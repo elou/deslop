@@ -13,6 +13,10 @@
     ['surprise-me', '✨ Surprise me'],
     ['hide-ai', '❌ Hide AI completely']
   ];
+  const CLEANUP_STREAM_OPTIONS = {
+    promoted: [...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'), ['hide-promoted', '❌ Hide all promoted']],
+    suggested: [...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'), ['hide-suggested', '❌ Hide all suggested']]
+  };
   const controls = {
     enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
@@ -24,6 +28,10 @@
     streamAi: document.querySelector('#stream-ai'),
     streamMixed: document.querySelector('#stream-mixed'),
     streamAssisted: document.querySelector('#stream-assisted'),
+    streamPromoted: document.querySelector('#stream-promoted'),
+    streamSuggested: document.querySelector('#stream-suggested'),
+    cleanupStreamPromoted: document.querySelector('#cleanup-stream-promoted'),
+    cleanupStreamSuggested: document.querySelector('#cleanup-stream-suggested'),
     status: document.querySelector('#save-status')
   };
   let styleMode = 'same';
@@ -36,6 +44,17 @@
     controls.streamAssisted
   ]) {
     for (const [value, label] of STREAM_OPTIONS) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    }
+  }
+  for (const [type, select] of [
+    ['promoted', controls.streamPromoted],
+    ['suggested', controls.streamSuggested]
+  ]) {
+    for (const [value, label] of CLEANUP_STREAM_OPTIONS[type]) {
       const option = document.createElement('option');
       option.value = value;
       option.textContent = label;
@@ -66,6 +85,10 @@
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
     controls.streamAssisted.value = settings.streams.assisted;
+    controls.streamPromoted.value = settings.streams.promoted;
+    controls.streamSuggested.value = settings.streams.suggested;
+    controls.cleanupStreamPromoted.hidden = !settings.hidePromoted;
+    controls.cleanupStreamSuggested.hidden = !settings.hideSuggested;
     controls.styleModeToggle.textContent =
       styleMode === 'same' ? 'Style each differently' : 'Style the same';
     document.body.dataset.styleMode = styleMode;
@@ -93,7 +116,9 @@
             ? controls.streamShared.value
             : controls.streamAi.value,
         mixed: controls.streamMixed.value,
-        assisted: controls.streamAssisted.value
+        assisted: controls.streamAssisted.value,
+        promoted: controls.streamPromoted.value,
+        suggested: controls.streamSuggested.value
       }
     });
     await setSettings(settings);
@@ -110,7 +135,9 @@
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed,
-    controls.streamAssisted
+    controls.streamAssisted,
+    controls.streamPromoted,
+    controls.streamSuggested
   ]) {
     control.addEventListener('change', () => void save());
   }

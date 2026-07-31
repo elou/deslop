@@ -71,6 +71,8 @@
   function formatVerdict(verdict) {
     if (verdict === 'mixed') return '🤖 Mixed';
     if (verdict === 'ai-assisted') return '🤖 AI-Assisted';
+    if (verdict === 'promoted') return '💸 Promoted';
+    if (verdict === 'suggested') return '🤓 Suggested';
     return '🤖 AI';
   }
 
@@ -119,7 +121,11 @@
       ? 'Mixed'
       : verdict === 'ai-assisted'
         ? 'AI-assisted'
-        : 'AI';
+        : verdict === 'promoted'
+          ? 'Promoted'
+          : verdict === 'suggested'
+            ? 'Suggested'
+            : 'AI';
     card.setAttribute('aria-label', `${verdictLabel} post replaced`);
     card.setAttribute('aria-busy', 'true');
 
@@ -207,17 +213,20 @@
     const byline = card.querySelector('.pangram-gallery-card__byline');
     const author = card.querySelector('.pangram-gallery-card__author');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !poem || !title || !description || !byline || !author || !notice) return false;
+    const toggle = card.querySelector('.pangram-gallery-card__toggle');
+    const verdict = card.querySelector('.pangram-gallery-card__verdict');
+    if (!image || !poem || !title || !description || !byline || !author || !notice || !toggle || !verdict) return false;
 
     if (item.kind === 'notice') {
-      notice.textContent = item.title || '☢️ Slop cleansed';
+      notice.textContent = item.title || '☢️ De-slopped your feed';
       notice.hidden = false;
       title.hidden = true;
       description.hidden = true;
-      byline.parentElement.hidden = true;
+      byline.hidden = true;
+      verdict.hidden = true;
       image.hidden = true;
       poem.hidden = true;
-      card.querySelector('.pangram-gallery-card__toggle').hidden = true;
+      toggle.hidden = false;
       card.classList.add('pangram-gallery-card--notice');
     } else if (item.kind === 'poem') {
       const lines = Array.isArray(item.lines) ? item.lines : [];
@@ -266,7 +275,7 @@
     target.removeAttribute(STATE_ATTRIBUTE);
   }
 
-  async function replaceTarget(target, verdict, activeGeneration) {
+  async function replaceTarget(target, verdict, activeGeneration, stream = null) {
     if (target.getAttribute(STATE_ATTRIBUTE)) return;
     target.setAttribute(STATE_ATTRIBUTE, 'pending');
     const card = createCard(verdict, target);
@@ -276,7 +285,8 @@
     try {
       const response = await sendMessage({
         type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
-        verdict
+        verdict,
+        stream
       });
       if (activeGeneration !== generation || !target.isConnected) {
         disposeCard(card);
@@ -375,12 +385,12 @@
       if (!target) continue;
 
       if (settings.hidePromoted && core.isPromotedTarget(target)) {
-        hidePromotedTarget(target);
+        void replaceCleanupTarget(target, 'promoted', activeGeneration);
         continue;
       }
 
       if (settings.hideSuggested && core.isSuggestedTarget(target)) {
-        hideSuggestedTarget(target);
+        void replaceCleanupTarget(target, 'suggested', activeGeneration);
         continue;
       }
 
@@ -403,35 +413,18 @@
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
   }
 
-  function hidePromotedTarget(target) {
-    if (target.getAttribute(STATE_ATTRIBUTE) === 'hidden-promoted') return;
-    restoreTarget(target);
-    const card = createCard('promoted', target);
-    card.setAttribute('aria-label', 'Promoted post hidden');
-    target.before(card);
-    if (!hydrateCard(card, { kind: 'notice', title: '💸 Depromoted your feed' })) {
-      disposeCard(card);
-      return;
-    }
-    target.classList.add(HIDDEN_CLASS);
-    target.setAttribute(STATE_ATTRIBUTE, 'hidden-promoted');
-  }
-
-  function hideSuggestedTarget(target) {
-    if (target.getAttribute(STATE_ATTRIBUTE) === 'hidden-suggested') return;
-    restoreTarget(target);
-    const card = createCard('suggested', target);
-    card.setAttribute('aria-label', 'Suggested post hidden');
-    target.before(card);
-    if (!hydrateCard(card, { kind: 'notice', title: '🦟 Desuggested your feed' })) {
-      disposeCard(card);
-      return;
-    }
-    target.classList.add(HIDDEN_CLASS);
-    target.setAttribute(STATE_ATTRIBUTE, 'hidden-suggested');
+  function replaceCleanupTarget(target, cleanupType, activeGeneration) {
+    if (!target?.isConnected || target.getAttribute(STATE_ATTRIBUTE)) return;
+    void replaceTarget(
+      target,
+      cleanupType,
+      activeGeneration,
+      core.getStreamForCleanup(settings, cleanupType)
+    );
   }
 
   function processCleanupTargets(promotedTargetValues, suggestedTargetValues) {
+    const activeGeneration = generation;
     const promotedTargets = new Set(promotedTargetValues || []);
     const suggestedTargets = new Set(suggestedTargetValues || []);
     const targets = new Set([...promotedTargets, ...suggestedTargets]);
@@ -439,9 +432,9 @@
     for (const target of targets) {
       if (!target?.isConnected) continue;
       if (settings.hidePromoted && promotedTargets.has(target)) {
-        hidePromotedTarget(target);
+        replaceCleanupTarget(target, 'promoted', activeGeneration);
       } else if (settings.hideSuggested && suggestedTargets.has(target)) {
-        hideSuggestedTarget(target);
+        replaceCleanupTarget(target, 'suggested', activeGeneration);
       }
     }
   }

@@ -46,12 +46,30 @@ test('defaults to AI-only replacement', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
     mixed: 'painting-classics',
-    assisted: 'painting-classics'
+    assisted: 'painting-classics',
+    promoted: 'hide-promoted',
+    suggested: 'hide-suggested'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
   assert.equal(core.shouldReplace('ai-assisted', settings), false);
   assert.equal(core.shouldReplace('human', settings), false);
+});
+
+test('keeps cleanup streams independent from verdict styling', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({
+    styleMode: 'different',
+    streams: {
+      ai: 'classic-poetry',
+      promoted: 'deep-space',
+      suggested: 'hide-suggested'
+    }
+  });
+
+  assert.equal(core.getStreamForCleanup(settings, 'promoted'), 'deep-space');
+  assert.equal(core.getStreamForCleanup(settings, 'suggested'), 'hide-suggested');
+  assert.equal(core.getStreamForCleanup(settings, 'unknown'), 'hide-suggested');
 });
 
 test('routes one shared stream or separate streams per verdict', () => {
