@@ -485,7 +485,8 @@
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['data-pangram-scanned']
+    attributeFilter: ['data-pangram-scanned'],
+    characterData: true
   });
 
   chrome.storage.onChanged.addListener((_changes, areaName) => {

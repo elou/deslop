@@ -179,6 +179,10 @@ test('observes Pangram scanning an existing feed item without rescanning the pag
   );
 });
 
+test('observes Pangram hydrating a verdict in an existing badge text node', () => {
+  assert.match(contentSource, /characterData:\s*true/);
+});
+
 test('clowns only Pangram-marked AI comments and keeps their words accessible', () => {
   assert.match(contentSource, /core\.findCommentTarget\(badge\)/);
   assert.match(contentSource, /clownCommentTarget\(commentTarget, badge\)/);

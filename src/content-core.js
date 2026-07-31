@@ -359,13 +359,15 @@
 
     for (const record of records || []) {
       const target = record?.target;
-      if (target?.nodeType === 1) {
+      const targetElement =
+        target?.nodeType === 1 ? target : target?.parentElement;
+      if (targetElement) {
         const badge =
-          typeof target.matches === 'function' &&
-          target.matches('.pangram-feed-badge')
-            ? target
-            : typeof target.closest === 'function'
-              ? target.closest('.pangram-feed-badge')
+          typeof targetElement.matches === 'function' &&
+          targetElement.matches('.pangram-feed-badge')
+            ? targetElement
+            : typeof targetElement.closest === 'function'
+              ? targetElement.closest('.pangram-feed-badge')
               : null;
         if (badge) {
           badges.add(badge);
