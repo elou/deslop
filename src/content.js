@@ -55,25 +55,72 @@
     return element;
   }
 
-  function getOriginalPostPermalink(target) {
-    for (const link of target.querySelectorAll('a[href]')) {
-      const url = new URL(link.href, window.location.origin);
+  function getPostScope(target) {
+    return target.querySelector?.('[data-pangram-post-id]') || target;
+  }
+
+  function cleanName(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function isOriginalPostPermalink(value) {
+    try {
+      const url = new URL(value, window.location.origin);
       const isFeedUpdate = /^\/feed\/update\/urn:li:activity:\d+\/?$/.test(url.pathname);
       const isPostPage = /^\/posts\/[^/?#]*-activity-\d+(?:-[^/?#]+)?\/?$/.test(url.pathname);
-      if (url.origin === window.location.origin && (isFeedUpdate || isPostPage)) {
-        return url.href;
-      }
+      return (
+        url.origin === window.location.origin &&
+        url.href !== window.location.href &&
+        (isFeedUpdate || isPostPage)
+      );
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function isOriginalAuthorProfile(value) {
+    try {
+      const url = new URL(value, window.location.origin);
+      return (
+        url.origin === window.location.origin &&
+        url.href !== window.location.href &&
+        /^\/(in|company|school)\//.test(url.pathname)
+      );
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function getOriginalPostPermalink(target) {
+    const scope = getPostScope(target);
+    for (const link of scope.querySelectorAll('a[href]')) {
+      if (isOriginalPostPermalink(link.href)) return link.href;
     }
 
-    const activityUrn = target
+    const activityUrn = scope
       .querySelector('[data-urn*="activity:"]')
       ?.getAttribute('data-urn')
       ?.match(/activity:(\d+)/)?.[1];
     return activityUrn ? `https://www.linkedin.com/feed/update/urn:li:activity:${activityUrn}/` : '';
   }
 
-  function getOriginalPostAuthor(target) {
-    const actors = target.querySelectorAll(
+  function getControlMenuAuthorName(scope) {
+    const control = scope.querySelector(
+      'button[aria-label^="Open control menu for post by "]'
+    );
+    const label = control?.getAttribute('aria-label') || '';
+    return cleanName(label.replace(/^Open control menu for post by\s+/i, ''));
+  }
+
+  function getPangramAuthorHandle(scope) {
+    const host = scope.matches?.('[data-pangram-author-handle]')
+      ? scope
+      : scope.querySelector?.('[data-pangram-author-handle]');
+    return cleanName(host?.getAttribute?.('data-pangram-author-handle')).toLowerCase();
+  }
+
+  function getActorFallbackName(scope) {
+    const actors = scope.querySelectorAll(
       '.update-components-actor, .feed-shared-actor, .update-components-actor__title, .feed-shared-actor__title'
     );
     for (const actor of actors) {
@@ -89,26 +136,39 @@
       )
         ? actor
         : actor.querySelector('.update-components-actor__title, .feed-shared-actor__title');
-      const name = (title?.querySelector('[aria-hidden="true"]')?.textContent || title?.textContent)
-        ?.trim()
-        .replace(/\s+/g, ' ');
-      if (!name || /^view:/i.test(name) || name.length > 120) continue;
-
-      const link = (title || actor).querySelector(
-        'a.update-components-actor__title-link[href], .update-components-actor__title a[href], a.feed-shared-actor__title-link[href], .feed-shared-actor__title a[href], a[href*="/in/"], a[href*="/company/"], a[href*="/school/"]'
+      const name = cleanName(
+        title?.querySelector('[aria-hidden="true"]')?.textContent || title?.textContent
       );
-      if (!link?.href) return { name, href: '' };
-
-      const url = new URL(link.href, window.location.origin);
-      if (
-        url.origin !== window.location.origin ||
-        !/^\/(in|company|school)\//.test(url.pathname)
-      ) {
-        return { name, href: '' };
-      }
-      return { name, href: url.href };
+      if (!name || /^view:/i.test(name) || name.length > 120) continue;
+      return name;
     }
-    return null;
+    return '';
+  }
+
+  function getOriginalPostAuthor(target) {
+    const scope = getPostScope(target);
+    const name = getControlMenuAuthorName(scope) || getActorFallbackName(scope);
+    if (!name) return null;
+
+    const handle = getPangramAuthorHandle(scope);
+    const normalizedName = name.toLowerCase();
+    const candidates = [...scope.querySelectorAll('a[href]')]
+      .filter((link) => isOriginalAuthorProfile(link.href))
+      .map((link) => {
+        const url = new URL(link.href, window.location.origin);
+        const pathHandle = decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1) || '')
+          .toLowerCase();
+        const linkName = cleanName(link.textContent).toLowerCase();
+        const score =
+          (handle && pathHandle === handle ? 100 : 0) +
+          (linkName === normalizedName || linkName.includes(normalizedName) ? 20 : 0) +
+          (link.closest('.update-components-actor, .feed-shared-actor') ? 5 : 0);
+        return { href: url.href, score };
+      })
+      .filter((candidate) => candidate.score > 0)
+      .sort((left, right) => right.score - left.score);
+
+    return { name, href: candidates[0]?.href || '' };
   }
 
   function unloadCardImage(image) {
@@ -242,6 +302,43 @@
     return card;
   }
 
+  function renderOriginalPostAuthor(card) {
+    const source = card.querySelector('.pangram-gallery-card__source');
+    const author = card.querySelector('.pangram-gallery-card__author');
+    const postAuthor = card.pangramGalleryAuthor;
+    if (!source || !author) return;
+
+    source.hidden = !postAuthor;
+    if (!postAuthor) return;
+    source.textContent = 'Original post by ';
+    const authorDestination = card.pangramGalleryPermalink || postAuthor.href;
+    if (authorDestination) {
+      author.href = authorDestination;
+    } else {
+      author.removeAttribute('href');
+    }
+    author.textContent = postAuthor.name;
+    source.append(author);
+  }
+
+  function scheduleOriginalMetadataRefresh(card) {
+    if (
+      card.dataset.pangramGalleryMetadataRefresh ||
+      (card.pangramGalleryPermalink && card.pangramGalleryAuthor?.href)
+    ) {
+      return;
+    }
+    card.dataset.pangramGalleryMetadataRefresh = 'scheduled';
+    window.setTimeout(() => {
+      const target = card.pangramGalleryTarget;
+      if (!card.isConnected || !target?.isConnected || target.pangramGalleryCard !== card) return;
+      card.pangramGalleryPermalink ||= getOriginalPostPermalink(target);
+      const refreshedAuthor = getOriginalPostAuthor(target);
+      if (refreshedAuthor?.name) card.pangramGalleryAuthor = refreshedAuthor;
+      renderOriginalPostAuthor(card);
+    }, 250);
+  }
+
   function hydrateCard(card, item) {
     const image = card.querySelector('.pangram-gallery-card__image');
     const imageLink = card.querySelector('.pangram-gallery-card__image-link');
@@ -285,19 +382,8 @@
       title.textContent = item.title;
       title.href = item.sourceUrl;
       location.textContent = item.location || item.provider;
-      const postAuthor = card.pangramGalleryAuthor;
-      source.hidden = !postAuthor;
-      if (postAuthor) {
-        source.textContent = 'Original post by ';
-        const authorDestination = card.pangramGalleryPermalink || postAuthor.href;
-        if (authorDestination) {
-          author.href = authorDestination;
-        } else {
-          author.removeAttribute('href');
-        }
-        author.textContent = postAuthor.name;
-        source.append(author);
-      }
+      renderOriginalPostAuthor(card);
+      scheduleOriginalMetadataRefresh(card);
     }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');

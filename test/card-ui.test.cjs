@@ -187,6 +187,17 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
   );
 });
 
+test('resolves the original author from the post control menu and rejects feed navigation URLs', () => {
+  assert.match(
+    contentSource,
+    /button\[aria-label\^="Open control menu for post by "\]/
+  );
+  assert.match(contentSource, /data-pangram-author-handle/);
+  assert.match(contentSource, /function isOriginalPostPermalink\(/);
+  assert.match(contentSource, /function isOriginalAuthorProfile\(/);
+  assert.match(contentSource, /function scheduleOriginalMetadataRefresh\(/);
+});
+
 test('processes promoted feed targets independently of Pangram verdict badges', () => {
   assert.match(contentSource, /function processPromotedTargets\(/);
   assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
