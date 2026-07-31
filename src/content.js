@@ -90,7 +90,12 @@
       'role',
       target.getAttribute('role') === 'listitem' ? 'listitem' : 'region'
     );
-    card.setAttribute('aria-label', `${verdict === 'mixed' ? 'Mixed' : 'AI'} post replaced`);
+    const verdictLabel = verdict === 'mixed'
+      ? 'Mixed'
+      : verdict === 'ai-assisted'
+        ? 'AI-assisted'
+        : 'AI';
+    card.setAttribute('aria-label', `${verdictLabel} post replaced`);
     card.setAttribute('aria-busy', 'true');
 
     const image = document.createElement('img');

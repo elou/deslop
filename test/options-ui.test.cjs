@@ -38,6 +38,7 @@ test('switches between one shared stream and per-verdict stream menus', () => {
   assert.match(optionsHtml, /Style each differently/);
   assert.match(optionsHtml, /id="stream-ai"/);
   assert.match(optionsHtml, /id="stream-mixed"/);
+  assert.match(optionsHtml, /id="stream-assisted"/);
   assert.match(optionsHtml, /id="stream-shared"/);
   assert.match(optionsSource, /Style the same/);
   assert.match(
@@ -53,6 +54,8 @@ test('does not expose removed museum source controls', () => {
 
 test('offers the explicit cleanup controls', () => {
   assert.match(optionsSource, /Hide AI completely/);
+  assert.match(optionsHtml, /AI-Assisted/);
+  assert.match(optionsHtml, /id="replace-assisted"/);
   assert.match(optionsHtml, /id="hide-promoted"/);
   assert.match(optionsHtml, /💸 Hide promoted posts/);
 });

@@ -13,6 +13,7 @@ Pangram Gallery follows semantic versioning from its first cumulative GitHub rel
 - Added a normalized provider registry so category labels can pool sources without losing provider attribution.
 - Added `🖼️ Art 2`, pooling National Gallery of Art and Rijksmuseum public-domain records; added explicit `🎾 Garross Gallery` research cards.
 - Added `✨ Surprise me`, a rights-safe global pool across Art, Art 2, Poetry, and Deep Space.
+- Added optional `AI-Assisted` verdict handling, including a third per-verdict stream mapping in Style each differently mode.
 
 ## 0.2.0 — 2026-07-30
 

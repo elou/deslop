@@ -19,11 +19,12 @@ A small group of Pangram users who install the unpacked extension from GitHub.
 - Verify feed behavior on LinkedIn, Medium, and X.
 - Replace `AI` verdicts by default.
 - Offer an option to include `Mixed` verdicts.
+- Offer an option to include `AI-Assisted` verdicts as a third Pangram category.
 - Let people choose from supported content streams.
 - Hide provider selection behind category labels while preserving provider/source attribution in every card.
 - Offer Art 2 as a pooled National Gallery of Art + Rijksmuseum category, and keep Garross Gallery as an explicit research stream.
 - Offer Surprise me as a global random draw across rights-safe art, poetry, and space providers.
-- Let people use one stream for all selected verdicts or route AI and Mixed differently.
+- Let people use one stream for all selected verdicts or route AI, Mixed, and AI-Assisted differently.
 - Let people choose `❌ Hide AI completely` for either verdict mapping, removing the post and leaving a compact `☢️ Slop cleansed` notice.
 - Let people separately enable `💸 Hide promoted posts` to replace promoted impressions with a compact `💸 Unpromoted a post` notice.
 - Start with a recognizable public-domain Painting Classics canon sourced through Wikidata and Wikimedia Commons.

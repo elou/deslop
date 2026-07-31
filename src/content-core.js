@@ -2,11 +2,13 @@
   const DEFAULT_SETTINGS = Object.freeze({
     enabled: true,
     replaceMixed: false,
+    replaceAssisted: false,
     hidePromoted: false,
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
-      mixed: 'painting-classics'
+      mixed: 'painting-classics',
+      assisted: 'painting-classics'
     })
   });
 
@@ -27,6 +29,7 @@
   const VERDICTS = new Map([
     ['ai', 'ai'],
     ['mixed', 'mixed'],
+    ['ai-assisted', 'ai-assisted'],
     ['human', 'human']
   ]);
 
@@ -48,6 +51,10 @@
         typeof input.replaceMixed === 'boolean'
           ? input.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
+      replaceAssisted:
+        typeof input.replaceAssisted === 'boolean'
+          ? input.replaceAssisted
+          : DEFAULT_SETTINGS.replaceAssisted,
       hidePromoted:
         typeof input.hidePromoted === 'boolean'
           ? input.hidePromoted
@@ -59,7 +66,10 @@
           : DEFAULT_SETTINGS.streams.ai,
         mixed: STREAM_IDS.includes(inputStreams.mixed)
           ? inputStreams.mixed
-          : DEFAULT_SETTINGS.streams.mixed
+          : DEFAULT_SETTINGS.streams.mixed,
+        assisted: STREAM_IDS.includes(inputStreams.assisted)
+          ? inputStreams.assisted
+          : DEFAULT_SETTINGS.streams.assisted
       }
     };
   }
@@ -67,14 +77,17 @@
   function getStreamForVerdict(settingsValue, verdict) {
     const settings = normalizeSettings(settingsValue);
     if (settings.styleMode === 'same') return settings.streams.ai;
-    return verdict === 'mixed' ? settings.streams.mixed : settings.streams.ai;
+    if (verdict === 'mixed') return settings.streams.mixed;
+    if (verdict === 'ai-assisted') return settings.streams.assisted;
+    return settings.streams.ai;
   }
 
   function shouldReplace(verdict, settingsValue) {
     const settings = normalizeSettings(settingsValue);
     if (!settings.enabled) return false;
     if (verdict === 'ai') return true;
-    return verdict === 'mixed' && settings.replaceMixed;
+    if (verdict === 'mixed') return settings.replaceMixed;
+    return verdict === 'ai-assisted' && settings.replaceAssisted;
   }
 
   // These are the LinkedIn impression containers Pangram already recognizes

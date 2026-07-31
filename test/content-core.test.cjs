@@ -20,6 +20,7 @@ test('reads only Pangram verdict labels', () => {
 
   assert.equal(core.classifyBadgeText(' AI '), 'ai');
   assert.equal(core.classifyBadgeText('Mixed'), 'mixed');
+  assert.equal(core.classifyBadgeText('AI-Assisted'), 'ai-assisted');
   assert.equal(core.classifyBadgeText('Human'), 'human');
   assert.equal(core.classifyBadgeText('AI Product Designer'), null);
   assert.equal(core.classifyBadgeText(''), null);
@@ -31,30 +32,43 @@ test('defaults to AI-only replacement', () => {
 
   assert.equal(settings.enabled, true);
   assert.equal(settings.replaceMixed, false);
+  assert.equal(settings.replaceAssisted, false);
   assert.equal(settings.hidePromoted, false);
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
-    mixed: 'painting-classics'
+    mixed: 'painting-classics',
+    assisted: 'painting-classics'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
+  assert.equal(core.shouldReplace('ai-assisted', settings), false);
   assert.equal(core.shouldReplace('human', settings), false);
 });
 
 test('routes one shared stream or separate streams per verdict', () => {
   const core = loadCore();
   const shared = core.normalizeSettings({
-    streams: { ai: 'classic-poetry', mixed: 'deep-space' }
+    streams: {
+      ai: 'classic-poetry',
+      mixed: 'deep-space',
+      assisted: 'art-2'
+    }
   });
   const separate = core.normalizeSettings({
     styleMode: 'different',
-    streams: { ai: 'classic-poetry', mixed: 'deep-space' }
+    streams: {
+      ai: 'classic-poetry',
+      mixed: 'deep-space',
+      assisted: 'art-2'
+    }
   });
 
   assert.equal(core.getStreamForVerdict(shared, 'mixed'), 'classic-poetry');
   assert.equal(core.getStreamForVerdict(separate, 'ai'), 'classic-poetry');
   assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'deep-space');
+  assert.equal(core.getStreamForVerdict(shared, 'ai-assisted'), 'classic-poetry');
+  assert.equal(core.getStreamForVerdict(separate, 'ai-assisted'), 'art-2');
 });
 
 test('falls back to Painting Classics for unknown stream choices', () => {
@@ -78,6 +92,13 @@ test('can opt into Mixed verdicts', () => {
   assert.equal(core.shouldReplace('mixed', settings), true);
 });
 
+test('can opt into AI-Assisted verdicts', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({ replaceAssisted: true });
+
+  assert.equal(core.shouldReplace('ai-assisted', settings), true);
+});
+
 test('can opt into hiding promoted impressions', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({ hidePromoted: true });
@@ -99,6 +120,7 @@ test('disabled mode never replaces a verdict', () => {
 
   assert.equal(core.shouldReplace('ai', settings), false);
   assert.equal(core.shouldReplace('mixed', settings), false);
+  assert.equal(core.shouldReplace('ai-assisted', settings), false);
 });
 
 test('collects Pangram badges only from added mutation subtrees', () => {

@@ -3,9 +3,14 @@ import { getReplacement } from './providers.mjs';
 const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
+  replaceAssisted: false,
   hidePromoted: false,
   styleMode: 'same',
-  streams: { ai: 'painting-classics', mixed: 'painting-classics' }
+  streams: {
+    ai: 'painting-classics',
+    mixed: 'painting-classics',
+    assisted: 'painting-classics'
+  }
 };
 
 const STREAM_IDS = new Set([
@@ -28,6 +33,7 @@ function readSettings() {
       resolve({
         enabled: value.enabled !== false,
         replaceMixed: value.replaceMixed === true,
+        replaceAssisted: value.replaceAssisted === true,
         hidePromoted: value.hidePromoted === true,
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
@@ -36,6 +42,9 @@ function readSettings() {
             : 'painting-classics',
           mixed: STREAM_IDS.has(value.streams?.mixed)
             ? value.streams.mixed
+            : 'painting-classics',
+          assisted: STREAM_IDS.has(value.streams?.assisted)
+            ? value.streams.assisted
             : 'painting-classics'
         }
       });
@@ -54,6 +63,10 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.replaceMixed === 'boolean'
           ? current.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
+      replaceAssisted:
+        typeof current.replaceAssisted === 'boolean'
+          ? current.replaceAssisted
+          : DEFAULT_SETTINGS.replaceAssisted,
       hidePromoted:
         typeof current.hidePromoted === 'boolean'
           ? current.hidePromoted
@@ -65,6 +78,9 @@ chrome.runtime.onInstalled.addListener(() => {
           : 'painting-classics',
         mixed: STREAM_IDS.has(current.streams?.mixed)
           ? current.streams.mixed
+          : 'painting-classics',
+        assisted: STREAM_IDS.has(current.streams?.assisted)
+          ? current.streams.assisted
           : 'painting-classics'
       }
     });
@@ -77,7 +93,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
       const settings = await readSettings();
-      const verdict = message.verdict === 'mixed' ? 'mixed' : 'ai';
+      const verdict = ['ai', 'mixed', 'ai-assisted'].includes(message.verdict)
+        ? message.verdict
+        : 'ai';
       const item = await getReplacement(settings, verdict);
       sendResponse({ ok: true, item });
     } catch (error) {

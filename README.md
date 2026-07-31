@@ -6,6 +6,7 @@ Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, po
 
 - Replaces `AI` posts by default.
 - Can also replace `Mixed` posts.
+- Can optionally replace `AI-Assisted` posts as a third Pangram verdict category.
 - Uses one content stream for every verdict by default.
 - Can route `AI` and `Mixed` verdicts to different streams.
 - Offers 🖼️ Art, 🖼️ Art 2, 📜 Poetry, 🎨 Modern Art (experimental), 🌌 Deep Space, 🗞️ Publisher feeds, 🃏 New Yorker cartoons, 🃏 Far Side (experimental), 🎾 Garross Gallery, and ✨ Surprise me.
@@ -26,7 +27,7 @@ The extension is designed to work anywhere Pangram adds its feed badges. LinkedI
 5. Select the unzipped `pangram-gallery` folder.
 6. Keep the Pangram extension installed and signed in.
 
-Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI and another for Mixed. Choose **❌ Hide AI completely** in either dropdown to remove matching posts and leave the cleansing notice; the separate **💸 Hide promoted posts** filter replaces promoted impressions with `💸 Unpromoted a post`.
+Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI, Mixed, and AI-Assisted. Choose **❌ Hide AI completely** in any dropdown to remove matching posts and leave the cleansing notice; the separate **💸 Hide promoted posts** filter replaces promoted impressions with `💸 Unpromoted a post`.
 
 Chrome will report that the extension can read and change data on websites. That broad permission is required because Pangram can label feeds on any site. Pangram Gallery looks only for Pangram's verdict markers and does not collect or transmit post text.
 

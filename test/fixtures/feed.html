@@ -50,8 +50,13 @@
       const fixtureSettings = {
         enabled: true,
         replaceMixed: true,
+        replaceAssisted: true,
         styleMode: 'different',
-        streams: { ai: 'painting-classics', mixed: 'classic-poetry' }
+        streams: {
+          ai: 'painting-classics',
+          mixed: 'classic-poetry',
+          assisted: 'art-2'
+        }
       };
       globalThis.chrome = {
         runtime: {
@@ -76,6 +81,23 @@
                   sourceUrl: 'https://thefreeverse.org/poem/Emily-Dickinson/Hope/',
                   rights: 'US public domain',
                   provider: 'Freeverse'
+                }
+              });
+              return;
+            }
+            if (message.verdict === 'ai-assisted') {
+              callback({
+                ok: true,
+                item: {
+                  kind: 'image',
+                  id: 'national-gallery-fixture',
+                  assetUrl: 'https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c/full/!960,960/0/default.jpg',
+                  title: 'AI-assisted fixture artwork',
+                  creator: 'National Gallery of Art',
+                  location: 'National Gallery of Art · open access',
+                  sourceUrl: 'https://www.nga.gov/',
+                  rights: 'CC0',
+                  provider: 'National Gallery of Art'
                 }
               });
               return;
@@ -110,7 +132,7 @@
     <main>
       <header>
         <h1>Infinite feed fixture</h1>
-      <p>AI posts become Painting Classics; Mixed posts become Classic Poetry. Human posts remain.</p>
+      <p>AI posts become Painting Classics; Mixed posts become Classic Poetry; AI-Assisted posts become Art 2. Human posts remain.</p>
       </header>
       <section id="feed" aria-label="Feed">
         <article>
@@ -129,6 +151,12 @@
           <div data-pangram-scanned="true" data-pangram-post-id="fixture-mixed-1">
             <h2>Third post <span class="pangram-feed-badge">Mixed</span></h2>
             <p>This Mixed post should become a poetry interlude.</p>
+          </div>
+        </article>
+        <article>
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-assisted-1">
+            <h2>Fourth post <span class="pangram-feed-badge">AI-Assisted</span></h2>
+            <p>This AI-Assisted post should become a pooled art interlude.</p>
           </div>
         </article>
       </section>
