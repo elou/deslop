@@ -160,12 +160,22 @@ test('links replacement artwork and its title to the item source', () => {
 
 test('links the original post footer to the hidden post permalink', () => {
   assert.match(contentSource, /function getOriginalPostPermalink\(target\)/);
+  assert.match(contentSource, /const isFeedUpdate =/);
+  assert.match(contentSource, /const isPostPage =/);
+  assert.match(contentSource, /url\.origin === window\.location\.origin/);
+  assert.match(contentSource, /querySelector\('\[data-urn\*="activity:"\]'\)/);
+  assert.doesNotMatch(contentSource, /a\[href\*="\\\/feed\\\/update\\\/"\]/);
   assert.match(contentSource, /card\.pangramGalleryPermalink = getOriginalPostPermalink\(target\)/);
   assert.match(contentSource, /source\.textContent = 'Original post';/);
   assert.match(contentSource, /source\.href = card\.pangramGalleryPermalink;/);
+  assert.match(contentSource, /source\.hidden = !card\.pangramGalleryPermalink;/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card__source\s*\{[^}]*text-decoration:\s*underline;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__source\[hidden\]\s*\{[^}]*display:\s*none;/s
   );
 });
 

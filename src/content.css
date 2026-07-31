@@ -248,6 +248,10 @@
   text-decoration: underline;
 }
 
+.pangram-gallery-card__source[hidden] {
+  display: none;
+}
+
 .pangram-gallery-card__toggle {
   order: 2;
   flex: none;

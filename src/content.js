@@ -56,12 +56,19 @@
   }
 
   function getOriginalPostPermalink(target) {
-    const link = target.querySelector(
-      'a[href*="/feed/update/"], a[href*="/posts/"]'
-    );
-    if (link?.href) return link.href;
+    for (const link of target.querySelectorAll('a[href]')) {
+      const url = new URL(link.href, window.location.origin);
+      const isFeedUpdate = /^\/feed\/update\/urn:li:activity:\d+\/?$/.test(url.pathname);
+      const isPostPage = /^\/posts\/[^/?#]*-activity-\d+(?:-[^/?#]+)?\/?$/.test(url.pathname);
+      if (url.origin === window.location.origin && (isFeedUpdate || isPostPage)) {
+        return url.href;
+      }
+    }
 
-    const activityUrn = target.getAttribute('data-urn')?.match(/activity:(\d+)/)?.[1];
+    const activityUrn = target
+      .querySelector('[data-urn*="activity:"]')
+      ?.getAttribute('data-urn')
+      ?.match(/activity:(\d+)/)?.[1];
     return activityUrn ? `https://www.linkedin.com/feed/update/urn:li:activity:${activityUrn}/` : '';
   }
 
