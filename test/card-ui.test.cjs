@@ -63,7 +63,7 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*64px\s+48px\s+28px;[^}]*background:\s*inherit;/s,
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s,
     'the image should sit in a generous, centered stage'
   );
   assert.match(
@@ -125,19 +125,19 @@ test('uses a footer row for the existing source and unhide control', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*520 30px\/1\.15 -apple-system/s
+    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*500 20px\s*\/\s*1\.2 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__location\s*\{[^}]*margin-block:\s*10px 0;[^}]*font:\s*400 20px\/1\.35 -apple-system/s
+    /\.pangram-gallery-card__location\s*\{[^}]*color:\s*inherit;[^}]*margin-block-start:\s*2px;[^}]*margin-block-end:\s*16px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*font:\s*400 17px\/1\.3 -apple-system/s
+    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*margin-block-start:\s*6px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*44px;[^}]*text-transform:\s*uppercase;/s
+    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
   );
 });
 
