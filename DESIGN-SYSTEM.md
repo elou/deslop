@@ -30,7 +30,7 @@ Quiet, editorial, and gallery-like. The replacement should feel like a small pau
 
 - Fade the card in once after content arrives.
 - Reserve a 4:3 artwork frame of at least 280px and the metadata area before remote content arrives.
-- Use a quiet neutral shimmer only while museum content is loading; keep the final artwork contained in the same frame.
+- Use a quiet neutral shimmer only while content is loading; keep final images and poetry in the same frame.
 - Use no looping or decorative animation.
 - Respect `prefers-reduced-motion`.
 

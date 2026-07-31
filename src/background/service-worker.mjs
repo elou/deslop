@@ -3,8 +3,30 @@ import { getReplacement } from './providers.mjs';
 const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
-  providers: { met: true, artic: true }
+  replaceAssisted: false,
+  hidePromoted: false,
+  hideSuggested: false,
+  styleMode: 'same',
+  streams: {
+    ai: 'painting-classics',
+    mixed: 'painting-classics',
+    assisted: 'painting-classics'
+  }
 };
+
+const STREAM_IDS = new Set([
+  'painting-classics',
+  'art-2',
+  'classic-poetry',
+  'modern-art',
+  'deep-space',
+  'newyorker-latest',
+  'newyorker-cartoons',
+  'far-side',
+  'garros-gallery',
+  'surprise-me',
+  'hide-ai'
+]);
 
 function readSettings() {
   return new Promise((resolve) => {
@@ -12,9 +34,20 @@ function readSettings() {
       resolve({
         enabled: value.enabled !== false,
         replaceMixed: value.replaceMixed === true,
-        providers: {
-          met: value.providers?.met !== false,
-          artic: value.providers?.artic !== false
+        replaceAssisted: value.replaceAssisted === true,
+        hidePromoted: value.hidePromoted === true,
+        hideSuggested: value.hideSuggested === true,
+        styleMode: value.styleMode === 'different' ? 'different' : 'same',
+        streams: {
+          ai: STREAM_IDS.has(value.streams?.ai)
+            ? value.streams.ai
+            : 'painting-classics',
+          mixed: STREAM_IDS.has(value.streams?.mixed)
+            ? value.streams.mixed
+            : 'painting-classics',
+          assisted: STREAM_IDS.has(value.streams?.assisted)
+            ? value.streams.assisted
+            : 'painting-classics'
         }
       });
     });
@@ -32,15 +65,29 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.replaceMixed === 'boolean'
           ? current.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
-      providers: {
-        met:
-          typeof current.providers?.met === 'boolean'
-            ? current.providers.met
-            : true,
-        artic:
-          typeof current.providers?.artic === 'boolean'
-            ? current.providers.artic
-            : true
+      replaceAssisted:
+        typeof current.replaceAssisted === 'boolean'
+          ? current.replaceAssisted
+          : DEFAULT_SETTINGS.replaceAssisted,
+      hidePromoted:
+        typeof current.hidePromoted === 'boolean'
+          ? current.hidePromoted
+          : DEFAULT_SETTINGS.hidePromoted,
+      hideSuggested:
+        typeof current.hideSuggested === 'boolean'
+          ? current.hideSuggested
+          : DEFAULT_SETTINGS.hideSuggested,
+      styleMode: current.styleMode === 'different' ? 'different' : 'same',
+      streams: {
+        ai: STREAM_IDS.has(current.streams?.ai)
+          ? current.streams.ai
+          : 'painting-classics',
+        mixed: STREAM_IDS.has(current.streams?.mixed)
+          ? current.streams.mixed
+          : 'painting-classics',
+        assisted: STREAM_IDS.has(current.streams?.assisted)
+          ? current.streams.assisted
+          : 'painting-classics'
       }
     });
   });
@@ -52,7 +99,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
       const settings = await readSettings();
-      const item = await getReplacement(settings);
+      const verdict = ['ai', 'mixed', 'ai-assisted'].includes(message.verdict)
+        ? message.verdict
+        : 'ai';
+      const item = await getReplacement(settings, verdict);
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({

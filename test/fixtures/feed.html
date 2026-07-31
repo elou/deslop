@@ -49,26 +49,72 @@
     <script>
       const fixtureSettings = {
         enabled: true,
-        replaceMixed: false,
-        providers: { met: true, artic: true }
+        replaceMixed: true,
+        replaceAssisted: true,
+        styleMode: 'different',
+        streams: {
+          ai: 'painting-classics',
+          mixed: 'classic-poetry',
+          assisted: 'art-2'
+        }
       };
       globalThis.chrome = {
         runtime: {
           id: 'fixture',
           lastError: null,
-          sendMessage(_message, callback) {
+          sendMessage(message, callback) {
+            if (message.verdict === 'mixed') {
+              callback({
+                ok: true,
+                item: {
+                  kind: 'poem',
+                  id: 'freeverse-hope',
+                  title: '“Hope” is the thing with feathers',
+                  creator: 'Emily Dickinson',
+                  lines: [
+                    '“Hope” is the thing with feathers –',
+                    'That perches in the soul –',
+                    'And sings the tune without the words –',
+                    'And never stops – at all –'
+                  ],
+                  location: 'Emily Dickinson',
+                  sourceUrl: 'https://thefreeverse.org/poem/Emily-Dickinson/Hope/',
+                  rights: 'US public domain',
+                  provider: 'Freeverse'
+                }
+              });
+              return;
+            }
+            if (message.verdict === 'ai-assisted') {
+              callback({
+                ok: true,
+                item: {
+                  kind: 'image',
+                  id: 'national-gallery-fixture',
+                  assetUrl: 'https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c/full/!960,960/0/default.jpg',
+                  title: 'AI-assisted fixture artwork',
+                  creator: 'National Gallery of Art',
+                  location: 'National Gallery of Art · open access',
+                  sourceUrl: 'https://www.nga.gov/',
+                  rights: 'CC0',
+                  provider: 'National Gallery of Art'
+                }
+              });
+              return;
+            }
             callback({
               ok: true,
               item: {
-                id: 'met-436535',
-                assetUrl: 'https://images.metmuseum.org/CRDImages/ep/web-large/DT1567.jpg',
+                kind: 'image',
+                id: 'painting-classics-q12418',
+                assetUrl: 'https://upload.wikimedia.org/example.jpg',
                 title: 'Wheat Field with Cypresses',
                 creator: 'Vincent van Gogh',
                 date: '1889',
                 location: 'Saint-Rémy-de-Provence, France',
-                sourceUrl: 'https://www.metmuseum.org/art/collection/search/436535',
-                rights: 'CC0',
-                provider: 'The Met'
+                sourceUrl: 'https://www.wikidata.org/wiki/Q12418',
+                rights: 'Public domain',
+                provider: 'Painting Classics'
               }
             });
           }
@@ -86,7 +132,7 @@
     <main>
       <header>
         <h1>Infinite feed fixture</h1>
-        <p>AI posts become full-size gallery interludes. Human and Mixed posts remain.</p>
+      <p>AI posts become Painting Classics; Mixed posts become Classic Poetry; AI-Assisted posts become Art 2. Human posts remain.</p>
       </header>
       <section id="feed" aria-label="Feed">
         <article>
@@ -104,7 +150,13 @@
         <article>
           <div data-pangram-scanned="true" data-pangram-post-id="fixture-mixed-1">
             <h2>Third post <span class="pangram-feed-badge">Mixed</span></h2>
-            <p>This Mixed post should remain visible under the default setting.</p>
+            <p>This Mixed post should become a poetry interlude.</p>
+          </div>
+        </article>
+        <article>
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-assisted-1">
+            <h2>Fourth post <span class="pangram-feed-badge">AI-Assisted</span></h2>
+            <p>This AI-Assisted post should become a pooled art interlude.</p>
           </div>
         </article>
       </section>

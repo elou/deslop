@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Pangram Gallery",
-  "version": "0.1.4",
-  "description": "Replace Pangram-labeled AI feed posts with quiet public-domain art.",
+  "version": "0.2.0",
+  "description": "Replace Pangram-labeled AI feed posts with art, poetry, space, or cartoons.",
   "icons": {
     "16": "assets/icon-16.png",
     "32": "assets/icon-32.png",
@@ -11,10 +11,21 @@
   },
   "permissions": ["storage"],
   "host_permissions": [
-    "https://collectionapi.metmuseum.org/*",
-    "https://images.metmuseum.org/*",
-    "https://api.artic.edu/*",
-    "https://www.artic.edu/*"
+    "https://www.wikidata.org/*",
+    "https://commons.wikimedia.org/*",
+    "https://upload.wikimedia.org/*",
+    "https://api.nga.gov/*",
+    "https://data.rijksmuseum.nl/*",
+    "https://iiif.micr.io/*",
+    "https://www.garros.gallery/*",
+    "https://smlneelkaujgtwoe.public.blob.vercel-storage.com/*",
+    "https://thefreeverse.org/*",
+    "https://raw.githubusercontent.com/*",
+    "https://datasets-server.huggingface.co/*",
+    "https://images-api.nasa.gov/*",
+    "https://images-assets.nasa.gov/*",
+    "https://www.newyorker.com/*",
+    "https://media.newyorker.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.mjs",
@@ -34,6 +45,7 @@
       "matches": ["<all_urls>"],
       "js": ["src/content-core.js", "src/content.js"],
       "css": ["src/content.css"],
+      "all_frames": true,
       "run_at": "document_idle"
     }
   ]

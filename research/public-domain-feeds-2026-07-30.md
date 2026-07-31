@@ -8,6 +8,34 @@ Checks: Verified primary Met, Art Institute Chicago, Smithsonian, Library of Con
 Residuals: Provider limits can change; LoC and Met publish enforcement but no numeric quota.
 Next: Build v1 around Met and Art Institute CC0 filters, preserving each item's title, creator, and source URL as optional on-screen credit.
 
+## 2026-07-30 scope expansion: official live feeds
+
+Emily expanded the product beyond public-domain-only media. Copyrighted publisher
+content may now be shown when it comes from an official feed, is fetched at display
+time, keeps a source label, and links back to the original.
+
+- **PoetryDB**: `https://poetrydb.org/random/1` returns a random poem with title,
+  author, and line breaks. The endpoint was successfully probed from the extension
+  adapter.
+- **NASA APOD**: `https://api.nasa.gov/planetary/apod` returns image records with
+  date and creator credit. v0.2.0 uses `DEMO_KEY`, preserves third-party copyright
+  notices, and links to the dated APOD page. NASA documents a `30/hour` and
+  `50/day` per-IP limit for the demo key.
+- **The New Yorker Latest**: the publisher exposes
+  `https://www.newyorker.com/feed/latest/rss` with titles, links, creators, and
+  `media:thumbnail` images.
+- **The New Yorker Cartoons**: the official Humor feed at
+  `https://www.newyorker.com/feed/humor/rss` currently includes cartoon entries
+  and thumbnails. The extension treats this as publisher RSS, not public-domain
+  content, and does not persist the media.
+- **New Yorker covers**: no comparable official cover feed was found. The cover
+  gallery remains excluded because scraping or reproducing it would exceed the
+  official-feed model.
+
+Sources: [The New Yorker RSS feeds](https://www.newyorker.com/about/feeds),
+[NASA APIs](https://api.nasa.gov/), [NASA media guidance](https://www.nasa.gov/nasa-brand-center/images-and-media/),
+and [PoetryDB](https://github.com/thundercomb/poetrydb).
+
 ## Ranked v1 shortlist
 
 ### 1. The Metropolitan Museum of Art
@@ -60,9 +88,12 @@ Next: Build v1 around Met and Art Institute CC0 filters, preserving each item's 
 
 ## Cartoon findings
 
-### New Yorker cartoons
+### New Yorker cartoons (superseded for official-feed display)
 
-Exclude from v1. They are publicly viewable but not public domain. The publisher directs non-personal reuse to paid licensing through Cartoon Bank. No authorized public-domain API or feed suitable for this extension was found. Do not scrape or hotlink gallery images. [Licensing FAQ](https://store.newyorker.com/pages/faq).
+The public-domain-only recommendation was to exclude them. After the scope
+expanded, the official Humor RSS feed became acceptable for feed-reader-style
+display with attribution and original links. Do not scrape the cartoon archive or
+cover gallery. [Licensing FAQ](https://store.newyorker.com/pages/faq).
 
 ### The Far Side
 

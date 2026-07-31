@@ -1,13 +1,47 @@
 (function setUpOptions() {
   const core = globalThis.PangramGalleryCore;
+  const STREAM_OPTIONS = [
+    ['painting-classics', '🖼️ Art'],
+    ['art-2', '🖼️ Art 2'],
+    ['classic-poetry', '📜 Poetry'],
+    ['modern-art', '🎨 Modern Art (experimental)'],
+    ['deep-space', '🌌 Deep Space'],
+    ['newyorker-latest', '🗞️ Publisher feeds'],
+    ['newyorker-cartoons', '🃏 New Yorker cartoons'],
+    ['far-side', '🃏 Far Side (experimental)'],
+    ['garros-gallery', '🎾 Garross Gallery'],
+    ['surprise-me', '✨ Surprise me'],
+    ['hide-ai', '❌ Hide AI completely']
+  ];
   const controls = {
     enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
-    met: document.querySelector('#provider-met'),
-    artic: document.querySelector('#provider-artic'),
+    replaceAssisted: document.querySelector('#replace-assisted'),
+    hidePromoted: document.querySelector('#hide-promoted'),
+    hideSuggested: document.querySelector('#hide-suggested'),
+    styleModeToggle: document.querySelector('#style-mode-toggle'),
+    streamShared: document.querySelector('#stream-shared'),
+    streamAi: document.querySelector('#stream-ai'),
+    streamMixed: document.querySelector('#stream-mixed'),
+    streamAssisted: document.querySelector('#stream-assisted'),
     status: document.querySelector('#save-status')
   };
+  let styleMode = 'same';
   let statusTimer = null;
+
+  for (const select of [
+    controls.streamShared,
+    controls.streamAi,
+    controls.streamMixed,
+    controls.streamAssisted
+  ]) {
+    for (const [value, label] of STREAM_OPTIONS) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.append(option);
+    }
+  }
 
   function readSettings() {
     return new Promise((resolve) => {
@@ -22,10 +56,19 @@
   }
 
   function render(settings) {
+    styleMode = settings.styleMode;
     controls.enabled.checked = settings.enabled;
     controls.replaceMixed.checked = settings.replaceMixed;
-    controls.met.checked = settings.providers.met;
-    controls.artic.checked = settings.providers.artic;
+    controls.replaceAssisted.checked = settings.replaceAssisted;
+    controls.hidePromoted.checked = settings.hidePromoted;
+    controls.hideSuggested.checked = settings.hideSuggested;
+    controls.streamShared.value = settings.streams.ai;
+    controls.streamAi.value = settings.streams.ai;
+    controls.streamMixed.value = settings.streams.mixed;
+    controls.streamAssisted.value = settings.streams.assisted;
+    controls.styleModeToggle.textContent =
+      styleMode === 'same' ? 'Style each differently' : 'Style the same';
+    document.body.dataset.styleMode = styleMode;
   }
 
   function showStatus(message) {
@@ -37,17 +80,20 @@
   }
 
   async function save() {
-    if (!controls.met.checked && !controls.artic.checked) {
-      controls.met.checked = true;
-      showStatus('Keep at least one source on');
-    }
-
     const settings = core.normalizeSettings({
       enabled: controls.enabled.checked,
       replaceMixed: controls.replaceMixed.checked,
-      providers: {
-        met: controls.met.checked,
-        artic: controls.artic.checked
+      replaceAssisted: controls.replaceAssisted.checked,
+      hidePromoted: controls.hidePromoted.checked,
+      hideSuggested: controls.hideSuggested.checked,
+      styleMode,
+      streams: {
+        ai:
+          styleMode === 'same'
+            ? controls.streamShared.value
+            : controls.streamAi.value,
+        mixed: controls.streamMixed.value,
+        assisted: controls.streamAssisted.value
       }
     });
     await setSettings(settings);
@@ -58,11 +104,29 @@
   for (const control of [
     controls.enabled,
     controls.replaceMixed,
-    controls.met,
-    controls.artic
+    controls.replaceAssisted,
+    controls.hidePromoted,
+    controls.hideSuggested,
+    controls.streamShared,
+    controls.streamAi,
+    controls.streamMixed,
+    controls.streamAssisted
   ]) {
     control.addEventListener('change', () => void save());
   }
+
+  controls.styleModeToggle.addEventListener('click', () => {
+    if (styleMode === 'same') {
+      controls.streamAi.value = controls.streamShared.value;
+      controls.streamMixed.value = controls.streamShared.value;
+      controls.streamAssisted.value = controls.streamShared.value;
+      styleMode = 'different';
+    } else {
+      controls.streamShared.value = controls.streamAi.value;
+      styleMode = 'same';
+    }
+    void save();
+  });
 
   void readSettings().then(render);
 })();

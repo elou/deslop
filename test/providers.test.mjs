@@ -2,117 +2,620 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  buildArticReplacement,
-  buildMetReplacement,
-  chooseEnabledProvider,
-  getReplacement
+  buildFreeverseReplacement,
+  buildFarSideReplacement,
+  buildGarrosGalleryReplacement,
+  buildHideReplacement,
+  buildNationalGalleryReplacement,
+  buildModernArtReplacement,
+  buildNasaDeepSpaceReplacement,
+  buildNextMlReplacement,
+  buildPaintingClassicsReplacement,
+  buildRijksmuseumReplacement,
+  getReplacement,
+  normalizeCard,
+  parseGarrosGallery,
+  parseNgaPublishedImagesChunk,
+  parseNewYorkerFeed,
+  PROVIDER_REGISTRY,
+  STREAM_REGISTRY
 } from '../src/background/providers.mjs';
 
-test('accepts a public-domain Met object with an image', () => {
-  const item = buildMetReplacement({
-    objectID: 436535,
-    title: 'Wheat Field with Cypresses',
-    artistDisplayName: 'Vincent van Gogh',
-    objectDate: '1889',
-    country: 'France',
-    objectURL: 'https://www.metmuseum.org/art/collection/search/436535',
-    primaryImageSmall: 'https://images.metmuseum.org/example.jpg',
-    isPublicDomain: true
+test('normalizes provider cards to one stable shape', () => {
+  const item = normalizeCard({
+    kind: 'image',
+    id: 'example',
+    assetUrl: 'https://example.com/image.jpg',
+    title: 'Example',
+    provider: 'Example provider',
+    rights: 'CC0',
+    caption: 'Optional metadata'
   });
 
-  assert.equal(item.provider, 'The Met');
+  assert.deepEqual(item, {
+    kind: 'image',
+    id: 'example',
+    title: 'Example',
+    creator: '',
+    date: '',
+    location: '',
+    sourceUrl: '',
+    rights: 'CC0',
+    credit: '',
+    provider: 'Example provider',
+    assetUrl: 'https://example.com/image.jpg',
+    caption: 'Optional metadata'
+  });
+});
+
+test('parses and builds an open-access National Gallery image row', () => {
+  const csv = [
+    'uuid,iiifurl,iiifthumburl,viewtype,sequence,width,height,maxpixels,openaccess,created,modified,depictstmsobjectid,assistivetext',
+    '00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c,"https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c/full/!200,200/0/default.jpg",Image,1,1000,800,0,1,2020-01-01,2020-01-02,17387,"Study of a landscape, open access."'
+  ].join('\n');
+  const rows = parseNgaPublishedImagesChunk(csv);
+  const item = buildNationalGalleryReplacement(rows[0]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(item.provider, 'National Gallery of Art');
   assert.equal(item.rights, 'CC0');
+  assert.match(item.assetUrl, /api\.nga\.gov\/iiif\/00007f61/);
+  assert.match(item.sourceUrl, /art-object-page\.17387/);
+});
+
+test('builds a public-domain Rijksmuseum IIIF image', () => {
+  const item = buildRijksmuseumReplacement(
+    {
+      id: 'https://id.rijksmuseum.nl/200100988',
+      identified_by: [
+        { type: 'Name', content: 'The Night Watch' },
+        { type: 'Identifier', content: 'SK-C-5' }
+      ],
+      produced_by: {
+        part: [{ carried_out_by: [{ notation: [{ '@language': 'en', '@value': 'Rembrandt van Rijn' }] }] }],
+        timespan: { identified_by: [{ content: '1642' }] }
+      }
+    },
+    { subject_to: [{ id: 'https://creativecommons.org/publicdomain/zero/1.0/' }] },
+    { access_point: [{ id: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg' }] }
+  );
+
+  assert.equal(item.provider, 'Rijksmuseum');
+  assert.equal(item.rights, 'Public domain');
+  assert.equal(item.creator, 'Rembrandt van Rijn');
+  assert.equal(item.title, 'The Night Watch');
+  assert.match(item.assetUrl, /full\/960,/);
+  assert.match(item.sourceUrl, /SK-C-5/);
+});
+
+test('parses and labels Garross Gallery records as research link-backs', () => {
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    mainEntity: { itemListElement: [{ item: {
+      name: '2026 poster',
+      creator: { name: 'Example artist' },
+      dateCreated: '2026',
+      image: 'https://smlneelkaujgtwoe.public.blob.vercel-storage.com/posters/rg2026.webp',
+      url: 'https://www.garros.gallery/poster/2026'
+    } }] }
+  })}</script>`;
+  const [record] = parseGarrosGallery(html);
+  const item = buildGarrosGalleryReplacement(record);
+
+  assert.equal(item.provider, '🎾 Garross Gallery');
+  assert.equal(item.rights, 'Copyrighted · research link-back');
+  assert.equal(item.creator, 'Example artist');
+  assert.match(item.sourceUrl, /garros\.gallery\/poster\/2026/);
+});
+
+test('registers pooled categories and keeps Surprise me rights-safe', () => {
+  assert.deepEqual(STREAM_REGISTRY['art-2'].providerIds, [
+    'national-gallery',
+    'rijksmuseum'
+  ]);
+  assert.deepEqual(STREAM_REGISTRY['surprise-me'].providerIds, [
+    'painting-classics',
+    'national-gallery',
+    'rijksmuseum',
+    'freeverse',
+    'deep-space'
+  ]);
+  assert.ok(
+    STREAM_REGISTRY['surprise-me'].providerIds.every(
+      (providerId) => PROVIDER_REGISTRY[providerId].rightsSafe
+    )
+  );
+  assert.equal(PROVIDER_REGISTRY['national-gallery'].rightsSafe, true);
+  assert.equal(PROVIDER_REGISTRY['garros-gallery'].rightsSafe, false);
+  for (const provider of Object.values(PROVIDER_REGISTRY)) {
+    assert.equal(typeof provider.fetch, 'function');
+  }
+});
+
+test('builds a Freeverse poem with its original line breaks', () => {
+  const item = buildFreeverseReplacement(
+    {
+      id: 'Emily-Dickinson/Hope',
+      title: '“Hope” is the thing with feathers',
+      author: 'Emily Dickinson'
+    },
+    '“Hope” is the thing with feathers –\nThat perches in the soul –'
+  );
+
+  assert.equal(item.kind, 'poem');
+  assert.equal(item.provider, 'Freeverse');
+  assert.equal(item.rights, 'US public domain');
+  assert.equal(item.creator, 'Emily Dickinson');
+  assert.deepEqual(item.lines, [
+    '“Hope” is the thing with feathers –',
+    'That perches in the soul –'
+  ]);
+});
+
+test('builds a Painting Classics item only from a checked public-domain Commons image', () => {
+  const entity = {
+    id: 'Q12418',
+    labels: { en: { value: 'The Starry Night' } },
+    claims: {
+      P170: [{ mainsnak: { datavalue: { value: { id: 'Q5582' } } } }],
+      P571: [{ mainsnak: { datavalue: { value: { time: '+1889-01-01T00:00:00Z' } } } }]
+    }
+  };
+  const item = buildPaintingClassicsReplacement(
+    entity,
+    { labels: { en: { value: 'Vincent van Gogh' } } },
+    {
+      thumburl: 'https://upload.wikimedia.org/example.jpg',
+      descriptionurl: 'https://commons.wikimedia.org/wiki/File:Example.jpg',
+      extmetadata: {
+        LicenseShortName: { value: 'Public domain' },
+        Copyrighted: { value: 'False' },
+        Credit: { value: 'Museum collection' }
+      }
+    }
+  );
+
+  assert.equal(item.provider, 'Painting Classics');
+  assert.equal(item.rights, 'Public domain');
   assert.equal(item.creator, 'Vincent van Gogh');
-  assert.equal(item.location, 'France');
+  assert.equal(item.location, 'Museum collection');
   assert.match(item.assetUrl, /^https:\/\//);
 });
 
-test('rejects Met objects without explicit public-domain status', () => {
-  assert.equal(
-    buildMetReplacement({
-      objectID: 1,
-      title: 'Restricted work',
-      primaryImageSmall: 'https://images.metmuseum.org/example.jpg',
-      isPublicDomain: false
-    }),
-    null
-  );
-});
-
-test('builds an Art Institute image only from an explicit public-domain record', () => {
-  const item = buildArticReplacement(
-    {
-      id: 27992,
-      title: 'A Sunday on La Grande Jatte',
-      artist_display: 'Georges Seurat',
-      date_display: '1884–86',
-      place_of_origin: 'Paris, France',
-      image_id: '8315b9f7-4bad-0f8d-3f2b-c73ff21d58ed',
-      is_public_domain: true
-    },
-    'https://www.artic.edu/iiif/2'
-  );
-
-  assert.equal(item.provider, 'Art Institute of Chicago');
-  assert.equal(item.rights, 'CC0');
-  assert.equal(item.location, 'Paris, France');
-  assert.match(item.assetUrl, /\/full\/960,\/0\/default\.jpg$/);
-  assert.equal(item.sourceUrl, 'https://www.artic.edu/artworks/27992');
-});
-
-test('rejects an Art Institute record without an image or rights flag', () => {
-  assert.equal(
-    buildArticReplacement({ id: 1, image_id: null, is_public_domain: true }),
-    null
-  );
-  assert.equal(
-    buildArticReplacement({ id: 2, image_id: 'image', is_public_domain: false }),
-    null
-  );
-});
-
-test('chooses only from enabled providers', () => {
-  assert.equal(
-    chooseEnabledProvider({ met: false, artic: true }, () => 0),
-    'artic'
-  );
-  assert.equal(
-    chooseEnabledProvider({ met: true, artic: false }, () => 0.99),
-    'met'
-  );
-});
-
-test('falls back to the other enabled provider when the first source fails', async () => {
-  const fetchFn = async (url) => {
-    if (url.includes('metmuseum.org')) {
-      return { ok: false, status: 503, json: async () => ({}) };
+test('rejects copyrighted or non-public-domain Painting Classics images', () => {
+  const entity = { id: 'Q1', labels: { en: { value: 'Restricted work' } } };
+  const base = {
+    thumburl: 'https://upload.wikimedia.org/example.jpg',
+    extmetadata: {
+      LicenseShortName: { value: 'CC BY-SA 4.0' },
+      Copyrighted: { value: 'True' }
     }
+  };
+
+  assert.equal(buildPaintingClassicsReplacement(entity, null, base), null);
+});
+
+test('builds a modern-art research item only for a selected modern style', () => {
+  const features = [
+    { name: 'artist', type: { names: ['Unknown', 'Pablo Picasso'] } },
+    { name: 'genre', type: { names: ['portrait'] } },
+    { name: 'style', type: { names: ['Cubism'] } }
+  ];
+  const item = buildModernArtReplacement(
+    {
+      artist: 1,
+      genre: 0,
+      style: 0,
+      image: { src: 'https://datasets-server.huggingface.co/image.jpg' }
+    },
+    features
+  );
+
+  assert.equal(item.provider, 'Modern Art');
+  assert.equal(item.rights, 'Noncommercial research');
+  assert.equal(item.creator, 'Pablo Picasso');
+  assert.equal(item.location, 'Cubism · portrait');
+});
+
+test('rejects modern-art rows outside the experimental style pool', () => {
+  assert.equal(
+    buildModernArtReplacement(
+      {
+        artist: 0,
+        genre: 0,
+        style: 0,
+        image: { src: 'https://datasets-server.huggingface.co/image.jpg' }
+      },
+      [
+        { name: 'artist', type: { names: ['Artist'] } },
+        { name: 'genre', type: { names: ['genre'] } },
+        { name: 'style', type: { names: ['Rococo'] } }
+      ]
+    ),
+    null
+  );
+});
+
+test('builds an optimized Deep Space NASA replacement', () => {
+  const item = buildNasaDeepSpaceReplacement(
+    {
+      nasa_id: 'W49B',
+      media_type: 'image',
+      title: 'Supernova Remnant W49B',
+      date_created: '2024-01-02',
+      secondary_creator: 'NASA/JPL-Caltech'
+    },
+    'https://images-assets.nasa.gov/image/W49B~large.jpg'
+  );
+
+  assert.equal(item.provider, 'Deep Space');
+  assert.equal(item.rights, 'NASA media');
+  assert.equal(item.title, 'Supernova Remnant W49B');
+  assert.match(item.sourceUrl, /images\.nasa\.gov\/details\/W49B/);
+});
+
+test('builds a bounded NextML Caption Contest replacement', () => {
+  const item = buildNextMlReplacement({
+    contest_number: 556,
+    image: { src: 'https://datasets-server.huggingface.co/cached-assets/cartoon.jpg' },
+    caption_choices: ['Another executive order?', 'We had meth on Tuesday.'],
+    label: 'B',
+    instance_id: 'contest-row'
+  });
+
+  assert.equal(item.provider, 'NextML Caption Contest');
+  assert.equal(item.title, 'We had meth on Tuesday.');
+  assert.equal(item.rights, 'Noncommercial dataset');
+});
+
+test('builds an explicitly labeled Far Side research replacement', () => {
+  const item = buildFarSideReplacement(
+    {
+      image: {
+        src: 'https://datasets-server.huggingface.co/cached-assets/farside.jpg'
+      },
+      text: 'a person with an old tree and another with a ladder'
+    },
+    12
+  );
+
+  assert.equal(item.kind, 'image');
+  assert.equal(item.id, 'far-side-12');
+  assert.equal(item.provider, 'Far Side (experimental)');
+  assert.equal(item.creator, 'Gary Larson');
+  assert.equal(item.rights, 'Copyrighted · noncommercial dataset');
+  assert.equal(item.caption, 'a person with an old tree and another with a ladder');
+});
+
+test('builds the compact Hide AI replacement notice', () => {
+  const item = buildHideReplacement();
+
+  assert.equal(item.kind, 'notice');
+  assert.equal(item.title, '☢️ Slop cleansed');
+});
+
+test('parses official New Yorker RSS thumbnails and caps image width', () => {
+  const xml = `<rss><channel>
+    <item><title><![CDATA[The Cartoon Caption Contest]]></title>
+      <link>https://www.newyorker.com/cartoons/contest</link>
+      <category>Cartoons</category>
+      <dc:creator><![CDATA[The New Yorker]]></dc:creator>
+      <media:thumbnail url="https://media.newyorker.com/photos/id/master/pass/cartoon.jpg" />
+    </item>
+    <item><title>News &amp; notes</title>
+      <link>https://www.newyorker.com/news/example</link>
+      <media:thumbnail url="https://media.newyorker.com/news.jpg" />
+    </item>
+  </channel></rss>`;
+
+  const items = parseNewYorkerFeed(xml);
+  assert.equal(items.length, 2);
+  assert.equal(items[1].title, 'News & notes');
+  assert.equal(
+    items[0].assetUrl,
+    'https://media.newyorker.com/photos/id/master/w_960,c_limit/cartoon.jpg'
+  );
+});
+
+test('skips animated New Yorker feed thumbnails', () => {
+  const xml = `<rss><channel><item>
+    <title>Animated contest entry</title>
+    <link>https://www.newyorker.com/cartoons/contest</link>
+    <media:thumbnail url="https://media.newyorker.com/photos/id/master/pass/cartoon.gif" />
+  </item></channel></rss>`;
+
+  assert.deepEqual(parseNewYorkerFeed(xml), []);
+});
+
+test('routes Classic Poetry through the Freeverse index and raw poem', async () => {
+  const fetchFn = async (url) => {
+    if (url.endsWith('/search-index.json')) {
+      return { ok: true, status: 200, json: async () => ({ poems: [
+        { id: 'Emily-Dickinson/Hope', title: 'Hope', author: 'Emily Dickinson' }
+      ] }) };
+    }
+    assert.match(url, /raw\.githubusercontent\.com\/Spitfire-Cowboy\/freeverse/);
+    return { ok: true, status: 200, text: async () => 'A line\nAnother line' };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'classic-poetry' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+  assert.equal(item.provider, 'Freeverse');
+  assert.deepEqual(item.lines, ['A line', 'Another line']);
+});
+
+test('routes Art 2 to the National Gallery adapter', async () => {
+  const csv = [
+    'uuid,iiifurl,iiifthumburl,viewtype,sequence,width,height,maxpixels,openaccess,created,modified,depictstmsobjectid,assistivetext',
+    '00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/thumb,Image,1,1000,800,0,1,2020-01-01,2020-01-02,17387,"Landscape study."'
+  ].join('\n');
+  const fetchFn = async (url) => {
+    assert.match(url, /raw\.githubusercontent\.com\/NationalGalleryOfArt\/opendata/);
+    return {
+      ok: true,
+      status: 206,
+      headers: { get: (name) => name === 'content-range' ? 'bytes 0-4095/89200527' : '' },
+      text: async () => csv
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'art-2' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+  assert.equal(item.provider, 'National Gallery of Art');
+});
+
+test('routes Art 2 to the Rijksmuseum adapter when the pooled choice lands there', async () => {
+  const fetchFn = async (url) => {
+    if (url.includes('/search/collection')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ orderedItems: [{ id: 'https://id.rijksmuseum.nl/200100988' }] })
+      };
+    }
+    if (url.includes('/200100988?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'https://id.rijksmuseum.nl/200100988',
+          identified_by: [{ type: 'Name', content: 'The Night Watch' }, { type: 'Identifier', content: 'SK-C-5' }],
+          produced_by: { part: [{ carried_out_by: [{ notation: [{ '@language': 'en', '@value': 'Rembrandt van Rijn' }] }] }] },
+          shows: [{ id: 'https://id.rijksmuseum.nl/202100988' }]
+        })
+      };
+    }
+    if (url.includes('/202100988?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          subject_to: [{ id: 'https://creativecommons.org/publicdomain/zero/1.0/' }],
+          digitally_shown_by: [{ id: 'https://id.rijksmuseum.nl/5008910398567010810098' }]
+        })
+      };
+    }
+    assert.match(url, /5008910398567010810098/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ access_point: [{ id: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg' }] })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'art-2' } },
+    'ai',
+    fetchFn,
+    () => 0.99
+  );
+  assert.equal(item.provider, 'Rijksmuseum');
+});
+
+test('routes Garross Gallery through its explicit research stream', async () => {
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    mainEntity: { itemListElement: [{ item: {
+      name: '2026 poster',
+      creator: { name: 'Example artist' },
+      dateCreated: '2026',
+      image: 'https://smlneelkaujgtwoe.public.blob.vercel-storage.com/posters/rg2026.webp',
+      url: 'https://www.garros.gallery/poster/2026'
+    } }] }
+  })}</script>`;
+  const item = await getReplacement(
+    { streams: { ai: 'garros-gallery' } },
+    'ai',
+    async (url) => {
+      assert.equal(url, 'https://www.garros.gallery/');
+      return { ok: true, status: 200, text: async () => html };
+    },
+    () => 0
+  );
+  assert.equal(item.provider, '🎾 Garross Gallery');
+});
+
+test('routes the Hide AI stream to a compact notice', async () => {
+  const item = await getReplacement(
+    { streams: { ai: 'hide-ai' } },
+    'ai',
+    async () => {
+      throw new Error('Hide AI should not request a remote provider');
+    },
+    () => 0
+  );
+
+  assert.equal(item.kind, 'notice');
+  assert.equal(item.title, '☢️ Slop cleansed');
+});
+
+test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {
+  const fetchFn = async (url) => {
+    if (url.includes('/search?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ collection: { items: [{ data: [{
+          nasa_id: 'W49B',
+          media_type: 'image',
+          title: 'Supernova remnant W49B',
+          description: 'A supernova remnant in deep space',
+          date_created: '2024-01-02'
+        }] }] } })
+      };
+    }
+    assert.match(url, /images-api\.nasa\.gov\/asset\/W49B$/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ collection: { items: [
+        { href: 'https://images-assets.nasa.gov/image/W49B~orig.jpg' },
+        { href: 'https://images-assets.nasa.gov/image/W49B~large.jpg' }
+      ] } })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'deep-space' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+  assert.equal(item.provider, 'Deep Space');
+  assert.match(item.assetUrl, /~large\.jpg$/);
+});
+
+test('routes AI-Assisted through its separate stream when styles differ', async () => {
+  const fetchFn = async (url) => {
+    if (url.includes('/search?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ collection: { items: [{ data: [{
+          nasa_id: 'ASSISTED-W49B',
+          media_type: 'image',
+          title: 'AI-Assisted deep-space selection',
+          description: 'A supernova remnant in deep space',
+          date_created: '2024-01-02'
+        }] }] } })
+      };
+    }
+    assert.match(url, /images-api\.nasa\.gov\/asset\/ASSISTED-W49B$/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ collection: { items: [
+        { href: 'https://images-assets.nasa.gov/image/ASSISTED-W49B~large.jpg' }
+      ] } })
+    };
+  };
+
+  const item = await getReplacement(
+    {
+      styleMode: 'different',
+      streams: {
+        ai: 'hide-ai',
+        assisted: 'deep-space'
+      }
+    },
+    'ai-assisted',
+    fetchFn,
+    () => 0
+  );
+
+  assert.equal(item.provider, 'Deep Space');
+  assert.match(item.assetUrl, /ASSISTED-W49B~large\.jpg$/);
+});
+
+test('routes Modern Art through the experimental WikiArt mirror', async () => {
+  const fetchFn = async (url) => {
+    assert.match(url, /datasets-server\.huggingface\.co\/filter/);
     return {
       ok: true,
       status: 200,
       json: async () => ({
-        data: [
-          {
-            id: 42,
-            title: 'Fallback work',
-            artist_display: 'An artist',
-            date_display: '1901',
-            place_of_origin: 'Chicago',
-            image_id: 'fallback-image',
-            is_public_domain: true
-          }
+        features: [
+          { name: 'artist', type: { names: ['Artist'] } },
+          { name: 'genre', type: { names: ['portrait'] } },
+          { name: 'style', type: { names: ['Pop_Art'] } }
         ],
-        config: { iiif_url: 'https://www.artic.edu/iiif/2' }
+        rows: [{ row: {
+          artist: 0,
+          genre: 0,
+          style: 0,
+          image: { src: 'https://datasets-server.huggingface.co/image.jpg' }
+        } }]
       })
     };
   };
 
   const item = await getReplacement(
-    { providers: { met: true, artic: true } },
+    { streams: { ai: 'modern-art' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+  assert.equal(item.provider, 'Modern Art');
+});
+
+test('loads the New Yorker cartoons stream from the NextML research corpus', async () => {
+  const fetchFn = async (url) => {
+    assert.match(url, /datasets-server\.huggingface\.co\/filter/);
+    assert.match(url, /where=%22contest_number%22%3E%3D508/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ rows: [{ row: {
+        contest_number: 556,
+        image: { src: 'https://datasets-server.huggingface.co/cached-assets/cartoon.jpg' },
+        caption_choices: ['First', 'Winner'],
+        label: 'B',
+        instance_id: 'row'
+      } }] })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'newyorker-cartoons' } },
+    'ai',
     fetchFn,
     () => 0
   );
 
-  assert.equal(item.provider, 'Art Institute of Chicago');
-  assert.equal(item.rights, 'CC0');
+  assert.equal(item.provider, 'NextML Caption Contest');
+  assert.equal(item.title, 'Winner');
+});
+
+test('loads the Far Side stream from the Hugging Face dataset server', async () => {
+  const fetchFn = async (url) => {
+    assert.match(url, /datasets-server\.huggingface\.co\/rows/);
+    assert.match(url, /dataset=maderix%2Ffarsidecomics-blip-captions/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ rows: [{
+        row_idx: 7,
+        row: {
+          image: { src: 'https://datasets-server.huggingface.co/cached-assets/farside.jpg' },
+          text: 'a bear on the road in the dark'
+        }
+      }] })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'far-side' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+
+  assert.equal(item.provider, 'Far Side (experimental)');
+  assert.equal(item.id, 'far-side-7');
 });

@@ -33,46 +33,78 @@
           <p class="kicker">Replace</p>
           <h2 id="verdict-heading">Pangram verdicts</h2>
         </div>
-        <label class="choice choice-fixed">
-          <input type="checkbox" checked disabled />
-          <span>
-            <strong>AI</strong>
-            <small>Always replaced when the extension is on</small>
-          </span>
-        </label>
-        <label class="choice">
-          <input id="replace-mixed" type="checkbox" />
-          <span>
-            <strong>Mixed</strong>
-            <small>Also replace posts Pangram considers partly AI</small>
-          </span>
+        <div class="choice-block">
+          <label class="choice choice-fixed">
+            <input type="checkbox" checked disabled />
+            <span>
+              <strong>AI</strong>
+              <small>Always replaced when the extension is on</small>
+            </span>
+          </label>
+          <label class="stream-picker stream-picker-verdict" for="stream-ai">
+            <span>Show</span>
+            <select id="stream-ai"></select>
+          </label>
+        </div>
+        <div class="choice-block">
+          <label class="choice">
+            <input id="replace-mixed" type="checkbox" />
+            <span>
+              <strong>Mixed</strong>
+              <small>Also replace posts Pangram considers partly AI</small>
+            </span>
+          </label>
+          <label class="stream-picker stream-picker-verdict" for="stream-mixed">
+            <span>Show</span>
+            <select id="stream-mixed"></select>
+          </label>
+        </div>
+        <div class="choice-block">
+          <label class="choice">
+            <input id="replace-assisted" type="checkbox" />
+            <span>
+              <strong>AI-Assisted</strong>
+              <small>Also replace posts Pangram marks as AI-assisted</small>
+            </span>
+          </label>
+          <label class="stream-picker stream-picker-verdict" for="stream-assisted">
+            <span>Show</span>
+            <select id="stream-assisted"></select>
+          </label>
+        </div>
+        <button id="style-mode-toggle" class="style-mode-toggle" type="button">
+          Style each differently
+        </button>
+        <label class="stream-picker stream-picker-shared" for="stream-shared">
+          <span>Show for every replacement</span>
+          <select id="stream-shared"></select>
         </label>
       </section>
 
-      <section class="section" aria-labelledby="sources-heading">
+      <section class="section" aria-labelledby="filters-heading">
         <div class="section-heading">
-          <p class="kicker">Show</p>
-          <h2 id="sources-heading">Public-domain sources</h2>
+          <p class="kicker">Filters</p>
+          <h2 id="filters-heading">Feed cleanup</h2>
         </div>
         <label class="choice">
-          <input id="provider-met" type="checkbox" />
+          <input id="hide-promoted" type="checkbox" />
           <span>
-            <strong>The Met</strong>
-            <small>Open Access collection</small>
+            <strong>💸 Hide promoted posts</strong>
+            <small>Remove promoted impressions from the feed</small>
           </span>
         </label>
         <label class="choice">
-          <input id="provider-artic" type="checkbox" />
+          <input id="hide-suggested" type="checkbox" />
           <span>
-            <strong>Art Institute of Chicago</strong>
-            <small>CC0 public-domain works</small>
+            <strong>🦟 Hide suggested</strong>
+            <small>Remove LinkedIn's Suggested posts from the feed</small>
           </span>
         </label>
       </section>
 
       <footer class="footer">
         <span id="save-status" role="status" aria-live="polite">Saved automatically</span>
-        <a href="https://www.metmuseum.org/policies/frequently-asked-questions-image-and-data-resources" target="_blank" rel="noreferrer">About source rights</a>
+        <a href="https://github.com/elou/pangram-gallery#content-streams" target="_blank" rel="noreferrer">About streams</a>
       </footer>
     </main>
 
