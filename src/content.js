@@ -72,6 +72,40 @@
     return activityUrn ? `https://www.linkedin.com/feed/update/urn:li:activity:${activityUrn}/` : '';
   }
 
+  function getOriginalPostAuthor(target) {
+    const actors = target.querySelectorAll('.update-components-actor, .feed-shared-actor');
+    for (const actor of actors) {
+      if (
+        actor.closest(
+          '[role="comment"], .comments-comment-item, .comments-comment-social-activity'
+        )
+      ) {
+        continue;
+      }
+      const link = actor.querySelector(
+        'a.update-components-actor__title-link[href], .update-components-actor__title a[href], a.feed-shared-actor__title-link[href], .feed-shared-actor__title a[href], a[href*="/in/"], a[href*="/company/"], a[href*="/school/"]'
+      );
+      if (!link?.href) continue;
+
+      const url = new URL(link.href, window.location.origin);
+      if (
+        url.origin !== window.location.origin ||
+        !/^\/(in|company|school)\//.test(url.pathname)
+      ) {
+        continue;
+      }
+      const title = actor.querySelector(
+        '.update-components-actor__title, .feed-shared-actor__title'
+      );
+      const name = (title?.querySelector('[aria-hidden="true"]')?.textContent || title?.textContent || link.textContent)
+        ?.trim()
+        .replace(/\s+/g, ' ');
+      if (!name || /^view:/i.test(name) || name.length > 120) continue;
+      return { name, href: url.href };
+    }
+    return null;
+  }
+
   function unloadCardImage(image) {
     if (!image.dataset.pangramGallerySrc || !image.getAttribute('src')) return;
     image.dataset.pangramGalleryUnloaded = 'true';
@@ -163,10 +197,13 @@
     const location = createText('p', 'pangram-gallery-card__location', '');
     body.append(notice, title, location, toggle);
 
-    const source = document.createElement('a');
+    const source = document.createElement('span');
     source.className = 'pangram-gallery-card__source';
-    source.target = '_blank';
-    source.rel = 'noreferrer';
+    const author = document.createElement('a');
+    author.className = 'pangram-gallery-card__author';
+    author.target = '_blank';
+    author.rel = 'noreferrer';
+    source.append(author);
     body.append(source);
 
     card.append(imageStage, body);
@@ -184,6 +221,7 @@
 
     card.pangramGalleryTarget = target;
     card.pangramGalleryPermalink = getOriginalPostPermalink(target);
+    card.pangramGalleryAuthor = getOriginalPostAuthor(target);
     target.pangramGalleryCard = card;
     residencyObserver?.observe(card);
 
@@ -197,8 +235,9 @@
     const title = card.querySelector('.pangram-gallery-card__title');
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
+    const author = card.querySelector('.pangram-gallery-card__author');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !imageLink || !poem || !title || !location || !source || !notice) return false;
+    if (!image || !imageLink || !poem || !title || !location || !source || !author || !notice) return false;
 
     if (item.kind === 'notice') {
       notice.textContent = item.title || '☢️ Slop cleansed';
@@ -230,9 +269,14 @@
       title.textContent = item.title;
       title.href = item.sourceUrl;
       location.textContent = item.location || item.provider;
-      source.textContent = 'Original post';
-      source.href = card.pangramGalleryPermalink;
-      source.hidden = !card.pangramGalleryPermalink;
+      const postAuthor = card.pangramGalleryAuthor;
+      source.hidden = !postAuthor;
+      if (postAuthor) {
+        source.textContent = 'Original post by ';
+        author.href = card.pangramGalleryPermalink || postAuthor.href;
+        author.textContent = postAuthor.name;
+        source.append(author);
+      }
     }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');
