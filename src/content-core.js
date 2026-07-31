@@ -4,12 +4,14 @@
     replaceMixed: false,
     replaceAssisted: false,
     hidePromoted: false,
+    hideSuggested: false,
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
       mixed: 'painting-classics',
       assisted: 'painting-classics',
-      promoted: 'hide-promoted'
+      promoted: 'hide-promoted',
+      suggested: 'hide-suggested'
     })
   });
 
@@ -25,7 +27,8 @@
     'garros-gallery',
     'surprise-me',
     'hide-ai',
-    'hide-promoted'
+    'hide-promoted',
+    'hide-suggested'
   ]);
 
   const VERDICTS = new Map([
@@ -61,6 +64,10 @@
         typeof input.hidePromoted === 'boolean'
           ? input.hidePromoted
           : DEFAULT_SETTINGS.hidePromoted,
+      hideSuggested:
+        typeof input.hideSuggested === 'boolean'
+          ? input.hideSuggested
+          : DEFAULT_SETTINGS.hideSuggested,
       styleMode: input.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.includes(inputStreams.ai)
@@ -74,7 +81,10 @@
           : DEFAULT_SETTINGS.streams.assisted,
         promoted: STREAM_IDS.includes(inputStreams.promoted)
           ? inputStreams.promoted
-          : DEFAULT_SETTINGS.streams.promoted
+          : DEFAULT_SETTINGS.streams.promoted,
+        suggested: STREAM_IDS.includes(inputStreams.suggested)
+          ? inputStreams.suggested
+          : DEFAULT_SETTINGS.streams.suggested
       }
     };
   }
@@ -99,7 +109,9 @@
     const settings = normalizeSettings(settingsValue);
     return cleanupType === 'promoted'
       ? settings.streams.promoted
-      : 'painting-classics';
+      : cleanupType === 'suggested'
+        ? settings.streams.suggested
+        : 'painting-classics';
   }
 
   const FEED_OWNER_SELECTOR =
@@ -108,6 +120,8 @@
     '.feed-shared-update-v2--promoted, [data-promoted="true"]';
   const PROMOTED_LABEL_SELECTOR =
     '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
+  const SUGGESTED_LABEL_SELECTOR =
+    '.update-components-header__text-view, [data-testid="suggested-label"]';
 
   function getFeedOwner(node) {
     return node?.closest?.(FEED_OWNER_SELECTOR) || null;
@@ -133,6 +147,21 @@
     return false;
   }
 
+  function isSuggestedTarget(target) {
+    if (!target || typeof target.matches !== 'function') return false;
+    for (const label of target.querySelectorAll?.(SUGGESTED_LABEL_SELECTOR) || []) {
+      const owner = getFeedOwner(label);
+      if (owner && owner !== target) continue;
+      if ((label.textContent || '').trim().toLowerCase() === 'suggested') return true;
+    }
+    for (const label of target.querySelectorAll?.('p, span') || []) {
+      const owner = getFeedOwner(label);
+      if (owner && owner !== target) continue;
+      if ((label.textContent || '').trim().toLowerCase() === 'suggested') return true;
+    }
+    return false;
+  }
+
   function collectPromotedTargets(rootNode) {
     const candidates = new Set();
     const root = rootNode?.nodeType === 9 ? rootNode.documentElement : rootNode;
@@ -140,6 +169,15 @@
     if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
     for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
     return [...candidates].filter(isPromotedTarget);
+  }
+
+  function collectSuggestedTargets(rootNode) {
+    const candidates = new Set();
+    const root = rootNode?.nodeType === 9 ? rootNode.documentElement : rootNode;
+    if (!root) return [];
+    if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
+    for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
+    return [...candidates].filter(isSuggestedTarget);
   }
 
   function collectPromotedTargetsFromMutationRecords(records) {
@@ -157,6 +195,24 @@
       for (const target of collectPromotedTargets(root)) targets.add(target);
     }
     for (const owner of owners) if (isPromotedTarget(owner)) targets.add(owner);
+    return [...targets];
+  }
+
+  function collectSuggestedTargetsFromMutationRecords(records) {
+    const roots = new Set();
+    const owners = new Set();
+    for (const record of records || []) {
+      const owner = getFeedOwner(record?.target);
+      if (owner) owners.add(owner);
+      for (const node of record?.addedNodes || []) {
+        if (node?.nodeType === 1 || node?.nodeType === 11) roots.add(node);
+      }
+    }
+    const targets = new Set();
+    for (const root of roots) {
+      for (const target of collectSuggestedTargets(root)) targets.add(target);
+    }
+    for (const owner of owners) if (isSuggestedTarget(owner)) targets.add(owner);
     return [...targets];
   }
 
@@ -231,6 +287,9 @@
     findReplacementTarget,
     isPromotedTarget,
     collectPromotedTargets,
-    collectPromotedTargetsFromMutationRecords
+    collectPromotedTargetsFromMutationRecords,
+    isSuggestedTarget,
+    collectSuggestedTargets,
+    collectSuggestedTargetsFromMutationRecords
   });
 })(globalThis);

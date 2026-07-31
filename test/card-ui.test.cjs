@@ -147,10 +147,9 @@ test('links replacement artwork and its title to the item source', () => {
 });
 
 test('shows the Pangram verdict at the right of the replacement footer', () => {
-  assert.match(
-    contentSource,
-    /const verdictChip = createText\(\s*'span',\s*'pangram-gallery-card__verdict',\s*`🤖 \$\{verdictLabel\} ›`\s*\);/s
-  );
+  assert.match(contentSource, /pangram-gallery-card__verdict/);
+  assert.match(contentSource, /verdict === 'promoted'/);
+  assert.match(contentSource, /verdict === 'suggested'/);
   assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
@@ -193,4 +192,11 @@ test('processes promoted feed targets independently of Pangram verdict badges', 
   assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
   assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
   assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'promoted'\)/);
+});
+
+test('processes Suggested feed targets independently of Pangram verdict badges', () => {
+  assert.match(contentSource, /function processSuggestedTargets\(/);
+  assert.match(contentSource, /core\.collectSuggestedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectSuggestedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'suggested'\)/);
 });

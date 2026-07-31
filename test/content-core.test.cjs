@@ -39,7 +39,8 @@ test('defaults to AI-only replacement', () => {
     ai: 'painting-classics',
     mixed: 'painting-classics',
     assisted: 'painting-classics',
-    promoted: 'hide-promoted'
+    promoted: 'hide-promoted',
+    suggested: 'hide-suggested'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
@@ -118,6 +119,27 @@ test('can opt into hiding promoted impressions with a separate stream', () => {
   );
 });
 
+test('can opt into hiding explicit Suggested impressions with a separate stream', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({
+    hideSuggested: true,
+    streams: { suggested: 'hide-suggested' }
+  });
+
+  assert.equal(settings.hideSuggested, true);
+  assert.equal(core.getStreamForCleanup(settings, 'suggested'), 'hide-suggested');
+  assert.equal(
+    core.isSuggestedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('update-components-header__text-view')
+          ? [{ textContent: 'Suggested' }]
+          : []
+    }),
+    true
+  );
+});
+
 test('does not treat a Featured/profile wrapper as a promoted impression', () => {
   const core = loadCore();
   const featuredItem = {
@@ -162,6 +184,22 @@ test('does not assign a nested promoted disclosure to an outer feed item', () =>
   };
 
   assert.equal(core.isPromotedTarget(outer), false);
+});
+
+test('does not infer Suggested from generic content or a nested feed item', () => {
+  const core = loadCore();
+  const inner = { matches: () => false, querySelectorAll: () => [] };
+  const nestedSuggested = { textContent: 'Suggested', closest: () => inner };
+  const outer = {
+    matches: () => false,
+    querySelectorAll: () => [nestedSuggested]
+  };
+
+  assert.equal(core.isSuggestedTarget(outer), false);
+  assert.equal(
+    core.isSuggestedTarget({ matches: () => false, querySelectorAll: () => [{ textContent: 'Suggested for you' }] }),
+    false
+  );
 });
 
 test('does not rescan a mutation parent when a replacement card mounts', () => {

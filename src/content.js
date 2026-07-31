@@ -150,7 +150,11 @@
       ? 'Mixed'
       : verdict === 'ai-assisted'
         ? 'AI-assisted'
-        : 'AI';
+        : verdict === 'promoted'
+          ? 'Promoted'
+          : verdict === 'suggested'
+            ? 'Suggested'
+            : 'AI';
     card.setAttribute('aria-label', `${verdictLabel} post replaced`);
     card.setAttribute('aria-busy', 'true');
 
@@ -212,7 +216,7 @@
     const verdictChip = createText(
       'span',
       'pangram-gallery-card__verdict',
-      `🤖 ${verdictLabel} ›`
+      `${verdict === 'promoted' ? '💸' : verdict === 'suggested' ? '🦟' : '🤖'} ${verdictLabel} ›`
     );
     body.append(source, verdictChip);
 
@@ -374,10 +378,25 @@
     }
   }
 
+  function processSuggestedTargets(targets) {
+    if (!settings.hideSuggested) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(
+        target,
+        'suggested',
+        activeGeneration,
+        core.getStreamForCleanup(settings, 'suggested')
+      );
+    }
+  }
+
   function scanInitialDocument() {
     scanTimer = null;
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processPromotedTargets(core.collectPromotedTargets(document));
+    processSuggestedTargets(core.collectSuggestedTargets(document));
   }
 
   function removeOrphanedCardsFromRemovedSubtrees(records) {
@@ -438,6 +457,7 @@
     removeOrphanedCardsFromRemovedSubtrees(records);
     processBadges(core.collectBadgesFromMutationRecords(records));
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
+    processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
   }
 
   const observer = new MutationObserver(handleMutations);
