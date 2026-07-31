@@ -243,7 +243,10 @@
     toggle.addEventListener('click', () => {
       const isHidden = target.classList.toggle(HIDDEN_CLASS);
       card.classList.toggle('pangram-gallery-card--original-visible', !isHidden);
-      toggle.textContent = isHidden ? 'Show original' : 'Hide original';
+      const hiddenLabel = card.classList.contains('pangram-gallery-card--notice')
+        ? 'Unhide'
+        : 'Show original';
+      toggle.textContent = isHidden ? hiddenLabel : 'Hide original';
       toggle.setAttribute('aria-expanded', String(!isHidden));
     });
     toggle.setAttribute('aria-expanded', 'false');
@@ -349,10 +352,11 @@
     const author = card.querySelector('.pangram-gallery-card__author');
     const verdictChip = card.querySelector('.pangram-gallery-card__verdict');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !imageLink || !poem || !title || !location || !source || !author || !verdictChip || !notice) return false;
+    const toggle = card.querySelector('.pangram-gallery-card__toggle');
+    if (!image || !imageLink || !poem || !title || !location || !source || !author || !verdictChip || !notice || !toggle) return false;
 
     if (item.kind === 'notice') {
-      notice.textContent = item.title || '☢️ Slop cleansed';
+      notice.textContent = item.title || '💩 De-slopped your feed';
       notice.hidden = false;
       title.hidden = true;
       location.hidden = true;
@@ -360,7 +364,8 @@
       verdictChip.hidden = true;
       image.hidden = true;
       poem.hidden = true;
-      card.querySelector('.pangram-gallery-card__toggle').hidden = true;
+      toggle.textContent = 'Unhide';
+      toggle.hidden = false;
       card.classList.add('pangram-gallery-card--notice');
     } else if (item.kind === 'poem') {
       const lines = Array.isArray(item.lines) ? item.lines : [];

@@ -129,6 +129,24 @@ test('uses a footer row for the existing source and unhide control', () => {
   );
 });
 
+test('uses the adjusted artwork radius and shared subtle toggle hover', () => {
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__image\s*\{[^}]*border-radius:\s*12px;/s,
+    'artwork should use the 12px radius adjusted in DevTools'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__toggle\s*\{[^}]*transition:\s*background-color 200ms[^;]*,\s*border-color 200ms[^;]*,\s*color 200ms[^;]*;/s,
+    'every toggle should animate its hover treatment over 200ms'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__toggle:hover\s*\{[^}]*background:\s*rgba\(0, 0, 0, 0\.04\);[^}]*color:\s*#666 !important;[^}]*border-color:\s*rgba\(0, 0, 0, 0\.3\) !important;/s,
+    'image and notice toggles should share the subtle gray hover treatment'
+  );
+});
+
 test('sends each Pangram verdict to the selected stream router', () => {
   assert.match(
     contentSource,
@@ -177,13 +195,34 @@ test('links the original post author to the post permalink or their profile', ()
   );
 });
 
-test('renders the compact slop-cleansed notice without an original toggle', () => {
+test('renders each hide variant as a compact notice with an unhide control', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
-  assert.match(contentSource, /☢️ Slop cleansed/);
+  assert.match(contentSource, /💩 De-slopped your feed/);
+  assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
   assert.match(contentSource, /pangram-gallery-card--notice/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card--notice \.pangram-gallery-card__image-stage\s*\{[^}]*display:\s*none;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--notice\s*\{[^}]*margin-block:\s*0;[^}]*border-color:\s*rgba\(0, 0, 0, 0\.15\);[^}]*border-radius:\s*12px;[^}]*background:\s*transparent;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*min-block-size:\s*0;[^}]*padding:\s*8px 8px 8px 16px;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__title,\s*\.pangram-gallery-card--notice \.pangram-gallery-card__location\s*\{[^}]*display:\s*none;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__notice\s*\{[^}]*color:\s*#777;[^}]*font:\s*400 15px\/1\.4[^;]*;[^}]*text-shadow:\s*0 1px rgba\(255, 255, 255, 0\.4\);/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__toggle\s*\{[^}]*display:\s*inline-flex;[^}]*margin-inline-start:\s*auto;[^}]*color:\s*#888;[^}]*font-size:\s*13px;[^}]*font-weight:\s*500;[^}]*border-color:\s*rgba\(0, 0, 0, 0\.2\);/s
   );
 });
 

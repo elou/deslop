@@ -564,7 +564,7 @@ export function buildHideReplacement() {
   return {
     kind: 'notice',
     id: 'slop-cleansed',
-    title: '☢️ Slop cleansed',
+    title: '💩 De-slopped your feed',
     provider: 'Pangram Gallery',
     rights: 'Local filter'
   };
@@ -574,7 +574,7 @@ export function buildHidePromotedReplacement() {
   return {
     kind: 'notice',
     id: 'de-monetized',
-    title: '💸 De-monetized your feed',
+    title: '💸 Promoted post hidden',
     provider: 'De-Slop',
     rights: 'Local filter'
   };
@@ -584,7 +584,7 @@ export function buildHideSuggestedReplacement() {
   return {
     kind: 'notice',
     id: 'de-suggested',
-    title: '🤓 De-suggested your feed',
+    title: '🤓 Suggested post hidden',
     provider: 'De-Slop',
     rights: 'Local filter'
   };
