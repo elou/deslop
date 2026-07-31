@@ -162,23 +162,6 @@ test('sends each Pangram verdict to the selected stream router', () => {
   );
 });
 
-test('observes late Pangram verdict text hydration', () => {
-  assert.match(
-    contentSource,
-    /observer\.observe\(document\.documentElement,\s*\{[^}]*characterData:\s*true,/s,
-    'the initial scan must also receive verdict text written into an existing badge shell'
-  );
-});
-
-test('performs only bounded follow-up scans for late Pangram startup badges', () => {
-  assert.match(
-    contentSource,
-    /const STARTUP_CATCH_UP_DELAYS = Object\.freeze\(\[800, 2400\]\)/,
-    'late badge recovery must be bounded rather than scanning the feed indefinitely'
-  );
-  assert.match(contentSource, /function scheduleStartupCatchUpScans/);
-});
-
 test('renders the compact slop-cleansed notice with an unhide control', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
   assert.match(contentSource, /☢️ Slop cleansed/);

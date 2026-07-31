@@ -89,11 +89,7 @@
     const badges = new Set();
 
     for (const record of records || []) {
-      const mutationTarget = record?.target;
-      const target =
-        mutationTarget?.nodeType === 3
-          ? mutationTarget.parentElement
-          : mutationTarget;
+      const target = record?.target;
       if (target?.nodeType === 1) {
         const badge =
           typeof target.matches === 'function' &&
