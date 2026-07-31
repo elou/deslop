@@ -483,7 +483,10 @@
   const observer = new MutationObserver(handleMutations);
   observer.observe(document.documentElement, {
     childList: true,
-    subtree: true
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-pangram-scanned'],
+    characterData: true
   });
 
   chrome.storage.onChanged.addListener((_changes, areaName) => {

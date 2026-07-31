@@ -195,6 +195,120 @@ test('recognizes a LinkedIn partnership disclosure that starts with Promoted', (
   assert.equal(core.isPromotedTarget(feedItem), true);
 });
 
+test('recognizes a current LinkedIn promoted paragraph with obfuscated classes', () => {
+  const core = loadCore();
+  const promotedLabel = { textContent: 'Promoted' };
+  const feedItem = {
+    matches: () => false,
+    querySelectorAll: (selector) => (selector === 'p, span' ? [promotedLabel] : [])
+  };
+
+  assert.equal(core.isPromotedTarget(feedItem), true);
+});
+
+test('recognizes a current LinkedIn Suggested paragraph with obfuscated classes', () => {
+  const core = loadCore();
+  const suggestedLabel = { textContent: 'Suggested' };
+  const feedItem = {
+    querySelectorAll: (selector) => (selector === 'p, span' ? [suggestedLabel] : [])
+  };
+
+  assert.equal(core.isSuggestedTarget(feedItem), true);
+});
+
+test('collects an obfuscated promoted label from a Pangram-scanned feed context', () => {
+  const core = loadCore();
+  const feedItem = { id: 'live-promoted-post' };
+  const scannedContext = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector === 'p, span' ? [promotedLabel] : []
+  };
+  const promotedLabel = {
+    textContent: 'Promoted',
+    matches: (selector) => selector === 'p, span',
+    closest: (selector) => {
+      if (selector === '[data-pangram-scanned="true"]') return scannedContext;
+      if (selector.includes('[role="listitem"]')) return feedItem;
+      return null;
+    }
+  };
+  const documentRoot = {
+    querySelectorAll: (selector) =>
+      selector === '[data-pangram-scanned="true"]' ? [scannedContext] : []
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectPromotedTargets(documentRoot))),
+    [{ id: 'live-promoted-post' }]
+  );
+});
+
+test('collects an obfuscated Suggested label from a Pangram-scanned feed context', () => {
+  const core = loadCore();
+  const feedItem = { id: 'live-suggested-post' };
+  const scannedContext = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector === 'p, span' ? [suggestedLabel] : []
+  };
+  const suggestedLabel = {
+    textContent: 'Suggested',
+    matches: (selector) => selector === 'p, span',
+    closest: (selector) => {
+      if (selector === '[data-pangram-scanned="true"]') return scannedContext;
+      if (selector.includes('[role="listitem"]')) return feedItem;
+      return null;
+    }
+  };
+  const documentRoot = {
+    querySelectorAll: (selector) =>
+      selector === '[data-pangram-scanned="true"]' ? [scannedContext] : []
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectSuggestedTargets(documentRoot))),
+    [{ id: 'live-suggested-post' }]
+  );
+});
+
+test('collects a promoted post when Pangram marks an existing host as scanned', () => {
+  const core = loadCore();
+  const feedItem = { id: 'late-scanned-promoted-post' };
+  const scannedContext = {
+    nodeType: 1,
+    matches: (selector) => selector === '[data-pangram-scanned="true"]',
+    closest: () => null,
+    querySelectorAll: (selector) =>
+      selector === 'p, span' ? [promotedLabel] : []
+  };
+  const promotedLabel = {
+    textContent: 'Promoted',
+    matches: (selector) => selector === 'p, span',
+    closest: (selector) => {
+      if (selector === '[data-pangram-scanned="true"]') return scannedContext;
+      if (selector.includes('[role="listitem"]')) return feedItem;
+      return null;
+    }
+  };
+
+  assert.deepEqual(
+    JSON.parse(
+      JSON.stringify(
+        core.collectPromotedTargetsFromMutationRecords([
+          {
+            type: 'attributes',
+            attributeName: 'data-pangram-scanned',
+            target: scannedContext,
+            addedNodes: []
+          }
+        ])
+      )
+    ),
+    [{ id: 'late-scanned-promoted-post' }]
+  );
+});
+
 test('disabled mode never replaces a verdict', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({ enabled: false, replaceMixed: true });
@@ -382,6 +496,34 @@ test('collects a badge when Pangram adds its verdict text after the badge shell'
   assert.deepEqual(
     JSON.parse(JSON.stringify(badges)),
     [{ nodeType: 1, id: 'late-verdict' }]
+  );
+});
+
+test('collects a badge when Pangram updates an existing verdict text node', () => {
+  const core = loadCore();
+  const badge = {
+    nodeType: 1,
+    id: 'character-data-verdict',
+    matches: (selector) => selector === '.pangram-feed-badge'
+  };
+  const wrapper = {
+    nodeType: 1,
+    matches: () => false,
+    closest: (selector) =>
+      selector === '.pangram-feed-badge' ? badge : null
+  };
+  const textNode = {
+    nodeType: 3,
+    parentElement: wrapper
+  };
+
+  const badges = core.collectBadgesFromMutationRecords([
+    { type: 'characterData', target: textNode, addedNodes: [] }
+  ]);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(badges)),
+    [{ nodeType: 1, id: 'character-data-verdict' }]
   );
 });
 

@@ -109,6 +109,8 @@
     '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
   const SUGGESTED_LABEL_SELECTOR =
     '.update-components-header__text-view, [data-testid="suggested-label"]';
+  const GENERIC_LABEL_SELECTOR = 'p, span';
+  const SCANNED_FEED_CONTEXT_SELECTOR = '[data-pangram-scanned="true"]';
   const FEED_SIGNAL_OWNER_SELECTOR =
     'article, [role="article"], [role="listitem"], .fie-impression-container, li[data-testid="carousel-child-container"]';
   const PROMOTED_SIGNAL_SELECTOR =
@@ -118,6 +120,10 @@
     return Boolean(
       signal?.textContent?.trim().toLowerCase().startsWith('promoted')
     );
+  }
+
+  function hasExactPromotedLabelText(signal) {
+    return signal?.textContent?.trim().toLowerCase() === 'promoted';
   }
 
   function hasSuggestedLabelText(signal) {
@@ -137,6 +143,22 @@
       signal?.matches?.(SUGGESTED_LABEL_SELECTOR) &&
       hasSuggestedLabelText(signal)
     );
+  }
+
+  function isGenericFeedSignal(signal, hasLabelText) {
+    return Boolean(
+      signal?.matches?.(GENERIC_LABEL_SELECTOR) &&
+      hasLabelText(signal) &&
+      signal.closest?.(SCANNED_FEED_CONTEXT_SELECTOR)
+    );
+  }
+
+  function isGenericPromotedSignal(signal) {
+    return isGenericFeedSignal(signal, hasExactPromotedLabelText);
+  }
+
+  function isGenericSuggestedSignal(signal) {
+    return isGenericFeedSignal(signal, hasSuggestedLabelText);
   }
 
   function findSignalOwner(signal, isSignal) {
@@ -159,15 +181,58 @@
     ) {
       return true;
     }
-    return Array.from(target?.querySelectorAll?.(PROMOTED_LABEL_SELECTOR) || []).some(
-      (label) => isSignalOwnedByTarget(target, label, hasPromotedLabelText)
+    const explicitLabel = Array.from(
+      target?.querySelectorAll?.(PROMOTED_LABEL_SELECTOR) || []
+    ).some((label) =>
+      isSignalOwnedByTarget(target, label, hasPromotedLabelText)
+    );
+    if (explicitLabel) return true;
+
+    // LinkedIn also renders these disclosures with generated class names. In
+    // that layout only an exact standalone label is accepted, so ordinary post
+    // copy that happens to start with "Promoted" cannot hide the post.
+    return Array.from(
+      target?.querySelectorAll?.(GENERIC_LABEL_SELECTOR) || []
+    ).some((label) =>
+      isSignalOwnedByTarget(target, label, hasExactPromotedLabelText)
     );
   }
 
   function isSuggestedTarget(target) {
-    return Array.from(target?.querySelectorAll?.(SUGGESTED_LABEL_SELECTOR) || []).some(
-      (label) => isSignalOwnedByTarget(target, label, hasSuggestedLabelText)
+    const explicitLabel = Array.from(
+      target?.querySelectorAll?.(SUGGESTED_LABEL_SELECTOR) || []
+    ).some((label) =>
+      isSignalOwnedByTarget(target, label, hasSuggestedLabelText)
     );
+    if (explicitLabel) return true;
+
+    return Array.from(
+      target?.querySelectorAll?.(GENERIC_LABEL_SELECTOR) || []
+    ).some((label) =>
+      isSignalOwnedByTarget(target, label, hasSuggestedLabelText)
+    );
+  }
+
+  function collectGenericSignalTargets(root, isSignal) {
+    const targets = new Set();
+    const collectSignal = (signal) => {
+      const owner = findSignalOwner(signal, isSignal);
+      if (owner) targets.add(owner);
+    };
+    const inspectScannedContext = (context) => {
+      if (context?.matches?.(GENERIC_LABEL_SELECTOR)) collectSignal(context);
+      context?.querySelectorAll?.(GENERIC_LABEL_SELECTOR).forEach(collectSignal);
+    };
+
+    // Do not search every paragraph in the page. Pangram's scanned boundaries
+    // provide a small, feed-only set of contexts for LinkedIn's classless labels.
+    if (root?.nodeType === 1 && root.matches?.(SCANNED_FEED_CONTEXT_SELECTOR)) {
+      inspectScannedContext(root);
+    }
+    root
+      ?.querySelectorAll?.(SCANNED_FEED_CONTEXT_SELECTOR)
+      .forEach(inspectScannedContext);
+    return [...targets];
   }
 
   function collectSignalTargets(root, signalSelector, isSignal) {
@@ -221,12 +286,72 @@
     return [...targets];
   }
 
+  function collectGenericSignalTargetsFromMutationRecords(records, isSignal) {
+    const targets = new Set();
+    const collectSignal = (signal) => {
+      const owner = findSignalOwner(signal, isSignal);
+      if (owner) targets.add(owner);
+    };
+    const inspectMutationTarget = (node) => {
+      const element = node?.nodeType === 1 ? node : node?.parentElement;
+      if (!element) return;
+      if (element.matches?.(GENERIC_LABEL_SELECTOR)) {
+        collectSignal(element);
+        return;
+      }
+      const signal = element.closest?.(GENERIC_LABEL_SELECTOR);
+      if (signal) collectSignal(signal);
+    };
+    const inspectAddedSubtree = (node) => {
+      if (!node || (node.nodeType !== 1 && node.nodeType !== 11)) return;
+      if (node.nodeType === 1 && node.matches?.(GENERIC_LABEL_SELECTOR)) {
+        collectSignal(node);
+      }
+      // Descend only newly added subtrees. Each candidate still has to live in
+      // a Pangram-scanned feed context before it can produce a cleanup target.
+      node.querySelectorAll?.(GENERIC_LABEL_SELECTOR).forEach(collectSignal);
+    };
+    const inspectNewlyScannedContext = (record) => {
+      const context = record?.target;
+      if (
+        record?.type !== 'attributes' ||
+        record?.attributeName !== 'data-pangram-scanned' ||
+        context?.nodeType !== 1 ||
+        !context.matches?.(SCANNED_FEED_CONTEXT_SELECTOR)
+      ) {
+        return;
+      }
+
+      // Pangram can mark an already-rendered host after its disclosure was
+      // added. Descend only that newly scanned boundary, never its feed root.
+      if (context.matches?.(GENERIC_LABEL_SELECTOR)) collectSignal(context);
+      context.querySelectorAll?.(GENERIC_LABEL_SELECTOR).forEach(collectSignal);
+    };
+
+    for (const record of records || []) {
+      inspectNewlyScannedContext(record);
+      inspectMutationTarget(record?.target);
+      for (const node of record?.addedNodes || []) inspectAddedSubtree(node);
+    }
+    return [...targets];
+  }
+
   function collectPromotedTargets(root) {
-    return collectSignalTargets(root, PROMOTED_SIGNAL_SELECTOR, isPromotedSignal);
+    return [
+      ...new Set([
+        ...collectSignalTargets(root, PROMOTED_SIGNAL_SELECTOR, isPromotedSignal),
+        ...collectGenericSignalTargets(root, isGenericPromotedSignal)
+      ])
+    ];
   }
 
   function collectSuggestedTargets(root) {
-    return collectSignalTargets(root, SUGGESTED_LABEL_SELECTOR, isSuggestedSignal);
+    return [
+      ...new Set([
+        ...collectSignalTargets(root, SUGGESTED_LABEL_SELECTOR, isSuggestedSignal),
+        ...collectGenericSignalTargets(root, isGenericSuggestedSignal)
+      ])
+    ];
   }
 
   function collectBadgesFromMutationRecords(records) {
@@ -234,13 +359,15 @@
 
     for (const record of records || []) {
       const target = record?.target;
-      if (target?.nodeType === 1) {
+      const targetElement =
+        target?.nodeType === 1 ? target : target?.parentElement;
+      if (targetElement) {
         const badge =
-          typeof target.matches === 'function' &&
-          target.matches('.pangram-feed-badge')
-            ? target
-            : typeof target.closest === 'function'
-              ? target.closest('.pangram-feed-badge')
+          typeof targetElement.matches === 'function' &&
+          targetElement.matches('.pangram-feed-badge')
+            ? targetElement
+            : typeof targetElement.closest === 'function'
+              ? targetElement.closest('.pangram-feed-badge')
               : null;
         if (badge) {
           badges.add(badge);
@@ -265,19 +392,35 @@
   }
 
   function collectPromotedTargetsFromMutationRecords(records) {
-    return collectSignalTargetsFromMutationRecords(
-      records,
-      PROMOTED_SIGNAL_SELECTOR,
-      isPromotedSignal
-    );
+    return [
+      ...new Set([
+        ...collectSignalTargetsFromMutationRecords(
+          records,
+          PROMOTED_SIGNAL_SELECTOR,
+          isPromotedSignal
+        ),
+        ...collectGenericSignalTargetsFromMutationRecords(
+          records,
+          isGenericPromotedSignal
+        )
+      ])
+    ];
   }
 
   function collectSuggestedTargetsFromMutationRecords(records) {
-    return collectSignalTargetsFromMutationRecords(
-      records,
-      SUGGESTED_LABEL_SELECTOR,
-      isSuggestedSignal
-    );
+    return [
+      ...new Set([
+        ...collectSignalTargetsFromMutationRecords(
+          records,
+          SUGGESTED_LABEL_SELECTOR,
+          isSuggestedSignal
+        ),
+        ...collectGenericSignalTargetsFromMutationRecords(
+          records,
+          isGenericSuggestedSignal
+        )
+      ])
+    ];
   }
 
   function isOrphanedCard(card) {
