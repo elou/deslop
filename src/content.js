@@ -371,7 +371,7 @@
     const card = createCard('promoted', target);
     card.setAttribute('aria-label', 'Promoted post hidden');
     target.before(card);
-    if (!hydrateCard(card, { kind: 'notice', title: '💸 Unpromoted a post' })) {
+    if (!hydrateCard(card, { kind: 'notice', title: '💸 Depromoted your feed' })) {
       disposeCard(card);
       return;
     }
@@ -385,7 +385,7 @@
     const card = createCard('suggested', target);
     card.setAttribute('aria-label', 'Suggested post hidden');
     target.before(card);
-    if (!hydrateCard(card, { kind: 'notice', title: '🦟 Un-suggested a post' })) {
+    if (!hydrateCard(card, { kind: 'notice', title: '🦟 Desuggested your feed' })) {
       disposeCard(card);
       return;
     }

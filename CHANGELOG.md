@@ -9,8 +9,8 @@ Pangram Gallery follows semantic versioning from its first cumulative GitHub rel
 - Added a bounded WikiArt research stream and NASA Image and Video Library asset selection.
 - Added Far Side (experimental) from the 354-row Hugging Face image dataset, with explicit copyrighted/noncommercial labeling because the dataset card has no license metadata.
 - Added `❌ Hide AI completely`, which replaces selected verdicts with a compact `☢️ Slop cleansed` notice.
-- Added `💸 Hide promoted posts` for promoted impressions detected during initial scans and infinite scroll, with a compact `💸 Unpromoted a post` notice.
-- Added `🦟 Hide suggested` for LinkedIn Suggested posts, with a compact `🦟 Un-suggested a post` notice.
+- Added `💸 Hide promoted posts` for promoted impressions detected during initial scans and infinite scroll, with a compact `💸 Depromoted your feed` notice.
+- Added `🦟 Hide suggested` for LinkedIn Suggested posts, with a compact `🦟 Desuggested your feed` notice.
 - Added a normalized provider registry so category labels can pool sources without losing provider attribution.
 - Added `🖼️ Art 2`, pooling National Gallery of Art and Rijksmuseum public-domain records; added explicit `🎾 Garross Gallery` research cards.
 - Added `✨ Surprise me`, a rights-safe global pool across Art, Art 2, Poetry, and Deep Space.

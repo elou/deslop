@@ -151,17 +151,17 @@ test('defines a compact promoted-post hide state', () => {
     /record\.target[\s\S]{0,300}querySelectorAll\?\.\(FEED_ITEM_SELECTOR\)/,
     'mutation targets must not trigger a feed-tree rescan'
   );
-  assert.match(contentSource, /💸 Unpromoted a post/);
+  assert.match(contentSource, /💸 Depromoted your feed/);
   assert.match(
     contentSource,
-    /hydrateCard\(card, \{ kind: 'notice', title: '💸 Unpromoted a post' \}\)/
+    /hydrateCard\(card, \{ kind: 'notice', title: '💸 Depromoted your feed' \}\)/
   );
 });
 
 test('defines a compact suggested-post hide state', () => {
   assert.match(contentSource, /hidden-suggested/);
   assert.match(contentSource, /core\.isSuggestedTarget\(target\)/);
-  assert.match(contentSource, /🦟 Un-suggested a post/);
+  assert.match(contentSource, /🦟 Desuggested your feed/);
 });
 
 test('gives promoted cleanup precedence over suggested cleanup', () => {

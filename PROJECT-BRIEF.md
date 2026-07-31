@@ -26,8 +26,8 @@ A small group of Pangram users who install the unpacked extension from GitHub.
 - Offer Surprise me as a global random draw across rights-safe art, poetry, and space providers.
 - Let people use one stream for all selected verdicts or route AI, Mixed, and AI-Assisted differently.
 - Let people choose `❌ Hide AI completely` for either verdict mapping, removing the post and leaving a compact `☢️ Slop cleansed` notice.
-- Let people separately enable `💸 Hide promoted posts` to replace promoted impressions with a compact `💸 Unpromoted a post` notice.
-- Let people separately enable `🦟 Hide suggested` to replace LinkedIn Suggested posts with a compact `🦟 Un-suggested a post` notice.
+- Let people separately enable `💸 Hide promoted posts` to replace promoted impressions with a compact `💸 Depromoted your feed` notice.
+- Let people separately enable `🦟 Hide suggested` to replace LinkedIn Suggested posts with a compact `🦟 Desuggested your feed` notice.
 - When Pangram marks a comment as AI, leave the parent post untouched and render only that comment as a clown emoji per word, while retaining the original text for assistive technology.
 - Start with a recognizable public-domain Painting Classics canon sourced through Wikidata and Wikimedia Commons.
 - Include a Classic Poetry stream from Freeverse, an experimental Modern Art stream from WikiArt's research corpus, and a Deep Space stream from NASA's Image and Video Library.
