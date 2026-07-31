@@ -18,6 +18,8 @@ const RIJKSMUSEUM_SEARCH_API = 'https://data.rijksmuseum.nl/search/collection';
 const RIJKSMUSEUM_DATA_API = 'https://data.rijksmuseum.nl';
 const GARROS_GALLERY_URL = 'https://www.garros.gallery/';
 const HIDE_STREAM_ID = 'hide-ai';
+const HIDE_PROMOTED_STREAM_ID = 'hide-promoted';
+const HIDE_SUGGESTED_STREAM_ID = 'hide-suggested';
 const SURPRISE_STREAM_ID = 'surprise-me';
 const NASA_SEARCH_API = 'https://images-api.nasa.gov/search';
 const NASA_ASSET_API = 'https://images-api.nasa.gov/asset';
@@ -558,11 +560,17 @@ export function buildGarrosGalleryReplacement(record) {
   };
 }
 
-export function buildHideReplacement() {
+export function buildHideReplacement(cleanupType = 'ai') {
+  const notices = {
+    ai: { id: 'de-slopped', title: '☢️ De-slopped your feed' },
+    promoted: { id: 'de-monetized', title: '💸 De-monetized your feed' },
+    suggested: { id: 'de-suggested', title: '🤓 De-suggested your feed' }
+  };
+  const notice = notices[cleanupType] || notices.ai;
   return {
     kind: 'notice',
-    id: 'slop-cleansed',
-    title: '☢️ Slop cleansed',
+    id: notice.id,
+    title: notice.title,
     provider: 'Pangram Gallery',
     rights: 'Local filter'
   };
@@ -1080,11 +1088,21 @@ export const STREAM_REGISTRY = Object.freeze({
   [HIDE_STREAM_ID]: {
     label: '❌ Hide AI completely',
     providerIds: []
+  },
+  [HIDE_PROMOTED_STREAM_ID]: {
+    label: '❌ Hide all promoted',
+    providerIds: []
+  },
+  [HIDE_SUGGESTED_STREAM_ID]: {
+    label: '❌ Hide all suggested',
+    providerIds: []
   }
 });
 
 function streamForVerdict(settings, verdict) {
   const streams = settings?.streams || {};
+  if (verdict === 'promoted') return streams.promoted || HIDE_PROMOTED_STREAM_ID;
+  if (verdict === 'suggested') return streams.suggested || HIDE_SUGGESTED_STREAM_ID;
   if (settings?.styleMode !== 'different') {
     return streams.ai || 'painting-classics';
   }
@@ -1101,12 +1119,18 @@ export async function getReplacement(
   settings,
   verdict = 'ai',
   fetchFn = fetch,
-  random = Math.random
+  random = Math.random,
+  streamOverride = null
 ) {
-  const stream = streamForVerdict(settings, verdict);
+  const stream = streamOverride || streamForVerdict(settings, verdict);
   const streamConfig = STREAM_REGISTRY[stream] || STREAM_REGISTRY['painting-classics'];
-  if (stream === HIDE_STREAM_ID) {
-    return normalizeCard(buildHideReplacement());
+  if (stream === HIDE_STREAM_ID || stream === HIDE_PROMOTED_STREAM_ID || stream === HIDE_SUGGESTED_STREAM_ID) {
+    const cleanupType = stream === HIDE_PROMOTED_STREAM_ID
+      ? 'promoted'
+      : stream === HIDE_SUGGESTED_STREAM_ID
+        ? 'suggested'
+        : 'ai';
+    return normalizeCard(buildHideReplacement(cleanupType));
   }
   const providerId = streamConfig.providerIds[
     chooseIndex(streamConfig.providerIds.length, random)

@@ -9,7 +9,9 @@
     streams: Object.freeze({
       ai: 'painting-classics',
       mixed: 'painting-classics',
-      assisted: 'painting-classics'
+      assisted: 'painting-classics',
+      promoted: 'hide-promoted',
+      suggested: 'hide-suggested'
     })
   });
 
@@ -24,7 +26,9 @@
     'far-side',
     'garros-gallery',
     'surprise-me',
-    'hide-ai'
+    'hide-ai',
+    'hide-promoted',
+    'hide-suggested'
   ]);
 
   const VERDICTS = new Map([
@@ -74,7 +78,13 @@
           : DEFAULT_SETTINGS.streams.mixed,
         assisted: STREAM_IDS.includes(inputStreams.assisted)
           ? inputStreams.assisted
-          : DEFAULT_SETTINGS.streams.assisted
+          : DEFAULT_SETTINGS.streams.assisted,
+        promoted: STREAM_IDS.includes(inputStreams.promoted)
+          ? inputStreams.promoted
+          : DEFAULT_SETTINGS.streams.promoted,
+        suggested: STREAM_IDS.includes(inputStreams.suggested)
+          ? inputStreams.suggested
+          : DEFAULT_SETTINGS.streams.suggested
       }
     };
   }
@@ -85,6 +95,13 @@
     if (verdict === 'mixed') return settings.streams.mixed;
     if (verdict === 'ai-assisted') return settings.streams.assisted;
     return settings.streams.ai;
+  }
+
+  function getStreamForCleanup(settingsValue, cleanupType) {
+    const settings = normalizeSettings(settingsValue);
+    return cleanupType === 'promoted'
+      ? settings.streams.promoted
+      : settings.streams.suggested;
   }
 
   function shouldReplace(verdict, settingsValue) {
@@ -459,6 +476,7 @@
     classifyBadgeText,
     normalizeSettings,
     getStreamForVerdict,
+    getStreamForCleanup,
     shouldReplace,
     clownifyText,
     isPromotedTarget,

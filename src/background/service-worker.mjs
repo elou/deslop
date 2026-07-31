@@ -10,7 +10,9 @@ const DEFAULT_SETTINGS = {
   streams: {
     ai: 'painting-classics',
     mixed: 'painting-classics',
-    assisted: 'painting-classics'
+    assisted: 'painting-classics',
+    promoted: 'hide-promoted',
+    suggested: 'hide-suggested'
   }
 };
 
@@ -25,7 +27,9 @@ const STREAM_IDS = new Set([
   'far-side',
   'garros-gallery',
   'surprise-me',
-  'hide-ai'
+  'hide-ai',
+  'hide-promoted',
+  'hide-suggested'
 ]);
 
 function readSettings() {
@@ -47,7 +51,13 @@ function readSettings() {
             : 'painting-classics',
           assisted: STREAM_IDS.has(value.streams?.assisted)
             ? value.streams.assisted
-            : 'painting-classics'
+            : 'painting-classics',
+          promoted: STREAM_IDS.has(value.streams?.promoted)
+            ? value.streams.promoted
+            : 'hide-promoted',
+          suggested: STREAM_IDS.has(value.streams?.suggested)
+            ? value.streams.suggested
+            : 'hide-suggested'
         }
       });
     });
@@ -87,7 +97,13 @@ chrome.runtime.onInstalled.addListener(() => {
           : 'painting-classics',
         assisted: STREAM_IDS.has(current.streams?.assisted)
           ? current.streams.assisted
-          : 'painting-classics'
+          : 'painting-classics',
+        promoted: STREAM_IDS.has(current.streams?.promoted)
+          ? current.streams.promoted
+          : 'hide-promoted',
+        suggested: STREAM_IDS.has(current.streams?.suggested)
+          ? current.streams.suggested
+          : 'hide-suggested'
       }
     });
   });
@@ -99,10 +115,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
       const settings = await readSettings();
-      const verdict = ['ai', 'mixed', 'ai-assisted'].includes(message.verdict)
+      const verdict = ['ai', 'mixed', 'ai-assisted', 'promoted', 'suggested'].includes(message.verdict)
         ? message.verdict
         : 'ai';
-      const item = await getReplacement(settings, verdict);
+      const stream = STREAM_IDS.has(message.stream) ? message.stream : null;
+      const item = await getReplacement(settings, verdict, fetch, Math.random, stream);
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({

@@ -86,20 +86,32 @@
           <p class="kicker">Filters</p>
           <h2 id="filters-heading">Feed cleanup</h2>
         </div>
-        <label class="choice">
-          <input id="hide-promoted" type="checkbox" />
-          <span>
-            <strong>💸 Hide promoted posts</strong>
-            <small>Remove promoted impressions from the feed</small>
-          </span>
-        </label>
-        <label class="choice">
-          <input id="hide-suggested" type="checkbox" />
-          <span>
-            <strong>🦟 Hide suggested</strong>
-            <small>Remove LinkedIn's Suggested posts from the feed</small>
-          </span>
-        </label>
+        <div class="choice-block cleanup-choice-block">
+          <label class="choice">
+            <input id="hide-promoted" type="checkbox" />
+            <span>
+              <strong>💸 Hide promoted posts</strong>
+              <small>Replace promoted impressions from the feed</small>
+            </span>
+          </label>
+          <label id="cleanup-stream-promoted" class="stream-picker cleanup-stream" for="stream-promoted" hidden>
+            <span>Show</span>
+            <select id="stream-promoted"></select>
+          </label>
+        </div>
+        <div class="choice-block cleanup-choice-block">
+          <label class="choice">
+            <input id="hide-suggested" type="checkbox" />
+            <span>
+              <strong>🦟 Hide suggested</strong>
+              <small>Replace LinkedIn's Suggested posts from the feed</small>
+            </span>
+          </label>
+          <label id="cleanup-stream-suggested" class="stream-picker cleanup-stream" for="stream-suggested" hidden>
+            <span>Show</span>
+            <select id="stream-suggested"></select>
+          </label>
+        </div>
       </section>
 
       <footer class="footer">

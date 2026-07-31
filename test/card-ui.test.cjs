@@ -154,9 +154,9 @@ test('sends each Pangram verdict to the selected stream router', () => {
   );
 });
 
-test('renders the compact slop-cleansed notice without an original toggle', () => {
+test('renders compact cleanup notices with an unhide control', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
-  assert.match(contentSource, /☢️ Slop cleansed/);
+  assert.match(contentSource, /☢️ De-slopped your feed/);
   assert.match(contentSource, /pangram-gallery-card--notice/);
   assert.match(
     contentCss,
@@ -164,36 +164,33 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*padding:\s*26px 56px;/s,
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*padding:\s*8px 10px 8px 16px;/s,
     'cleanup notices should share the card system rather than render as bare text'
   );
+  assert.match(contentSource, /toggle\.hidden = false/);
+  assert.match(contentCss, /\.pangram-gallery-card--notice \.pangram-gallery-card__toggle/);
 });
 
-test('defines a compact promoted-post hide state', () => {
-  assert.match(contentSource, /hidden-promoted/);
+test('routes promoted cleanup through the selected stream', () => {
+  assert.match(contentSource, /replaceCleanupTarget\(target, 'promoted', activeGeneration\)/);
   assert.match(contentSource, /collectPromotedTargetsFromMutationRecords/);
   assert.doesNotMatch(
     contentSource,
     /record\.target[\s\S]{0,300}querySelectorAll\?\.\(FEED_ITEM_SELECTOR\)/,
     'mutation targets must not trigger a feed-tree rescan'
   );
-  assert.match(contentSource, /💸 Depromoted your feed/);
-  assert.match(
-    contentSource,
-    /hydrateCard\(card, \{ kind: 'notice', title: '💸 Depromoted your feed' \}\)/
-  );
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, cleanupType\)/);
 });
 
-test('defines a compact suggested-post hide state', () => {
-  assert.match(contentSource, /hidden-suggested/);
+test('routes suggested cleanup through the selected stream', () => {
   assert.match(contentSource, /core\.isSuggestedTarget\(target\)/);
-  assert.match(contentSource, /🦟 Desuggested your feed/);
+  assert.match(contentSource, /replaceCleanupTarget\(target, 'suggested', activeGeneration\)/);
 });
 
 test('gives promoted cleanup precedence over suggested cleanup', () => {
   assert.match(
     contentSource,
-    /if \(settings\.hidePromoted && promotedTargets\.has\(target\)\)[\s\S]*?hidePromotedTarget\(target\);[\s\S]*?else if \(settings\.hideSuggested && suggestedTargets\.has\(target\)\)[\s\S]*?hideSuggestedTarget\(target\);/
+    /if \(settings\.hidePromoted && promotedTargets\.has\(target\)\)[\s\S]*?replaceCleanupTarget\(target, 'promoted', activeGeneration\);[\s\S]*?else if \(settings\.hideSuggested && suggestedTargets\.has\(target\)\)[\s\S]*?replaceCleanupTarget\(target, 'suggested', activeGeneration\);/
   );
 });
 

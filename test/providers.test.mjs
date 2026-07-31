@@ -286,11 +286,11 @@ test('builds an explicitly labeled Far Side research replacement', () => {
   assert.equal(item.caption, 'a person with an old tree and another with a ladder');
 });
 
-test('builds the compact Hide AI replacement notice', () => {
+test('builds compact notices for every local cleanup stream', () => {
   const item = buildHideReplacement();
 
   assert.equal(item.kind, 'notice');
-  assert.equal(item.title, '☢️ Slop cleansed');
+  assert.equal(item.title, '☢️ De-slopped your feed');
 });
 
 test('parses official New Yorker RSS thumbnails and caps image width', () => {
@@ -441,7 +441,7 @@ test('routes Garross Gallery through its explicit research stream', async () => 
   assert.equal(item.provider, '🎾 Garross Gallery');
 });
 
-test('routes the Hide AI stream to a compact notice', async () => {
+test('routes local cleanup streams to compact notices without a remote request', async () => {
   const item = await getReplacement(
     { streams: { ai: 'hide-ai' } },
     'ai',
@@ -452,7 +452,27 @@ test('routes the Hide AI stream to a compact notice', async () => {
   );
 
   assert.equal(item.kind, 'notice');
-  assert.equal(item.title, '☢️ Slop cleansed');
+  assert.equal(item.title, '☢️ De-slopped your feed');
+
+  const promoted = await getReplacement(
+    { streams: { promoted: 'hide-promoted' } },
+    'promoted',
+    async () => {
+      throw new Error('Hide promoted should not request a remote provider');
+    },
+    () => 0
+  );
+  assert.equal(promoted.title, '💸 De-monetized your feed');
+
+  const suggested = await getReplacement(
+    { streams: { suggested: 'hide-suggested' } },
+    'suggested',
+    async () => {
+      throw new Error('Hide suggested should not request a remote provider');
+    },
+    () => 0
+  );
+  assert.equal(suggested.title, '🤓 De-suggested your feed');
 });
 
 test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {

@@ -60,4 +60,10 @@ test('offers the explicit cleanup controls', () => {
   assert.match(optionsHtml, /💸 Hide promoted posts/);
   assert.match(optionsHtml, /id="hide-suggested"/);
   assert.match(optionsHtml, /🦟 Hide suggested/);
+  assert.match(optionsHtml, /id="stream-promoted"/);
+  assert.match(optionsHtml, /id="stream-suggested"/);
+  assert.match(optionsSource, /Hide all promoted/);
+  assert.match(optionsSource, /Hide all suggested/);
+  assert.match(optionsCss, /\.cleanup-stream\[hidden\]/);
+  assert.match(optionsCss, /\.cleanup-stream:not\(\[hidden\]\)/);
 });
