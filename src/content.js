@@ -10,10 +10,7 @@
   const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
   let settings = core.normalizeSettings();
   let scanTimer = null;
-  let recoveryTimer = null;
   let generation = 0;
-  const pendingRecoveryTargets = new Set();
-  const recoveryAttempts = new WeakMap();
   const residencyObserver =
     typeof IntersectionObserver === 'function'
       ? new IntersectionObserver(
@@ -487,53 +484,7 @@
     scanTimer = window.setTimeout(scanInitialDocument, 80);
   }
 
-  function recoverRemovedCardTargets() {
-    recoveryTimer = null;
-    const targets = [...pendingRecoveryTargets];
-    pendingRecoveryTargets.clear();
-
-    for (const target of targets) {
-      if (!target?.isConnected || target.getAttribute(STATE_ATTRIBUTE)) continue;
-
-      if (settings.hidePromoted && core.isPromotedTarget(target)) {
-        replaceCleanupTarget(target, 'promoted', generation);
-        continue;
-      }
-      if (settings.hideSuggested && core.isSuggestedTarget(target)) {
-        replaceCleanupTarget(target, 'suggested', generation);
-        continue;
-      }
-
-      const badges = [];
-      if (target.matches?.('.pangram-feed-badge')) badges.push(target);
-      badges.push(...target.querySelectorAll?.('.pangram-feed-badge') || []);
-      processBadges(badges);
-    }
-  }
-
-  function scheduleRemovedCardRecovery(targets) {
-    const now = Date.now();
-    for (const target of targets || []) {
-      const previous = recoveryAttempts.get(target);
-      const attempt =
-        previous && now - previous.startedAt < 1000
-          ? previous
-          : { startedAt: now, count: 0 };
-      if (attempt.count >= 3) continue;
-      attempt.count += 1;
-      recoveryAttempts.set(target, attempt);
-      pendingRecoveryTargets.add(target);
-    }
-    if (!pendingRecoveryTargets.size || recoveryTimer !== null) return;
-    // Let LinkedIn finish reconciling the feed item before mounting its card
-    // again. Only the affected targets are revisited; the feed is never rescanned.
-    recoveryTimer = window.setTimeout(recoverRemovedCardTargets, 80);
-  }
-
   function restoreAll() {
-    if (recoveryTimer !== null) window.clearTimeout(recoveryTimer);
-    recoveryTimer = null;
-    pendingRecoveryTargets.clear();
     document.querySelectorAll(`.${CARD_CLASS}`).forEach(disposeCard);
     document.querySelectorAll(`[${STATE_ATTRIBUTE}]`).forEach((target) => {
       target.classList.remove(HIDDEN_CLASS);
@@ -552,15 +503,7 @@
   }
 
   function handleMutations(records) {
-    const removedCardTargets = core.collectConnectedTargetsFromRemovedCards(
-      records,
-      `.${CARD_CLASS}`
-    );
-    const recoverableTargets = removedCardTargets.filter((target) =>
-      target.classList?.contains(HIDDEN_CLASS)
-    );
     removeOrphanedCardsFromRemovedSubtrees(records);
-    scheduleRemovedCardRecovery(recoverableTargets);
     if (settings.hidePromoted || settings.hideSuggested) {
       processCleanupTargets(
         settings.hidePromoted

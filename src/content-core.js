@@ -444,40 +444,6 @@
     return Boolean(card?.pangramGalleryTarget && !card.pangramGalleryTarget.isConnected);
   }
 
-  function collectConnectedTargetsFromRemovedCards(records, cardSelector) {
-    const cards = new Set();
-    const targets = new Set();
-
-    for (const record of records || []) {
-      for (const node of record.removedNodes || []) {
-        if (!node || (node.nodeType !== 1 && node.nodeType !== 11)) continue;
-
-        if (
-          node.nodeType === 1 &&
-          typeof node.matches === 'function' &&
-          node.matches(cardSelector)
-        ) {
-          cards.add(node);
-        }
-
-        if (typeof node.querySelectorAll !== 'function') continue;
-        for (const card of node.querySelectorAll(cardSelector)) {
-          cards.add(card);
-        }
-      }
-    }
-
-    for (const card of cards) {
-      if (card?.isConnected) continue;
-      const target = card?.pangramGalleryTarget;
-      if (target?.isConnected && target.pangramGalleryCard === card) {
-        targets.add(target);
-      }
-    }
-
-    return [...targets];
-  }
-
   function findReplacementTarget(badge) {
     const commentHost = badge?.closest?.('[data-pangram-comment]');
     if (commentHost) return commentHost;
@@ -521,7 +487,6 @@
     collectPromotedTargetsFromMutationRecords,
     collectSuggestedTargetsFromMutationRecords,
     isOrphanedCard,
-    collectConnectedTargetsFromRemovedCards,
     findReplacementTarget,
     findCommentTarget
   });

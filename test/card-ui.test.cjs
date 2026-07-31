@@ -187,18 +187,6 @@ test('routes suggested cleanup through the selected stream', () => {
   assert.match(contentSource, /replaceCleanupTarget\(target, 'suggested', activeGeneration\)/);
 });
 
-test('remounts only live targets whose replacement card LinkedIn removed', () => {
-  assert.match(contentSource, /collectConnectedTargetsFromRemovedCards/);
-  assert.match(contentSource, /scheduleRemovedCardRecovery\(recoverableTargets\)/);
-  assert.match(contentSource, /classList\?\.contains\(HIDDEN_CLASS\)/);
-  assert.match(contentSource, /pendingRecoveryTargets\.clear\(\)/);
-  assert.doesNotMatch(
-    contentSource,
-    /recoverRemovedCardTargets[\s\S]{0,1200}querySelectorAll\(`?\.fie-impression-container/,
-    'card recovery must revisit only the affected targets, never the feed'
-  );
-});
-
 test('a stale provider response cannot overwrite a newer replacement card', () => {
   const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
   const replaceTargetEnd = contentSource.indexOf('\n  function restoreCommentTarget', replaceTargetStart);
@@ -206,6 +194,17 @@ test('a stale provider response cannot overwrite a newer replacement card', () =
 
   assert.match(replaceTargetSource, /!card\.isConnected/);
   assert.match(replaceTargetSource, /target\.pangramGalleryCard !== card/);
+});
+
+test('LinkedIn card removal cannot start a remount and provider-refetch loop', () => {
+  const mutationHandlerStart = contentSource.indexOf('function handleMutations');
+  const mutationHandlerSource = contentSource.slice(mutationHandlerStart);
+
+  assert.doesNotMatch(
+    mutationHandlerSource,
+    /scheduleRemovedCardRecovery/,
+    'a removed extension card must not trigger a new replacement request from the mutation observer'
+  );
 });
 
 test('clears replacement state from a detached LinkedIn item before it is recycled', () => {
