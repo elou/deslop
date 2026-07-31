@@ -5,7 +5,7 @@ Research date: 2026-07-30
 ## Finding
 
 Several substantial databases exist. NextML is the best fit for Pangram
-Gallery's personal, noncommercial Caption Contest stream; none of the sources
+De-Slop's personal, noncommercial Caption Contest stream; none of the sources
 provides a comparable broad archive with a general reuse grant.
 
 ## Sources
@@ -72,7 +72,7 @@ provides a comparable broad archive with a general reuse grant.
   stream. Fetch one randomized row at display time through the AI2/Hugging Face
   research mirror, whose image rendition is bounded to 600 pixels.
 - Continue using The New Yorker's official RSS feed for New Yorker Latest.
-- Emily clarified that Pangram Gallery is a personal, noncommercial commentary
+- Emily clarified that De-Slop is a personal, noncommercial commentary
   tool intended to demonstrate the volume of AI-written posts in feeds.
 - NextML's explicit noncommercial restriction is compatible with that purpose.
 - Internet Archive's terms do not provide a content license. Its rights guidance
@@ -83,7 +83,7 @@ provides a comparable broad archive with a general reuse grant.
 - The Internet Archive source is also a pair of 1.3 GB ISO images rather than an
   HTTP cartoon feed. Using its cartoons requires local extraction/storage or a
   separately hosted derivative index, changing the no-storage architecture.
-- Pangram Gallery links back to the NextML dataset, labels the source and
+- De-Slop links back to the NextML dataset, labels the source and
   noncommercial terms, and does not persist image bytes. The AI2 mirror avoids
   NextML's multi-megabyte original image files; a live sample returned a
   17,185-byte image.

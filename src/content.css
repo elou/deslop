@@ -1,14 +1,14 @@
-.pangram-gallery-original-hidden {
+.deslop-original-hidden {
   display: none !important;
 }
 
-.pangram-gallery-comment-clowns {
+.deslop-comment-clowns {
   display: inline;
   font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
   white-space: pre-wrap;
 }
 
-.pangram-gallery-comment-original {
+.deslop-comment-original {
   position: absolute !important;
   inline-size: 1px !important;
   block-size: 1px !important;
@@ -20,33 +20,33 @@
   border: 0 !important;
 }
 
-.pangram-gallery-card {
+.deslop-card {
   all: initial;
   box-sizing: border-box;
-  --pangram-gallery-surface: #fff;
-  --pangram-gallery-border: rgba(0, 0, 0, 0.1);
-  --pangram-gallery-ink: oklch(0.26 0.018 55);
+  --deslop-surface: #fff;
+  --deslop-border: rgba(0, 0, 0, 0.1);
+  --deslop-ink: oklch(0.26 0.018 55);
   display: block;
   inline-size: 100%;
   margin-block: 16px;
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--pangram-gallery-border);
+  border: 1px solid var(--deslop-border);
   border-radius: 14px;
-  background: var(--pangram-gallery-surface);
-  color: var(--pangram-gallery-ink);
+  background: var(--deslop-surface);
+  color: var(--deslop-ink);
   box-shadow: 0 18px 44px rgba(25, 20, 15, 0.08);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
-  animation: pangram-gallery-enter 180ms ease-out both;
+  animation: deslop-enter 180ms ease-out both;
 }
 
-.pangram-gallery-card,
-.pangram-gallery-card * {
+.deslop-card,
+.deslop-card * {
   box-sizing: border-box;
 }
 
-.pangram-gallery-card__image {
+.deslop-card__image {
   all: initial;
   position: absolute;
   inset: 0;
@@ -57,7 +57,7 @@
   max-block-size: 100%;
   margin: auto;
   object-fit: contain;
-  background: var(--pangram-gallery-surface);
+  background: var(--deslop-surface);
   border-radius: 14px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.1),
@@ -71,36 +71,36 @@
     -20px 20px 28.28425px -1px #00000019;
 }
 
-.pangram-gallery-card__poem {
+.deslop-card__poem {
   all: initial;
   display: block;
   max-inline-size: 100%;
   max-block-size: 100%;
   margin: 0;
   overflow: hidden;
-  color: var(--pangram-gallery-ink);
+  color: var(--deslop-ink);
   font: 400 italic clamp(16px, 1.2vw, 20px) / 1.5 Georgia, "Times New Roman", serif;
   text-wrap: balance;
   white-space: pre-line;
 }
 
-.pangram-gallery-card__poem[hidden] {
+.deslop-card__poem[hidden] {
   display: none;
 }
 
-.pangram-gallery-card--poem .pangram-gallery-card__image-frame {
+.deslop-card--poem .deslop-card__image-frame {
   overflow: hidden;
   background:
     linear-gradient(90deg, transparent 49.8%, oklch(0.89 0.008 65) 50%, transparent 50.2%)
       50% 28px / 100% 1px no-repeat,
-    var(--pangram-gallery-surface);
+    var(--deslop-surface);
 }
 
-.pangram-gallery-card--poem .pangram-gallery-card__image {
+.deslop-card--poem .deslop-card__image {
   display: none;
 }
 
-.pangram-gallery-card__image-stage {
+.deslop-card__image-stage {
   all: initial;
   display: grid;
   inline-size: 100%;
@@ -109,7 +109,7 @@
   background: inherit;
 }
 
-.pangram-gallery-card__image-frame {
+.deslop-card__image-frame {
   all: initial;
   position: relative;
   display: grid;
@@ -122,7 +122,7 @@
   background: inherit;
 }
 
-.pangram-gallery-card__body {
+.deslop-card__body {
   all: initial;
   display: block;
   min-inline-size: 0;
@@ -131,7 +131,7 @@
   color: inherit;
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__image-frame {
+.deslop-card--loading .deslop-card__image-frame {
   overflow: hidden;
   background: linear-gradient(
     110deg,
@@ -140,25 +140,25 @@
     oklch(0.96 0.006 70) 60%
   );
   background-size: 220% 100%;
-  animation: pangram-gallery-shimmer 1.8s ease-in-out infinite;
+  animation: deslop-shimmer 1.8s ease-in-out infinite;
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__image,
-.pangram-gallery-card--loading .pangram-gallery-card__poem,
-.pangram-gallery-card--loading .pangram-gallery-card__toggle,
-.pangram-gallery-card--loading .pangram-gallery-card__title,
-.pangram-gallery-card--loading .pangram-gallery-card__description,
-.pangram-gallery-card--loading .pangram-gallery-card__post-meta {
+.deslop-card--loading .deslop-card__image,
+.deslop-card--loading .deslop-card__poem,
+.deslop-card--loading .deslop-card__toggle,
+.deslop-card--loading .deslop-card__title,
+.deslop-card--loading .deslop-card__description,
+.deslop-card--loading .deslop-card__post-meta {
   visibility: hidden;
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__body {
+.deslop-card--loading .deslop-card__body {
   position: relative;
   overflow: hidden;
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__body::before,
-.pangram-gallery-card--loading .pangram-gallery-card__body::after {
+.deslop-card--loading .deslop-card__body::before,
+.deslop-card--loading .deslop-card__body::after {
   position: absolute;
   display: block;
   block-size: 12px;
@@ -167,39 +167,39 @@
   content: '';
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__body::before {
+.deslop-card--loading .deslop-card__body::before {
   inset-block-start: 4px;
   inset-inline: 5% auto;
   inline-size: 42%;
 }
 
-.pangram-gallery-card--loading .pangram-gallery-card__body::after {
+.deslop-card--loading .deslop-card__body::after {
   inset-block-start: 32px;
   inset-inline: 5% auto;
   inline-size: 28%;
 }
 
-.pangram-gallery-card__title,
-.pangram-gallery-card__description,
-.pangram-gallery-card__notice {
+.deslop-card__title,
+.deslop-card__description,
+.deslop-card__notice {
   all: initial;
   display: block;
   margin: 0;
   color: inherit;
 }
 
-.pangram-gallery-card--notice {
-  --pangram-gallery-surface: #f7f6f4;
-  --pangram-gallery-border: rgba(32, 28, 24, 0.16);
+.deslop-card--notice {
+  --deslop-surface: #f7f6f4;
+  --deslop-border: rgba(32, 28, 24, 0.16);
   margin-block: 16px;
   box-shadow: none;
 }
 
-.pangram-gallery-card--notice .pangram-gallery-card__image-stage {
+.deslop-card--notice .deslop-card__image-stage {
   display: none;
 }
 
-.pangram-gallery-card--notice .pangram-gallery-card__body {
+.deslop-card--notice .deslop-card__body {
   display: flex;
   min-block-size: 0;
   align-items: center;
@@ -207,46 +207,46 @@
   padding: 8px 10px 8px 16px;
 }
 
-.pangram-gallery-card--notice .pangram-gallery-card__post-meta {
+.deslop-card--notice .deslop-card__post-meta {
   display: flex;
   margin: 0;
 }
 
-.pangram-gallery-card--notice .pangram-gallery-card__toggle {
+.deslop-card--notice .deslop-card__toggle {
   min-block-size: 40px;
   padding: 8px 14px;
   border-color: color-mix(in srgb, currentColor 20%, transparent);
   color: color-mix(in srgb, currentColor 58%, transparent);
 }
 
-.pangram-gallery-card--notice .pangram-gallery-card__verdict,
-.pangram-gallery-card--notice .pangram-gallery-card__byline {
+.deslop-card--notice .deslop-card__verdict,
+.deslop-card--notice .deslop-card__byline {
   display: none;
 }
 
-.pangram-gallery-card__notice {
+.deslop-card__notice {
   flex: 1 1 auto;
   color: #999;
   font: 500 20px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card__notice[hidden] {
+.deslop-card__notice[hidden] {
   display: none;
 }
 
-.pangram-gallery-card__title {
+.deslop-card__title {
   display: block;
   color: inherit;
   font: 520 30px/1.15 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card__description {
+.deslop-card__description {
   margin-block: 10px 0;
   color: color-mix(in srgb, currentColor 82%, transparent);
   font: 400 20px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card__post-meta {
+.deslop-card__post-meta {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -256,15 +256,15 @@
   font: 400 17px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card__byline {
+.deslop-card__byline {
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pangram-gallery-card__author,
-.pangram-gallery-card__toggle {
+.deslop-card__author,
+.deslop-card__toggle {
   all: unset;
   box-sizing: border-box;
   color: #999;
@@ -272,26 +272,26 @@
   font: inherit;
 }
 
-.pangram-gallery-card__author {
+.deslop-card__author {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
-.pangram-gallery-card__toggle {
+.deslop-card__toggle {
   flex: none;
   min-block-size: 44px;
   padding: 0 14px;
-  border: 1px solid var(--pangram-gallery-border);
+  border: 1px solid var(--deslop-border);
   border-radius: 5px;
-  background: var(--pangram-gallery-surface);
+  background: var(--deslop-surface);
   font-size: 13px;
   font-weight: 600;
   line-height: 42px;
   text-transform: uppercase;
 }
 
-.pangram-gallery-card__verdict {
+.deslop-card__verdict {
   flex: none;
   margin-inline-start: auto;
   padding: 7px 10px;
@@ -301,7 +301,7 @@
   font: 650 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card--original-visible {
+.deslop-card--original-visible {
   block-size: 0;
   margin-block: 0;
   overflow: visible;
@@ -309,8 +309,8 @@
   background: transparent;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__image-stage,
-.pangram-gallery-card--original-visible .pangram-gallery-card__image-frame {
+.deslop-card--original-visible .deslop-card__image-stage,
+.deslop-card--original-visible .deslop-card__image-frame {
   block-size: 0;
   min-block-size: 0;
   padding-block: 0;
@@ -318,12 +318,12 @@
   background: transparent;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__image,
-.pangram-gallery-card--original-visible .pangram-gallery-card__poem {
+.deslop-card--original-visible .deslop-card__image,
+.deslop-card--original-visible .deslop-card__poem {
   display: none;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__body {
+.deslop-card--original-visible .deslop-card__body {
   display: block;
   block-size: 0;
   min-block-size: 0;
@@ -331,11 +331,11 @@
   overflow: visible;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__body > :not(.pangram-gallery-card__post-meta) {
+.deslop-card--original-visible .deslop-card__body > :not(.deslop-card__post-meta) {
   display: none;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__toggle {
+.deslop-card--original-visible .deslop-card__toggle {
   top: 16px;
   bottom: auto;
   right: 16px;
@@ -343,32 +343,32 @@
   z-index: 1;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__post-meta {
+.deslop-card--original-visible .deslop-card__post-meta {
   display: block;
   margin: 0;
   min-block-size: 0;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__byline,
-.pangram-gallery-card--original-visible .pangram-gallery-card__verdict {
+.deslop-card--original-visible .deslop-card__byline,
+.deslop-card--original-visible .deslop-card__verdict {
   display: none;
 }
 
-.pangram-gallery-card__author:hover {
+.deslop-card__author:hover {
   color: inherit;
 }
 
-.pangram-gallery-card__toggle:hover {
+.deslop-card__toggle:hover {
   background: oklch(0.93 0.012 70);
 }
 
-.pangram-gallery-card__author:focus-visible,
-.pangram-gallery-card__toggle:focus-visible {
+.deslop-card__author:focus-visible,
+.deslop-card__toggle:focus-visible {
   outline: 2px solid oklch(0.55 0.11 28);
   outline-offset: 2px;
 }
 
-@keyframes pangram-gallery-enter {
+@keyframes deslop-enter {
   from {
     opacity: 0;
   }
@@ -377,7 +377,7 @@
   }
 }
 
-@keyframes pangram-gallery-shimmer {
+@keyframes deslop-shimmer {
   from {
     background-position: 100% 0;
   }
@@ -387,44 +387,44 @@
 }
 
 @media (max-width: 480px) {
-  .pangram-gallery-card__body {
+  .deslop-card__body {
     padding: 16px 20px 28px;
   }
 
-  .pangram-gallery-card__title {
+  .deslop-card__title {
     font-size: 24px;
   }
 
-  .pangram-gallery-card__description {
+  .deslop-card__description {
     font-size: 17px;
   }
 
-  .pangram-gallery-card__post-meta {
+  .deslop-card__post-meta {
     flex-wrap: wrap;
     margin-block-start: 24px;
     font-size: 16px;
   }
 
-  .pangram-gallery-card__verdict {
+  .deslop-card__verdict {
     margin-inline-start: 0;
   }
 
-  .pangram-gallery-card__poem {
+  .deslop-card__poem {
     font-size: 16px;
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  .pangram-gallery-card {
-    --pangram-gallery-surface: #191919;
-    --pangram-gallery-border: rgba(255, 255, 255, 0.1);
-    --pangram-gallery-ink: rgba(255, 255, 255, 0.92);
+  .deslop-card {
+    --deslop-surface: #191919;
+    --deslop-border: rgba(255, 255, 255, 0.1);
+    --deslop-ink: rgba(255, 255, 255, 0.92);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pangram-gallery-card,
-  .pangram-gallery-card--loading .pangram-gallery-card__image-frame {
+  .deslop-card,
+  .deslop-card--loading .deslop-card__image-frame {
     animation: none;
   }
 }

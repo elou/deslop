@@ -1,5 +1,5 @@
 (function setUpOptions() {
-  const core = globalThis.PangramGalleryCore;
+  const core = globalThis.DeSlopCore;
   const STREAM_OPTIONS = [
     ['painting-classics', '🖼️ Art'],
     ['art-2', '🖼️ Art 2'],

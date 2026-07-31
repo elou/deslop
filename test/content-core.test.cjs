@@ -12,7 +12,7 @@ function loadCore() {
   const context = { globalThis: {} };
   vm.createContext(context);
   vm.runInContext(source, context);
-  return context.globalThis.PangramGalleryCore;
+  return context.globalThis.DeSlopCore;
 }
 
 test('reads only Pangram verdict labels', () => {
@@ -490,11 +490,11 @@ test('identifies cards whose original feed item was removed', () => {
   const core = loadCore();
 
   assert.equal(
-    core.isOrphanedCard({ pangramGalleryTarget: { isConnected: false } }),
+    core.isOrphanedCard({ deSlopTarget: { isConnected: false } }),
     true
   );
   assert.equal(
-    core.isOrphanedCard({ pangramGalleryTarget: { isConnected: true } }),
+    core.isOrphanedCard({ deSlopTarget: { isConnected: true } }),
     false
   );
 });

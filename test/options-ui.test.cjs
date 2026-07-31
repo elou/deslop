@@ -18,12 +18,18 @@ const optionsCss = fs.readFileSync(
 const manifest = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8')
 );
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+);
 
 test('uses De-Slop as the installed product identity', () => {
   assert.equal(manifest.name, 'De-Slop');
   assert.equal(manifest.action.default_title, 'De-Slop');
+  assert.equal(packageJson.name, 'deslop');
   assert.match(optionsHtml, /<title>De-Slop<\/title>/);
   assert.match(optionsHtml, /<h1>💩 De-Slop<\/h1>/);
+  assert.match(optionsHtml, /github\.com\/elou\/deslop#content-streams/);
+  assert.doesNotMatch(optionsHtml, /pangram-gallery/i);
 });
 
 test('offers the supported live streams', () => {

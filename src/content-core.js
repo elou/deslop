@@ -1,4 +1,4 @@
-(function installPangramGalleryCore(root) {
+(function installDeSlopCore(root) {
   const DEFAULT_SETTINGS = Object.freeze({
     enabled: true,
     replaceMixed: false,
@@ -441,7 +441,7 @@
   }
 
   function isOrphanedCard(card) {
-    return Boolean(card?.pangramGalleryTarget && !card.pangramGalleryTarget.isConnected);
+    return Boolean(card?.deSlopTarget && !card.deSlopTarget.isConnected);
   }
 
   function findReplacementTarget(badge) {
@@ -470,7 +470,7 @@
     return badge?.closest?.('[data-pangram-comment]') || null;
   }
 
-  root.PangramGalleryCore = Object.freeze({
+  root.DeSlopCore = Object.freeze({
     DEFAULT_SETTINGS,
     STREAM_IDS,
     classifyBadgeText,

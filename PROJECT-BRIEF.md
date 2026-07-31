@@ -68,4 +68,4 @@ The interruption should feel quiet and gallery-like. It uses a white surface, ge
 
 ## Tracking
 
-- Linear: [ELOU-962](https://linear.app/elou/issue/ELOU-962/build-pangram-gallery-chrome-extension-v1)
+- Linear: [ELOU-962](https://linear.app/elou/issue/ELOU-962/build-deslop-chrome-extension-v1)

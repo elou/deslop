@@ -5,7 +5,7 @@ Research date: 2026-07-30
 ## Goal
 
 Replace the obscure tail of random museum and PoetryDB results with
-recognizable paintings and classic poems while keeping Pangram Gallery
+recognizable paintings and classic poems while keeping De-Slop
 backend-free and lightweight.
 
 ## Paintings

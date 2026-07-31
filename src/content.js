@@ -1,26 +1,26 @@
-(function startPangramGallery() {
+(function startDeSlop() {
   const documentRoot = globalThis.document?.documentElement;
-  documentRoot?.setAttribute('data-pangram-gallery-boot', 'starting');
-  const core = globalThis.PangramGalleryCore;
+  documentRoot?.setAttribute('data-deslop-boot', 'starting');
+  const core = globalThis.DeSlopCore;
   if (!core) {
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-core');
+    documentRoot?.setAttribute('data-deslop-boot', 'missing-core');
     return;
   }
   if (!globalThis.chrome?.storage?.sync || !globalThis.chrome?.storage?.onChanged) {
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-storage-api');
+    documentRoot?.setAttribute('data-deslop-boot', 'missing-storage-api');
     return;
   }
   if (!globalThis.chrome?.runtime?.sendMessage) {
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-runtime-api');
+    documentRoot?.setAttribute('data-deslop-boot', 'missing-runtime-api');
     return;
   }
 
-  const CARD_CLASS = 'pangram-gallery-card';
-  const HIDDEN_CLASS = 'pangram-gallery-original-hidden';
-  const STATE_ATTRIBUTE = 'data-pangram-gallery-state';
-  const COMMENT_STATE_ATTRIBUTE = 'data-pangram-gallery-comment-state';
-  const COMMENT_ORIGINAL_CLASS = 'pangram-gallery-comment-original';
-  const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
+  const CARD_CLASS = 'deslop-card';
+  const HIDDEN_CLASS = 'deslop-original-hidden';
+  const STATE_ATTRIBUTE = 'data-deslop-state';
+  const COMMENT_STATE_ATTRIBUTE = 'data-deslop-comment-state';
+  const COMMENT_ORIGINAL_CLASS = 'deslop-comment-original';
+  const COMMENT_CLOWNS_CLASS = 'deslop-comment-clowns';
   const STARTUP_CATCH_UP_DELAYS = Object.freeze([800, 2400]);
   let settings = core.normalizeSettings();
   let scanTimer = null;
@@ -31,11 +31,11 @@
           (entries) => {
             for (const entry of entries) {
               const card = entry.target;
-              card.pangramGalleryResident = entry.isIntersecting && card.isConnected;
-              const image = card.querySelector('.pangram-gallery-card__image');
+              card.deSlopResident = entry.isIntersecting && card.isConnected;
+              const image = card.querySelector('.deslop-card__image');
               if (!image) continue;
 
-              if (card.pangramGalleryResident) {
+              if (card.deSlopResident) {
                 restoreCardImage(image);
               } else {
                 unloadCardImage(image);
@@ -96,45 +96,45 @@
   }
 
   function unloadCardImage(image) {
-    if (!image.dataset.pangramGallerySrc || !image.getAttribute('src')) return;
-    image.dataset.pangramGalleryUnloaded = 'true';
+    if (!image.dataset.deSlopSrc || !image.getAttribute('src')) return;
+    image.dataset.deSlopUnloaded = 'true';
     image.removeAttribute('src');
   }
 
   function restoreCardImage(image) {
-    const source = image.dataset.pangramGallerySrc;
+    const source = image.dataset.deSlopSrc;
     if (!source || image.getAttribute('src')) return;
-    delete image.dataset.pangramGalleryUnloaded;
+    delete image.dataset.deSlopUnloaded;
     image.src = source;
   }
 
   function disposeCard(card) {
     if (!card) return;
     residencyObserver?.unobserve(card);
-    card.pangramGalleryResident = false;
+    card.deSlopResident = false;
 
     if (
-      card.pangramGalleryRemountTimer !== null &&
-      card.pangramGalleryRemountTimer !== undefined
+      card.deSlopRemountTimer !== null &&
+      card.deSlopRemountTimer !== undefined
     ) {
-      window.clearTimeout(card.pangramGalleryRemountTimer);
+      window.clearTimeout(card.deSlopRemountTimer);
     }
-    card.pangramGalleryRemountTimer = null;
-    card.pangramGalleryRemountPending = false;
+    card.deSlopRemountTimer = null;
+    card.deSlopRemountPending = false;
 
-    const target = card.pangramGalleryTarget;
-    if (target?.pangramGalleryCard === card) {
-      target.pangramGalleryCard = null;
+    const target = card.deSlopTarget;
+    if (target?.deSlopCard === card) {
+      target.deSlopCard = null;
     }
-    card.pangramGalleryTarget = null;
+    card.deSlopTarget = null;
 
-    const image = card.querySelector?.('.pangram-gallery-card__image');
+    const image = card.querySelector?.('.deslop-card__image');
     if (image) unloadCardImage(image);
     card.remove();
   }
 
   function releaseCardTarget(card, target) {
-    const ownsTarget = target?.pangramGalleryCard === card;
+    const ownsTarget = target?.deSlopCard === card;
     disposeCard(card);
     if (!ownsTarget) return;
     target.classList.remove(HIDDEN_CLASS);
@@ -143,10 +143,10 @@
 
   function createCard(verdict, target) {
     const card = document.createElement('aside');
-    card.className = `${CARD_CLASS} pangram-gallery-card--loading`;
-    card.pangramGalleryRemountCount = 0;
-    card.pangramGalleryRemountTimer = null;
-    card.pangramGalleryRemountPending = false;
+    card.className = `${CARD_CLASS} deslop-card--loading`;
+    card.deSlopRemountCount = 0;
+    card.deSlopRemountTimer = null;
+    card.deSlopRemountPending = false;
     card.setAttribute('role', 'region');
     const verdictLabel = verdict === 'mixed'
       ? 'Mixed'
@@ -161,53 +161,53 @@
     card.setAttribute('aria-busy', 'true');
 
     const image = document.createElement('img');
-    image.className = 'pangram-gallery-card__image';
+    image.className = 'deslop-card__image';
     image.alt = '';
     image.setAttribute('aria-hidden', 'true');
     image.decoding = 'async';
     image.loading = 'lazy';
 
     const poem = document.createElement('blockquote');
-    poem.className = 'pangram-gallery-card__poem';
+    poem.className = 'deslop-card__poem';
     poem.hidden = true;
 
     const toggle = document.createElement('button');
-    toggle.className = 'pangram-gallery-card__toggle';
+    toggle.className = 'deslop-card__toggle';
     toggle.type = 'button';
     toggle.textContent = 'Unhide';
     toggle.addEventListener('click', () => {
       const isHidden = target.classList.toggle(HIDDEN_CLASS);
-      card.classList.toggle('pangram-gallery-card--original-visible', !isHidden);
+      card.classList.toggle('deslop-card--original-visible', !isHidden);
       toggle.textContent = isHidden ? 'Unhide' : 'Hide';
       toggle.setAttribute('aria-expanded', String(!isHidden));
     });
     toggle.setAttribute('aria-expanded', 'false');
 
     const imageFrame = document.createElement('div');
-    imageFrame.className = 'pangram-gallery-card__image-frame';
+    imageFrame.className = 'deslop-card__image-frame';
     imageFrame.append(image, poem);
 
     const imageStage = document.createElement('div');
-    imageStage.className = 'pangram-gallery-card__image-stage';
+    imageStage.className = 'deslop-card__image-stage';
     imageStage.append(imageFrame);
 
     const body = document.createElement('div');
-    body.className = 'pangram-gallery-card__body';
-    const notice = createText('p', 'pangram-gallery-card__notice', '');
+    body.className = 'deslop-card__body';
+    const notice = createText('p', 'deslop-card__notice', '');
     notice.hidden = true;
-    const title = createText('p', 'pangram-gallery-card__title', '');
-    const description = createText('p', 'pangram-gallery-card__description', '');
+    const title = createText('p', 'deslop-card__title', '');
+    const description = createText('p', 'deslop-card__description', '');
     const postMeta = document.createElement('div');
-    postMeta.className = 'pangram-gallery-card__post-meta';
+    postMeta.className = 'deslop-card__post-meta';
     const byline = document.createElement('span');
-    byline.className = 'pangram-gallery-card__byline';
+    byline.className = 'deslop-card__byline';
     const author = document.createElement('a');
-    author.className = 'pangram-gallery-card__author';
+    author.className = 'deslop-card__author';
     author.target = '_blank';
     author.rel = 'noreferrer';
     const verdictChip = createText(
       'span',
-      'pangram-gallery-card__verdict',
+      'deslop-card__verdict',
       formatVerdict(verdict)
     );
     verdictChip.setAttribute('aria-label', `Pangram verdict: ${verdictLabel}`);
@@ -221,32 +221,32 @@
       () => {
         // Removing src for offscreen cards is intentional, not a provider failure.
         if (
-          image.dataset.pangramGalleryUnloaded === 'true' ||
-          (!card.isConnected && !card.pangramGalleryRemountPending)
+          image.dataset.deSlopUnloaded === 'true' ||
+          (!card.isConnected && !card.deSlopRemountPending)
         ) return;
         releaseCardTarget(card, target);
       }
     );
 
-    card.pangramGalleryTarget = target;
-    card.pangramGalleryAuthor = getOriginalPostAuthor(target);
-    card.pangramGalleryResident = residencyObserver ? null : true;
-    target.pangramGalleryCard = card;
+    card.deSlopTarget = target;
+    card.deSlopAuthor = getOriginalPostAuthor(target);
+    card.deSlopResident = residencyObserver ? null : true;
+    target.deSlopCard = card;
     residencyObserver?.observe(card);
 
     return card;
   }
 
   function hydrateCard(card, item) {
-    const image = card.querySelector('.pangram-gallery-card__image');
-    const poem = card.querySelector('.pangram-gallery-card__poem');
-    const title = card.querySelector('.pangram-gallery-card__title');
-    const description = card.querySelector('.pangram-gallery-card__description');
-    const byline = card.querySelector('.pangram-gallery-card__byline');
-    const author = card.querySelector('.pangram-gallery-card__author');
-    const notice = card.querySelector('.pangram-gallery-card__notice');
-    const toggle = card.querySelector('.pangram-gallery-card__toggle');
-    const verdict = card.querySelector('.pangram-gallery-card__verdict');
+    const image = card.querySelector('.deslop-card__image');
+    const poem = card.querySelector('.deslop-card__poem');
+    const title = card.querySelector('.deslop-card__title');
+    const description = card.querySelector('.deslop-card__description');
+    const byline = card.querySelector('.deslop-card__byline');
+    const author = card.querySelector('.deslop-card__author');
+    const notice = card.querySelector('.deslop-card__notice');
+    const toggle = card.querySelector('.deslop-card__toggle');
+    const verdict = card.querySelector('.deslop-card__verdict');
     if (!image || !poem || !title || !description || !byline || !author || !notice || !toggle || !verdict) return false;
 
     if (item.kind === 'notice') {
@@ -259,16 +259,16 @@
       image.hidden = true;
       poem.hidden = true;
       toggle.hidden = false;
-      card.classList.add('pangram-gallery-card--notice');
+      card.classList.add('deslop-card--notice');
     } else if (item.kind === 'poem') {
       const lines = Array.isArray(item.lines) ? item.lines : [];
       if (!lines.length) return false;
       poem.textContent = lines.slice(0, 12).join('\n');
       poem.hidden = false;
-      card.classList.add('pangram-gallery-card--poem');
+      card.classList.add('deslop-card--poem');
     } else {
       if (!item.assetUrl) return false;
-      image.dataset.pangramGallerySrc = item.assetUrl;
+      image.dataset.deSlopSrc = item.assetUrl;
       image.alt = item.title
         ? `${item.title}${item.creator ? ` by ${item.creator}` : ''}`
         : 'Replacement image';
@@ -277,7 +277,7 @@
     if (item.kind !== 'notice') {
       title.textContent = item.title;
       description.textContent = getDescription(item);
-      const postAuthor = card.pangramGalleryAuthor;
+      const postAuthor = card.deSlopAuthor;
       if (postAuthor) {
         byline.textContent = 'Original post by ';
         author.href = postAuthor.href;
@@ -287,10 +287,10 @@
         byline.textContent = 'Original post';
       }
     }
-    card.classList.remove('pangram-gallery-card--loading');
+    card.classList.remove('deslop-card--loading');
     card.removeAttribute('aria-busy');
     if (item.kind !== 'poem') {
-      if (card.pangramGalleryResident !== false) restoreCardImage(image);
+      if (card.deSlopResident !== false) restoreCardImage(image);
     }
     return true;
   }
@@ -300,7 +300,7 @@
     if (!state) return;
     const previous = target.previousElementSibling;
     const card =
-      target.pangramGalleryCard ||
+      target.deSlopCard ||
       (previous?.classList.contains(CARD_CLASS) ? previous : null);
     if (card) disposeCard(card);
     target.classList.remove(HIDDEN_CLASS);
@@ -316,15 +316,15 @@
 
     try {
       const response = await sendMessage({
-        type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
+        type: 'DESLOP_GET_REPLACEMENT',
         verdict,
         stream
       });
       if (
         activeGeneration !== generation ||
         !target.isConnected ||
-        (!card.isConnected && !card.pangramGalleryRemountPending) ||
-        target.pangramGalleryCard !== card
+        (!card.isConnected && !card.deSlopRemountPending) ||
+        target.deSlopCard !== card
       ) {
         releaseCardTarget(card, target);
         return;
@@ -342,7 +342,7 @@
 
   function restoreCommentTarget(target) {
     if (!target?.hasAttribute?.(COMMENT_STATE_ATTRIBUTE)) return;
-    const treatment = target.pangramGalleryCommentTreatment;
+    const treatment = target.deSlopCommentTreatment;
     treatment?.original?.classList?.remove(COMMENT_ORIGINAL_CLASS);
     treatment?.clowns?.remove?.();
     target.querySelectorAll?.(`.${COMMENT_ORIGINAL_CLASS}`).forEach((element) => {
@@ -351,7 +351,7 @@
     target.querySelectorAll?.(`.${COMMENT_CLOWNS_CLASS}`).forEach((element) => {
       element.remove();
     });
-    target.pangramGalleryCommentTreatment = null;
+    target.deSlopCommentTreatment = null;
     target.removeAttribute(COMMENT_STATE_ATTRIBUTE);
   }
 
@@ -397,7 +397,7 @@
     root.classList.add(COMMENT_ORIGINAL_CLASS);
     root.after(clowns);
 
-    commentTarget.pangramGalleryCommentTreatment = { original: root, clowns };
+    commentTarget.deSlopCommentTreatment = { original: root, clowns };
     commentTarget.setAttribute(COMMENT_STATE_ATTRIBUTE, 'clowned');
   }
 
@@ -446,7 +446,7 @@
       );
     }
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'initial-scan-complete');
+    documentRoot?.setAttribute('data-deslop-boot', 'initial-scan-complete');
   }
 
   function replaceCleanupTarget(target, cleanupType, activeGeneration) {
@@ -476,25 +476,25 @@
   }
 
   function scheduleCardRemount(card, target) {
-    if (card?.pangramGalleryRemountPending) return true;
+    if (card?.deSlopRemountPending) return true;
     if (
       !card ||
       !target?.isConnected ||
-      target.pangramGalleryCard !== card ||
+      target.deSlopCard !== card ||
       !target.hasAttribute(STATE_ATTRIBUTE) ||
       !target.classList.contains(HIDDEN_CLASS) ||
-      card.pangramGalleryRemountCount >= 2
+      card.deSlopRemountCount >= 2
     ) {
       return false;
     }
 
-    card.pangramGalleryRemountCount += 1;
-    card.pangramGalleryRemountPending = true;
-    card.pangramGalleryRemountTimer = window.setTimeout(() => {
-      card.pangramGalleryRemountTimer = null;
+    card.deSlopRemountCount += 1;
+    card.deSlopRemountPending = true;
+    card.deSlopRemountTimer = window.setTimeout(() => {
+      card.deSlopRemountTimer = null;
       if (
         !target.isConnected ||
-        target.pangramGalleryCard !== card ||
+        target.deSlopCard !== card ||
         !target.hasAttribute(STATE_ATTRIBUTE) ||
         !target.classList.contains(HIDDEN_CLASS)
       ) {
@@ -503,7 +503,7 @@
       }
 
       target.before(card);
-      card.pangramGalleryRemountPending = false;
+      card.deSlopRemountPending = false;
     }, 80);
     return true;
   }
@@ -520,7 +520,7 @@
         }
         for (const card of cards) {
           if (card.isConnected) continue;
-          const target = card.pangramGalleryTarget;
+          const target = card.deSlopTarget;
           if (scheduleCardRemount(card, target)) continue;
           releaseCardTarget(card, target);
         }
@@ -533,7 +533,7 @@
 
         for (const target of targets) {
           if (target.isConnected) continue;
-          const card = target.pangramGalleryCard;
+          const card = target.deSlopCard;
           if (card && core.isOrphanedCard(card)) releaseCardTarget(card, target);
         }
       }
@@ -550,7 +550,7 @@
       window.setTimeout(() => {
         scanInitialDocument();
         documentRoot?.setAttribute(
-          'data-pangram-gallery-boot',
+          'data-deslop-boot',
           'catch-up-scan-complete'
         );
       }, delay);
@@ -571,7 +571,7 @@
   async function refreshSettings() {
     generation += 1;
     settings = await loadSettings();
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'settings-loaded');
+    documentRoot?.setAttribute('data-deslop-boot', 'settings-loaded');
     restoreAll();
     scheduleInitialScan();
   }
@@ -599,7 +599,7 @@
     attributeFilter: ['data-pangram-scanned'],
     characterData: true
   });
-  documentRoot?.setAttribute('data-pangram-gallery-boot', 'ready');
+  documentRoot?.setAttribute('data-deslop-boot', 'ready');
   scheduleStartupCatchUpScans();
 
   chrome.storage.onChanged.addListener((_changes, areaName) => {
@@ -607,7 +607,7 @@
   });
 
   void refreshSettings().catch((error) => {
-    documentRoot?.setAttribute('data-pangram-gallery-boot', 'boot-error');
+    documentRoot?.setAttribute('data-deslop-boot', 'boot-error');
     console.error('De-Slop failed to start', error);
   });
 })();

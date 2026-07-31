@@ -110,7 +110,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'PANGRAM_GALLERY_GET_REPLACEMENT') return false;
+  if (message?.type !== 'DESLOP_GET_REPLACEMENT') return false;
 
   (async () => {
     try {

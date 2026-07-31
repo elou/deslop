@@ -4,7 +4,7 @@ De-Slop follows semantic versioning from its first cumulative GitHub release.
 
 ## Unreleased
 
-- Renamed the installed extension from Pangram Gallery to De-Slop and replaced its icon with 💩.
+- Renamed the repository, package, local folder, and internal extension namespace to De-Slop.
 - Replaced the museum, PoetryDB, and APOD options with Painting Classics, Freeverse Classic Poetry, experimental Modern Art, and NASA Deep Space streams.
 - Added live public-domain checks for Painting Classics and an author-balanced Freeverse poem source.
 - Added a bounded WikiArt research stream and NASA Image and Video Library asset selection.
@@ -19,9 +19,9 @@ De-Slop follows semantic versioning from its first cumulative GitHub release.
 - Fixed AI-Assisted routing so its separate stream selection is honored.
 - Added comment-only 🤡 treatment for Pangram-marked comments, preserving the parent post and accessible original comment text.
 - Hardened promoted and Suggested cleanup to use only explicit, owned LinkedIn signals; profile Featured items remain visible and mutation handling no longer rescans the full feed.
-- Fixed promoted and Suggested cleanup when Pangram marks an already-rendered feed item after Gallery's initial scan.
+- Fixed promoted and Suggested cleanup when Pangram marks an already-rendered feed item after De-Slop's initial scan.
 - Fixed infinite-scroll verdicts when Pangram hydrates an existing badge's text node after the post is mounted.
-- Redesigned all Gallery card types with a rounded editorial shell, centered media stage, creator/date detail, linked original-post author, compact Unhide control, and right-aligned Pangram verdict.
+- Redesigned all De-Slop card types with a rounded editorial shell, centered media stage, creator/date detail, linked original-post author, compact Unhide control, and right-aligned Pangram verdict.
 - Delayed offscreen cards now defer image loading until they are near the viewport.
 
 ## 0.2.0 — 2026-07-30

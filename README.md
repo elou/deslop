@@ -22,11 +22,11 @@ The extension is designed to work anywhere Pangram adds its feed badges. LinkedI
 
 ## Install from GitHub
 
-1. Download the [latest release](https://github.com/elou/pangram-gallery/releases/latest) and unzip it.
+1. Download the [latest release](https://github.com/elou/deslop/releases/latest) and unzip it.
 2. Open Chrome and go to `chrome://extensions`.
 3. Turn on **Developer mode**.
 4. Choose **Load unpacked**.
-5. Select the unzipped `pangram-gallery` folder.
+5. Select the unzipped `deslop` folder.
 6. Keep the Pangram extension installed and signed in.
 
 Open De-Slop from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI, Mixed, and AI-Assisted. Choose **❌ Hide AI completely** in any dropdown to remove matching posts and leave a De-slopped notice. The separate **💸 Hide promoted posts** and **🦟 Hide suggested** filters can either render a chosen stream or leave compact cleanup notices.
@@ -35,7 +35,7 @@ Chrome will report that the extension can read and change data on websites. That
 
 ## Comments
 
-When Pangram marks a comment as AI, Gallery keeps the post and comment thread in place. Only the comment text becomes one 🤡 per visible word; the original comment remains available to screen readers. This treatment applies only to Pangram's explicit comment boundary and does not affect a human-authored parent post.
+When Pangram marks a comment as AI, De-Slop keeps the post and comment thread in place. Only the comment text becomes one 🤡 per visible word; the original comment remains available to screen readers. This treatment applies only to Pangram's explicit comment boundary and does not affect a human-authored parent post.
 
 ## Privacy and storage
 
