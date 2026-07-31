@@ -118,22 +118,26 @@ test('renders poem lines inside the same stable replacement frame', () => {
   );
 });
 
-test('uses compact metadata controls below the artwork', () => {
+test('uses a footer row for the existing source and unhide control', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*500 20px\/1\.2 -apple-system/s
+    /\.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__location\s*\{[^}]*margin-block:\s*2px 16px;[^}]*color:\s*inherit;/s
+    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*520 30px\/1\.15 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source,\s*\n\.pangram-gallery-card__toggle\s*\{[^}]*margin-block-start:\s*6px;[^}]*color:\s*#999;/s
+    /\.pangram-gallery-card__location\s*\{[^}]*margin-block:\s*10px 0;[^}]*font:\s*400 20px\/1\.35 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px 10px;/s
+    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*font:\s*400 17px\/1\.3 -apple-system/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*44px;[^}]*text-transform:\s*uppercase;/s
   );
 });
 
