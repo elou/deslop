@@ -63,11 +63,11 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*64px\s+48px\s+28px;[^}]*background:\s*inherit;/s
   );
 });
 
-test('show original collapses the art card while keeping its toggle available', () => {
+test('unhide collapses the replacement card while keeping its control available', () => {
   assert.match(
     contentCss,
     /\.pangram-gallery-card--original-visible\s*\{[^}]*block-size:\s*0;/s
@@ -78,9 +78,10 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /body\.append\(notice, title, location, toggle\)/,
-    'the original toggle should sit below the replacement metadata'
+    /body\.append\(notice, title, description, postMeta\)/,
+    'the control should sit in the card metadata row'
   );
+  assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
 });
 
 test('constrains portrait and landscape artwork to the reserved frame', () => {
@@ -112,22 +113,45 @@ test('renders poem lines inside the same stable replacement frame', () => {
   );
 });
 
-test('uses compact metadata controls below the artwork', () => {
+test('uses the editorial card anatomy from the visual reference', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*500 20px\/1\.2 -apple-system/s
+    /\.pangram-gallery-card\s*\{[^}]*border-radius:\s*14px;[^}]*box-shadow:\s*0 18px 44px/s,
+    'the replacement should be a softly shadowed rounded surface'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__location\s*\{[^}]*margin-block:\s*2px 16px;[^}]*color:\s*inherit;/s
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*border-radius:\s*14px;/s,
+    'artwork should be centered in a bounded, rounded frame'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source,\s*\n\.pangram-gallery-card__toggle\s*\{[^}]*margin-block-start:\s*6px;[^}]*color:\s*#999;/s
+    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*520 30px\/1\.15 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px 10px;/s
+    /\.pangram-gallery-card__description\s*\{[^}]*font:\s*400 20px\/1\.35 -apple-system/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__post-meta\s*\{[^}]*display:\s*flex;[^}]*margin-block-start:\s*34px;[^}]*min-block-size:\s*44px;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__toggle\s*\{[^}]*min-block-size:\s*44px;[^}]*text-transform:\s*uppercase;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict\s*\{[^}]*margin-inline-start:\s*auto;[^}]*background:\s*#ffe2e5;/s
+  );
+  assert.match(
+    contentSource,
+    /postMeta\.append\(byline, toggle, verdictChip\)/,
+    'every card should include author, unhide, and Pangram verdict controls'
   );
 });
 
@@ -138,13 +162,17 @@ test('sends each Pangram verdict to the selected stream router', () => {
   );
 });
 
-test('renders the compact slop-cleansed notice without an original toggle', () => {
+test('renders the compact slop-cleansed notice with an unhide control', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
   assert.match(contentSource, /☢️ Slop cleansed/);
   assert.match(contentSource, /pangram-gallery-card--notice/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card--notice \.pangram-gallery-card__image-stage\s*\{[^}]*display:\s*none;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;/s
   );
 });
 
