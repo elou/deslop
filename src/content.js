@@ -121,10 +121,7 @@
   function createCard(verdict, target) {
     const card = document.createElement('aside');
     card.className = `${CARD_CLASS} pangram-gallery-card--loading`;
-    card.setAttribute(
-      'role',
-      target.getAttribute('role') === 'listitem' ? 'listitem' : 'region'
-    );
+    card.setAttribute('role', 'region');
     const verdictLabel = verdict === 'mixed'
       ? 'Mixed'
       : verdict === 'ai-assisted'
@@ -272,10 +269,10 @@
   function restoreTarget(target) {
     const state = target.getAttribute(STATE_ATTRIBUTE);
     if (!state) return;
-    const previous = target.previousElementSibling;
+    const first = target.firstElementChild;
     const card =
       target.pangramGalleryCard ||
-      (previous?.classList.contains(CARD_CLASS) ? previous : null);
+      (first?.classList.contains(CARD_CLASS) ? first : null);
     if (card) disposeCard(card);
     target.classList.remove(HIDDEN_CLASS);
     target.removeAttribute(STATE_ATTRIBUTE);
@@ -285,7 +282,7 @@
     if (target.getAttribute(STATE_ATTRIBUTE)) return;
     target.setAttribute(STATE_ATTRIBUTE, 'pending');
     const card = createCard(verdict, target);
-    target.before(card);
+    target.prepend(card);
     target.classList.add(HIDDEN_CLASS);
 
     try {

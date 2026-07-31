@@ -12,11 +12,11 @@ const contentCss = fs.readFileSync(
   'utf8'
 );
 
-test('mounts a reserved replacement card before requesting museum content', () => {
+test('mounts a reserved replacement card inside the stable feed item before requesting content', () => {
   const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
   const replaceTargetEnd = contentSource.indexOf('\n  function processBadges', replaceTargetStart);
   const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
-  const mountIndex = replaceTargetSource.indexOf('target.before(card)');
+  const mountIndex = replaceTargetSource.indexOf('target.prepend(card)');
   const requestIndex = replaceTargetSource.indexOf('await sendMessage');
 
   assert.notEqual(mountIndex, -1, 'replacement card should be mounted');
@@ -25,6 +25,19 @@ test('mounts a reserved replacement card before requesting museum content', () =
     mountIndex < requestIndex,
     'the reserved card must mount before the museum request starts'
   );
+});
+
+test('hides only LinkedIn content children while keeping the in-target card visible', () => {
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-original-hidden\s*>\s*:not\(\.pangram-gallery-card\)\s*\{[^}]*display:\s*none\s*!important;/s
+  );
+  assert.doesNotMatch(
+    contentCss,
+    /\.pangram-gallery-original-hidden\s*\{[^}]*display:\s*none\s*!important;/s,
+    'the feed item itself must remain mounted for LinkedIn React reconciliation'
+  );
+  assert.match(contentSource, /card\.setAttribute\('role', 'region'\)/);
 });
 
 test('does not hydrate a delayed image after its card was marked offscreen', () => {
@@ -77,6 +90,11 @@ test('show original collapses the art card while keeping its toggle available', 
     'the original toggle should sit in the post metadata row'
   );
   assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
+  assert.match(
+    contentSource,
+    /const first = target\.firstElementChild;[\s\S]*first\?\.classList\.contains\(CARD_CLASS\)/,
+    'restore should recover a nested card even if its expando reference is lost'
+  );
 });
 
 test('constrains portrait and landscape artwork to the reserved frame', () => {

@@ -1,4 +1,4 @@
-.pangram-gallery-original-hidden {
+.pangram-gallery-original-hidden > :not(.pangram-gallery-card) {
   display: none !important;
 }
 
