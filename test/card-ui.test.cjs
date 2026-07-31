@@ -147,10 +147,9 @@ test('links replacement artwork and its title to the item source', () => {
 });
 
 test('shows the Pangram verdict at the right of the replacement footer', () => {
-  assert.match(
-    contentSource,
-    /const verdictChip = createText\(\s*'span',\s*'pangram-gallery-card__verdict',\s*`🤖 \$\{verdictLabel\} ›`\s*\);/s
-  );
+  assert.match(contentSource, /pangram-gallery-card__verdict/);
+  assert.match(contentSource, /verdict === 'promoted'/);
+  assert.match(contentSource, /verdict === 'suggested'/);
   assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
@@ -188,9 +187,27 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
   );
 });
 
+test('resolves the original author from the post control menu and rejects feed navigation URLs', () => {
+  assert.match(
+    contentSource,
+    /button\[aria-label\^="Open control menu for post by "\]/
+  );
+  assert.match(contentSource, /data-pangram-author-handle/);
+  assert.match(contentSource, /function isOriginalPostPermalink\(/);
+  assert.match(contentSource, /function isOriginalAuthorProfile\(/);
+  assert.match(contentSource, /function scheduleOriginalMetadataRefresh\(/);
+});
+
 test('processes promoted feed targets independently of Pangram verdict badges', () => {
   assert.match(contentSource, /function processPromotedTargets\(/);
   assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
   assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
   assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'promoted'\)/);
+});
+
+test('processes Suggested feed targets independently of Pangram verdict badges', () => {
+  assert.match(contentSource, /function processSuggestedTargets\(/);
+  assert.match(contentSource, /core\.collectSuggestedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectSuggestedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'suggested'\)/);
 });

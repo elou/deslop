@@ -65,3 +65,10 @@ test('offers a separate promoted-post cleanup control', () => {
   assert.match(optionsHtml, /id="stream-promoted"/);
   assert.match(optionsSource, /hide-promoted/);
 });
+
+test('offers a separate Suggested-post cleanup control', () => {
+  assert.match(optionsHtml, /id="hide-suggested"/);
+  assert.match(optionsHtml, /🦟 Hide suggested/);
+  assert.match(optionsHtml, /id="stream-suggested"/);
+  assert.match(optionsSource, /hide-suggested/);
+});
