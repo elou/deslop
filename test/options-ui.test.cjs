@@ -16,15 +16,16 @@ const optionsCss = fs.readFileSync(
   'utf8'
 );
 
-test('offers poetry and the supported live streams', () => {
+test('offers the supported live streams', () => {
   for (const label of [
-    'Art',
-    'Poetry',
-    'NASA space',
+    'Painting Classics',
+    'Classic Poetry',
+    'Modern Art (experimental)',
+    'Deep Space',
     'New Yorker latest',
     'New Yorker cartoons'
   ]) {
-    assert.match(optionsSource, new RegExp(`'${label}'`));
+    assert.ok(optionsSource.includes(`'${label}'`), `missing stream label: ${label}`);
   }
 });
 
@@ -41,7 +42,7 @@ test('switches between one shared stream and per-verdict stream menus', () => {
   );
 });
 
-test('only shows museum controls when an active stream uses art', () => {
-  assert.match(optionsHtml, /id="art-sources"/);
-  assert.match(optionsSource, /activeStreams\.includes\('art'\)/);
+test('does not expose removed museum source controls', () => {
+  assert.doesNotMatch(optionsHtml, /provider-met|provider-artic|art-sources/);
+  assert.doesNotMatch(optionsSource, /PoetryDB|NASA space|museum/i);
 });

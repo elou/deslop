@@ -16,6 +16,33 @@ assert.equal(
   'Pangram Gallery must run in the same child frames that Pangram scans'
 );
 
+const requiredHosts = [
+  'https://www.wikidata.org/*',
+  'https://commons.wikimedia.org/*',
+  'https://upload.wikimedia.org/*',
+  'https://thefreeverse.org/*',
+  'https://raw.githubusercontent.com/*',
+  'https://datasets-server.huggingface.co/*',
+  'https://images-api.nasa.gov/*',
+  'https://images-assets.nasa.gov/*',
+  'https://www.newyorker.com/*',
+  'https://media.newyorker.com/*'
+];
+for (const host of requiredHosts) {
+  assert.ok(manifest.host_permissions?.includes(host), `Missing host permission: ${host}`);
+}
+for (const removedHost of [
+  'https://collectionapi.metmuseum.org/*',
+  'https://images.metmuseum.org/*',
+  'https://api.artic.edu/*',
+  'https://www.artic.edu/*',
+  'https://poetrydb.org/*',
+  'https://api.nasa.gov/*',
+  'https://apod.nasa.gov/*'
+]) {
+  assert.ok(!manifest.host_permissions?.includes(removedHost), `Removed host still present: ${removedHost}`);
+}
+
 const referencedFiles = [
   manifest.background.service_worker,
   manifest.action?.default_popup,

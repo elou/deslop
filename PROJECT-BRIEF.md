@@ -21,9 +21,10 @@ A small group of Pangram users who install the unpacked extension from GitHub.
 - Offer an option to include `Mixed` verdicts.
 - Let people choose from supported content streams.
 - Let people use one stream for all selected verdicts or route AI and Mixed differently.
-- Start with public-domain artwork from The Met and Art Institute of Chicago.
+- Start with a recognizable public-domain Painting Classics canon sourced through Wikidata and Wikimedia Commons.
+- Include a Classic Poetry stream from Freeverse, an experimental Modern Art stream from WikiArt's research corpus, and a Deep Space stream from NASA's Image and Video Library.
 - Render a full-size gallery interlude with the artwork centered at 90% width.
-- Reserve a stable 4:3 loading frame and metadata area before museum content arrives.
+- Reserve a stable 4:3 loading frame and metadata area before remote source content arrives.
 - Keep the original collapsed behind a `Show original` control.
 - Observe new feed items as infinite-scroll pages append them.
 - Fetch media at display time without persisting image bytes.

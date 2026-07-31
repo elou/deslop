@@ -4,14 +4,14 @@ const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
   styleMode: 'same',
-  streams: { ai: 'art', mixed: 'art' },
-  providers: { met: true, artic: true }
+  streams: { ai: 'painting-classics', mixed: 'painting-classics' }
 };
 
 const STREAM_IDS = new Set([
-  'art',
-  'poetry',
-  'nasa',
+  'painting-classics',
+  'classic-poetry',
+  'modern-art',
+  'deep-space',
   'newyorker-latest',
   'newyorker-cartoons'
 ]);
@@ -24,12 +24,12 @@ function readSettings() {
         replaceMixed: value.replaceMixed === true,
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
-          ai: STREAM_IDS.has(value.streams?.ai) ? value.streams.ai : 'art',
-          mixed: STREAM_IDS.has(value.streams?.mixed) ? value.streams.mixed : 'art'
-        },
-        providers: {
-          met: value.providers?.met !== false,
-          artic: value.providers?.artic !== false
+          ai: STREAM_IDS.has(value.streams?.ai)
+            ? value.streams.ai
+            : 'painting-classics',
+          mixed: STREAM_IDS.has(value.streams?.mixed)
+            ? value.streams.mixed
+            : 'painting-classics'
         }
       });
     });
@@ -49,20 +49,12 @@ chrome.runtime.onInstalled.addListener(() => {
           : DEFAULT_SETTINGS.replaceMixed,
       styleMode: current.styleMode === 'different' ? 'different' : 'same',
       streams: {
-        ai: STREAM_IDS.has(current.streams?.ai) ? current.streams.ai : 'art',
+        ai: STREAM_IDS.has(current.streams?.ai)
+          ? current.streams.ai
+          : 'painting-classics',
         mixed: STREAM_IDS.has(current.streams?.mixed)
           ? current.streams.mixed
-          : 'art'
-      },
-      providers: {
-        met:
-          typeof current.providers?.met === 'boolean'
-            ? current.providers.met
-            : true,
-        artic:
-          typeof current.providers?.artic === 'boolean'
-            ? current.providers.artic
-            : true
+          : 'painting-classics'
       }
     });
   });

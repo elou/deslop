@@ -4,19 +4,16 @@
     replaceMixed: false,
     styleMode: 'same',
     streams: Object.freeze({
-      ai: 'art',
-      mixed: 'art'
-    }),
-    providers: Object.freeze({
-      met: true,
-      artic: true
+      ai: 'painting-classics',
+      mixed: 'painting-classics'
     })
   });
 
   const STREAM_IDS = Object.freeze([
-    'art',
-    'poetry',
-    'nasa',
+    'painting-classics',
+    'classic-poetry',
+    'modern-art',
+    'deep-space',
     'newyorker-latest',
     'newyorker-cartoons'
   ]);
@@ -36,26 +33,6 @@
     const input = value && typeof value === 'object' ? value : {};
     const inputStreams =
       input.streams && typeof input.streams === 'object' ? input.streams : {};
-    const inputProviders =
-      input.providers && typeof input.providers === 'object'
-        ? input.providers
-        : {};
-
-    const providers = {
-      met:
-        typeof inputProviders.met === 'boolean'
-          ? inputProviders.met
-          : DEFAULT_SETTINGS.providers.met,
-      artic:
-        typeof inputProviders.artic === 'boolean'
-          ? inputProviders.artic
-          : DEFAULT_SETTINGS.providers.artic
-    };
-
-    if (!providers.met && !providers.artic) {
-      providers.met = true;
-    }
-
     return {
       enabled:
         typeof input.enabled === 'boolean'
@@ -73,8 +50,7 @@
         mixed: STREAM_IDS.includes(inputStreams.mixed)
           ? inputStreams.mixed
           : DEFAULT_SETTINGS.streams.mixed
-      },
-      providers
+      }
     };
   }
 
@@ -138,7 +114,11 @@
 
     if (postHost) {
       return (
-        host.closest?.('article, [role="article"], [role="listitem"]') || host
+        host.closest?.(
+          '.fie-impression-container, li[data-testid="carousel-child-container"]'
+        ) ||
+        host.closest?.('article, [role="article"], [role="listitem"]') ||
+        host
       );
     }
 

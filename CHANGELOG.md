@@ -2,9 +2,15 @@
 
 Pangram Gallery follows semantic versioning from its first cumulative GitHub release.
 
+## Unreleased
+
+- Replaced the museum, PoetryDB, and APOD options with Painting Classics, Freeverse Classic Poetry, experimental Modern Art, and NASA Deep Space streams.
+- Added live public-domain checks for Painting Classics and an author-balanced Freeverse poem source.
+- Added a bounded WikiArt research stream and NASA Image and Video Library asset selection.
+
 ## 0.2.0 — 2026-07-30
 
-- Added Art, Poetry, NASA Space, New Yorker Latest, and NextML Caption Contest cartoon streams.
+- Added Painting Classics, Classic Poetry, Modern Art (experimental), Deep Space, New Yorker Latest, and NextML Caption Contest cartoon streams.
 - Added a compact same-versus-different mode for routing AI and Mixed verdicts.
 - Added stable poetry cards with preserved line breaks and source attribution.
 - Capped New Yorker feed images at 960px and skipped animated GIF thumbnails to limit feed memory use.
@@ -39,5 +45,4 @@ Pangram Gallery follows semantic versioning from its first cumulative GitHub rel
 
 - Added site-agnostic Pangram badge detection for infinite-scroll feeds.
 - Replaced AI-labeled posts by default, with an option to include Mixed.
-- Added public-domain providers for The Met and Art Institute of Chicago.
-- Added source controls, Chrome sync settings, and unpacked installation instructions.
+- Added the initial source controls, Chrome sync settings, and unpacked installation instructions.

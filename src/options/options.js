@@ -1,9 +1,10 @@
 (function setUpOptions() {
   const core = globalThis.PangramGalleryCore;
   const STREAM_OPTIONS = [
-    ['art', 'Art'],
-    ['poetry', 'Poetry'],
-    ['nasa', 'NASA space'],
+    ['painting-classics', 'Painting Classics'],
+    ['classic-poetry', 'Classic Poetry'],
+    ['modern-art', 'Modern Art (experimental)'],
+    ['deep-space', 'Deep Space'],
     ['newyorker-latest', 'New Yorker latest'],
     ['newyorker-cartoons', 'New Yorker cartoons']
   ];
@@ -14,9 +15,6 @@
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
     streamMixed: document.querySelector('#stream-mixed'),
-    artSources: document.querySelector('#art-sources'),
-    met: document.querySelector('#provider-met'),
-    artic: document.querySelector('#provider-artic'),
     status: document.querySelector('#save-status')
   };
   let styleMode = 'same';
@@ -54,17 +52,9 @@
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
-    controls.met.checked = settings.providers.met;
-    controls.artic.checked = settings.providers.artic;
     controls.styleModeToggle.textContent =
       styleMode === 'same' ? 'Style each differently' : 'Style the same';
     document.body.dataset.styleMode = styleMode;
-
-    const activeStreams =
-      styleMode === 'same'
-        ? [settings.streams.ai]
-        : [settings.streams.ai, settings.streams.mixed];
-    controls.artSources.hidden = !activeStreams.includes('art');
   }
 
   function showStatus(message) {
@@ -76,11 +66,6 @@
   }
 
   async function save() {
-    if (!controls.met.checked && !controls.artic.checked) {
-      controls.met.checked = true;
-      showStatus('Keep at least one source on');
-    }
-
     const settings = core.normalizeSettings({
       enabled: controls.enabled.checked,
       replaceMixed: controls.replaceMixed.checked,
@@ -91,10 +76,6 @@
             ? controls.streamShared.value
             : controls.streamAi.value,
         mixed: controls.streamMixed.value
-      },
-      providers: {
-        met: controls.met.checked,
-        artic: controls.artic.checked
       }
     });
     await setSettings(settings);
@@ -107,9 +88,7 @@
     controls.replaceMixed,
     controls.streamShared,
     controls.streamAi,
-    controls.streamMixed,
-    controls.met,
-    controls.artic
+    controls.streamMixed
   ]) {
     control.addEventListener('change', () => void save());
   }

@@ -51,8 +51,7 @@
         enabled: true,
         replaceMixed: true,
         styleMode: 'different',
-        streams: { ai: 'art', mixed: 'poetry' },
-        providers: { met: true, artic: true }
+        streams: { ai: 'painting-classics', mixed: 'classic-poetry' }
       };
       globalThis.chrome = {
         runtime: {
@@ -64,7 +63,7 @@
                 ok: true,
                 item: {
                   kind: 'poem',
-                  id: 'poetry-hope',
+                  id: 'freeverse-hope',
                   title: '“Hope” is the thing with feathers',
                   creator: 'Emily Dickinson',
                   lines: [
@@ -74,9 +73,9 @@
                     'And never stops – at all –'
                   ],
                   location: 'Emily Dickinson',
-                  sourceUrl: 'https://poetrydb.org',
-                  rights: 'PoetryDB API',
-                  provider: 'PoetryDB'
+                  sourceUrl: 'https://thefreeverse.org/poem/Emily-Dickinson/Hope/',
+                  rights: 'US public domain',
+                  provider: 'Freeverse'
                 }
               });
               return;
@@ -85,15 +84,15 @@
               ok: true,
               item: {
                 kind: 'image',
-                id: 'met-436535',
-                assetUrl: 'https://images.metmuseum.org/CRDImages/ep/web-large/DT1567.jpg',
+                id: 'painting-classics-q12418',
+                assetUrl: 'https://upload.wikimedia.org/example.jpg',
                 title: 'Wheat Field with Cypresses',
                 creator: 'Vincent van Gogh',
                 date: '1889',
                 location: 'Saint-Rémy-de-Provence, France',
-                sourceUrl: 'https://www.metmuseum.org/art/collection/search/436535',
-                rights: 'CC0',
-                provider: 'The Met'
+                sourceUrl: 'https://www.wikidata.org/wiki/Q12418',
+                rights: 'Public domain',
+                provider: 'Painting Classics'
               }
             });
           }
@@ -111,7 +110,7 @@
     <main>
       <header>
         <h1>Infinite feed fixture</h1>
-        <p>AI posts become art; Mixed posts become poetry. Human posts remain.</p>
+      <p>AI posts become Painting Classics; Mixed posts become Classic Poetry. Human posts remain.</p>
       </header>
       <section id="feed" aria-label="Feed">
         <article>

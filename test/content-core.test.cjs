@@ -31,14 +31,10 @@ test('defaults to AI-only replacement', () => {
 
   assert.equal(settings.enabled, true);
   assert.equal(settings.replaceMixed, false);
-  assert.deepEqual(JSON.parse(JSON.stringify(settings.providers)), {
-    met: true,
-    artic: true
-  });
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
-    ai: 'art',
-    mixed: 'art'
+    ai: 'painting-classics',
+    mixed: 'painting-classics'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
@@ -48,19 +44,19 @@ test('defaults to AI-only replacement', () => {
 test('routes one shared stream or separate streams per verdict', () => {
   const core = loadCore();
   const shared = core.normalizeSettings({
-    streams: { ai: 'poetry', mixed: 'nasa' }
+    streams: { ai: 'classic-poetry', mixed: 'deep-space' }
   });
   const separate = core.normalizeSettings({
     styleMode: 'different',
-    streams: { ai: 'poetry', mixed: 'nasa' }
+    streams: { ai: 'classic-poetry', mixed: 'deep-space' }
   });
 
-  assert.equal(core.getStreamForVerdict(shared, 'mixed'), 'poetry');
-  assert.equal(core.getStreamForVerdict(separate, 'ai'), 'poetry');
-  assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'nasa');
+  assert.equal(core.getStreamForVerdict(shared, 'mixed'), 'classic-poetry');
+  assert.equal(core.getStreamForVerdict(separate, 'ai'), 'classic-poetry');
+  assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'deep-space');
 });
 
-test('falls back to art for unknown stream choices', () => {
+test('falls back to Painting Classics for unknown stream choices', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({
     styleMode: 'surprise',
@@ -68,22 +64,17 @@ test('falls back to art for unknown stream choices', () => {
   });
 
   assert.equal(settings.styleMode, 'same');
-  assert.equal(settings.streams.ai, 'art');
+  assert.equal(settings.streams.ai, 'painting-classics');
   assert.equal(settings.streams.mixed, 'newyorker-cartoons');
 });
 
-test('can opt into Mixed verdicts and disable a provider', () => {
+test('can opt into Mixed verdicts', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({
-    replaceMixed: true,
-    providers: { met: false }
+    replaceMixed: true
   });
 
   assert.equal(core.shouldReplace('mixed', settings), true);
-  assert.deepEqual(JSON.parse(JSON.stringify(settings.providers)), {
-    met: false,
-    artic: true
-  });
 });
 
 test('disabled mode never replaces a verdict', () => {
@@ -92,16 +83,6 @@ test('disabled mode never replaces a verdict', () => {
 
   assert.equal(core.shouldReplace('ai', settings), false);
   assert.equal(core.shouldReplace('mixed', settings), false);
-});
-
-test('requires at least one enabled provider', () => {
-  const core = loadCore();
-  const settings = core.normalizeSettings({
-    providers: { met: false, artic: false }
-  });
-
-  assert.equal(settings.providers.met, true);
-  assert.equal(settings.providers.artic, false);
 });
 
 test('collects Pangram badges only from added mutation subtrees', () => {
@@ -202,6 +183,28 @@ test('replaces the full feed item for a Pangram post badge', () => {
   };
 
   assert.equal(core.findReplacementTarget(badge), feedItem);
+});
+
+test('replaces the full promoted impression for a Pangram badge', () => {
+  const core = loadCore();
+  const promotedImpression = { id: 'linkedin-promoted-impression' };
+  const postHost = {
+    closest: (selector) => {
+      if (
+        selector ===
+        '.fie-impression-container, li[data-testid="carousel-child-container"]'
+      ) {
+        return promotedImpression;
+      }
+      return null;
+    }
+  };
+  const badge = {
+    closest: (selector) =>
+      selector === '[data-pangram-post-id]' ? postHost : null
+  };
+
+  assert.equal(core.findReplacementTarget(badge), promotedImpression);
 });
 
 test('does not expand a comment-only Pangram badge to the surrounding feed item', () => {

@@ -8,7 +8,7 @@ Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, po
 - Can also replace `Mixed` posts.
 - Uses one content stream for every verdict by default.
 - Can route `AI` and `Mixed` verdicts to different streams.
-- Offers Art, Poetry, NASA Space, New Yorker Latest, and New Yorker Cartoons.
+- Offers Painting Classics, Classic Poetry, Modern Art (experimental), Deep Space, New Yorker Latest, and New Yorker Cartoons.
 - Keeps the original post behind a `Show original` button.
 - Watches for new posts in infinite-scroll feeds.
 - Stores preferences, but does not store downloaded content.
@@ -34,9 +34,10 @@ Pangram Gallery reads verdict labels that Pangram injects into the current page.
 
 ## Content streams
 
-- **Art** — explicit CC0 or public-domain records from [The Met Open Access](https://www.metmuseum.org/policies/frequently-asked-questions-image-and-data-resources) and the [Art Institute of Chicago](https://www.artic.edu/image-licensing).
-- **Poetry** — random poems from the [PoetryDB API](https://poetrydb.org).
-- **NASA space** — images and credits from [NASA Astronomy Picture of the Day](https://apod.nasa.gov/apod/). NASA's `DEMO_KEY` is used, so the stream may temporarily pause under its public rate limit.
+- **Painting Classics** — a recognizable canon from Wikidata's bot-maintained famous-paintings catalog, with live Wikimedia Commons image and public-domain checks.
+- **Classic Poetry** — author-balanced poems from [Freeverse](https://thefreeverse.org/), a 1,009-poem public-domain collection with source provenance.
+- **Modern Art (experimental)** — a curated modern-style slice of the [WikiArt research corpus](https://huggingface.co/datasets/huggan/wikiart). It is labeled noncommercial research because the dataset's rights vary.
+- **Deep Space** — optimized nebula, supernova-remnant, galaxy, and deep-field images from the official [NASA Image and Video Library](https://images.nasa.gov/), rather than weather-focused APOD rotation.
 - **New Yorker latest** — headlines and thumbnails from [The New Yorker's official RSS feed](https://www.newyorker.com/about/feeds).
 - **New Yorker cartoons** — noncommercial Caption Contest cartoons and winning captions from the [NextML dataset](https://nextml.github.io/caption-contest-data/), delivered through AI2's bounded research mirror.
 
