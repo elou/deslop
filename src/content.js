@@ -59,6 +59,26 @@
     return element;
   }
 
+  function getOriginalPostAuthor(target) {
+    const authorLink = target.querySelector?.(
+      '.update-components-actor__title a, .feed-shared-actor__title a, a[href*="/in/"], a[href*="/company/"]'
+    );
+    const name = authorLink?.textContent?.trim().replace(/\s+/g, ' ');
+    const href = authorLink?.href;
+    return name && href ? { name, href } : null;
+  }
+
+  function formatVerdict(verdict) {
+    if (verdict === 'mixed') return '🤖 Mixed';
+    if (verdict === 'ai-assisted') return '🤖 AI-Assisted';
+    return '🤖 AI';
+  }
+
+  function getDescription(item) {
+    const details = [item.creator, item.date].filter(Boolean);
+    return details.join(' · ') || item.credit || item.location || item.provider;
+  }
+
   function unloadCardImage(image) {
     if (!image.dataset.pangramGallerySrc || !image.getAttribute('src')) return;
     image.dataset.pangramGalleryUnloaded = 'true';
@@ -117,11 +137,11 @@
     const toggle = document.createElement('button');
     toggle.className = 'pangram-gallery-card__toggle';
     toggle.type = 'button';
-    toggle.textContent = 'Show original';
+    toggle.textContent = 'Unhide';
     toggle.addEventListener('click', () => {
       const isHidden = target.classList.toggle(HIDDEN_CLASS);
       card.classList.toggle('pangram-gallery-card--original-visible', !isHidden);
-      toggle.textContent = isHidden ? 'Show original' : 'Hide original';
+      toggle.textContent = isHidden ? 'Unhide' : 'Hide';
       toggle.setAttribute('aria-expanded', String(!isHidden));
     });
     toggle.setAttribute('aria-expanded', 'false');
@@ -139,14 +159,23 @@
     const notice = createText('p', 'pangram-gallery-card__notice', '');
     notice.hidden = true;
     const title = createText('p', 'pangram-gallery-card__title', '');
-    const location = createText('p', 'pangram-gallery-card__location', '');
-    body.append(notice, title, location, toggle);
-
-    const source = document.createElement('a');
-    source.className = 'pangram-gallery-card__source';
-    source.target = '_blank';
-    source.rel = 'noreferrer';
-    body.append(source);
+    const description = createText('p', 'pangram-gallery-card__description', '');
+    const postMeta = document.createElement('div');
+    postMeta.className = 'pangram-gallery-card__post-meta';
+    const byline = document.createElement('span');
+    byline.className = 'pangram-gallery-card__byline';
+    const author = document.createElement('a');
+    author.className = 'pangram-gallery-card__author';
+    author.target = '_blank';
+    author.rel = 'noreferrer';
+    const verdictChip = createText(
+      'span',
+      'pangram-gallery-card__verdict',
+      formatVerdict(verdict)
+    );
+    verdictChip.setAttribute('aria-label', `Pangram verdict: ${verdictLabel}`);
+    postMeta.append(byline, toggle, verdictChip);
+    body.append(notice, title, description, postMeta);
 
     card.append(imageStage, body);
 
@@ -162,6 +191,7 @@
     );
 
     card.pangramGalleryTarget = target;
+    card.pangramGalleryAuthor = getOriginalPostAuthor(target);
     card.pangramGalleryResident = residencyObserver ? null : true;
     target.pangramGalleryCard = card;
     residencyObserver?.observe(card);
@@ -173,17 +203,18 @@
     const image = card.querySelector('.pangram-gallery-card__image');
     const poem = card.querySelector('.pangram-gallery-card__poem');
     const title = card.querySelector('.pangram-gallery-card__title');
-    const location = card.querySelector('.pangram-gallery-card__location');
-    const source = card.querySelector('.pangram-gallery-card__source');
+    const description = card.querySelector('.pangram-gallery-card__description');
+    const byline = card.querySelector('.pangram-gallery-card__byline');
+    const author = card.querySelector('.pangram-gallery-card__author');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !poem || !title || !location || !source || !notice) return false;
+    if (!image || !poem || !title || !description || !byline || !author || !notice) return false;
 
     if (item.kind === 'notice') {
       notice.textContent = item.title || '☢️ Slop cleansed';
       notice.hidden = false;
       title.hidden = true;
-      location.hidden = true;
-      source.hidden = true;
+      description.hidden = true;
+      byline.parentElement.hidden = true;
       image.hidden = true;
       poem.hidden = true;
       card.querySelector('.pangram-gallery-card__toggle').hidden = true;
@@ -204,9 +235,16 @@
     }
     if (item.kind !== 'notice') {
       title.textContent = item.title;
-      location.textContent = item.location || item.provider;
-      source.href = item.sourceUrl;
-      source.textContent = `${item.provider} · ${item.rights}`;
+      description.textContent = getDescription(item);
+      const postAuthor = card.pangramGalleryAuthor;
+      if (postAuthor) {
+        byline.textContent = 'Original post by ';
+        author.href = postAuthor.href;
+        author.textContent = postAuthor.name;
+        byline.append(author);
+      } else {
+        byline.textContent = 'Original post';
+      }
     }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');

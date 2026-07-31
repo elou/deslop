@@ -20,6 +20,7 @@ Pangram Gallery follows semantic versioning from its first cumulative GitHub rel
 - Hardened promoted and Suggested cleanup to use only explicit, owned LinkedIn signals; profile Featured items remain visible and mutation handling no longer rescans the full feed.
 - Fixed promoted and Suggested cleanup when Pangram marks an already-rendered feed item after Gallery's initial scan.
 - Fixed infinite-scroll verdicts when Pangram hydrates an existing badge's text node after the post is mounted.
+- Redesigned all Gallery card types with a rounded editorial shell, centered media stage, creator/date detail, linked original-post author, compact Unhide control, and right-aligned Pangram verdict.
 - Delayed offscreen cards now defer image loading until they are near the viewport.
 
 ## 0.2.0 — 2026-07-30

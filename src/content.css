@@ -32,10 +32,10 @@
   position: relative;
   overflow: hidden;
   border: 1px solid var(--pangram-gallery-border);
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--pangram-gallery-surface);
   color: var(--pangram-gallery-ink);
-  box-shadow: none;
+  box-shadow: 0 18px 44px rgba(25, 20, 15, 0.08);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   animation: pangram-gallery-enter 180ms ease-out both;
@@ -58,6 +58,7 @@
   margin: auto;
   object-fit: contain;
   background: var(--pangram-gallery-surface);
+  border-radius: 14px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.1),
     -0.335921px 0.335921px 0.475064px -0.125px #00000007,
@@ -103,7 +104,7 @@
   all: initial;
   display: grid;
   inline-size: 100%;
-  padding: 32px 32px 32px 0;
+  padding: 64px 48px 28px;
   place-items: center;
   background: inherit;
 }
@@ -112,10 +113,11 @@
   all: initial;
   position: relative;
   display: grid;
-  inline-size: 90%;
+  inline-size: min(90%, 560px);
   min-block-size: 280px;
   aspect-ratio: 4 / 3;
   overflow: visible;
+  border-radius: 14px;
   place-items: center;
   background: inherit;
 }
@@ -124,8 +126,8 @@
   all: initial;
   display: block;
   min-inline-size: 0;
-  min-block-size: 144px;
-  padding: 0 5% 36px;
+  min-block-size: 184px;
+  padding: 22px 56px 36px;
   color: inherit;
 }
 
@@ -145,8 +147,8 @@
 .pangram-gallery-card--loading .pangram-gallery-card__poem,
 .pangram-gallery-card--loading .pangram-gallery-card__toggle,
 .pangram-gallery-card--loading .pangram-gallery-card__title,
-.pangram-gallery-card--loading .pangram-gallery-card__location,
-.pangram-gallery-card--loading .pangram-gallery-card__source {
+.pangram-gallery-card--loading .pangram-gallery-card__description,
+.pangram-gallery-card--loading .pangram-gallery-card__post-meta {
   visibility: hidden;
 }
 
@@ -178,7 +180,7 @@
 }
 
 .pangram-gallery-card__title,
-.pangram-gallery-card__location,
+.pangram-gallery-card__description,
 .pangram-gallery-card__notice {
   all: initial;
   display: block;
@@ -187,9 +189,7 @@
 }
 
 .pangram-gallery-card--notice {
-  margin-block: 8px;
-  border-color: transparent;
-  background: transparent;
+  margin-block: 16px;
 }
 
 .pangram-gallery-card--notice .pangram-gallery-card__image-stage {
@@ -198,13 +198,12 @@
 
 .pangram-gallery-card--notice .pangram-gallery-card__body {
   min-block-size: 0;
-  padding-block: 12px;
+  padding: 26px 56px;
 }
 
 .pangram-gallery-card__notice {
-  color: #777;
-  font: 500 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: 0.02em;
+  color: color-mix(in srgb, currentColor 72%, transparent);
+  font: 500 20px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .pangram-gallery-card__notice[hidden] {
@@ -214,40 +213,68 @@
 .pangram-gallery-card__title {
   display: block;
   color: inherit;
-  font: 500 20px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 520 30px/1.15 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.pangram-gallery-card__location {
-  margin-block: 2px 16px;
+.pangram-gallery-card__description {
+  margin-block: 10px 0;
+  color: color-mix(in srgb, currentColor 82%, transparent);
+  font: 400 20px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.pangram-gallery-card__post-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-block-start: 34px;
+  min-block-size: 44px;
+  color: #999;
+  font: 400 17px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.pangram-gallery-card__byline {
+  min-inline-size: 0;
   overflow: hidden;
-  color: inherit;
-  font: 400 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pangram-gallery-card__source,
+.pangram-gallery-card__author,
 .pangram-gallery-card__toggle {
   all: unset;
   box-sizing: border-box;
-  border-radius: 3px;
-  margin-block-start: 6px;
   color: #999;
   cursor: pointer;
-  font: 500 11px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-decoration: none;
+  font: inherit;
 }
 
-.pangram-gallery-card__source {
-  display: inline-block;
+.pangram-gallery-card__author {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .pangram-gallery-card__toggle {
-  display: block;
-  min-block-size: 24px;
-  padding: 10px 10px;
+  flex: none;
+  min-block-size: 44px;
+  padding: 0 14px;
   border: 1px solid var(--pangram-gallery-border);
-  background: transparent;
+  border-radius: 5px;
+  background: var(--pangram-gallery-surface);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 42px;
+  text-transform: uppercase;
+}
+
+.pangram-gallery-card__verdict {
+  flex: none;
+  margin-inline-start: auto;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #ffe2e5;
+  color: #d33b45;
+  font: 650 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .pangram-gallery-card--original-visible {
@@ -280,7 +307,7 @@
   overflow: visible;
 }
 
-.pangram-gallery-card--original-visible .pangram-gallery-card__body > :not(.pangram-gallery-card__toggle) {
+.pangram-gallery-card--original-visible .pangram-gallery-card__body > :not(.pangram-gallery-card__post-meta) {
   display: none;
 }
 
@@ -292,15 +319,26 @@
   z-index: 1;
 }
 
-.pangram-gallery-card__source:hover {
-  text-decoration: underline;
+.pangram-gallery-card--original-visible .pangram-gallery-card__post-meta {
+  display: block;
+  margin: 0;
+  min-block-size: 0;
+}
+
+.pangram-gallery-card--original-visible .pangram-gallery-card__byline,
+.pangram-gallery-card--original-visible .pangram-gallery-card__verdict {
+  display: none;
+}
+
+.pangram-gallery-card__author:hover {
+  color: inherit;
 }
 
 .pangram-gallery-card__toggle:hover {
   background: oklch(0.93 0.012 70);
 }
 
-.pangram-gallery-card__source:focus-visible,
+.pangram-gallery-card__author:focus-visible,
 .pangram-gallery-card__toggle:focus-visible {
   outline: 2px solid oklch(0.55 0.11 28);
   outline-offset: 2px;
@@ -326,11 +364,25 @@
 
 @media (max-width: 480px) {
   .pangram-gallery-card__body {
-    padding-block-end: 28px;
+    padding: 16px 20px 28px;
   }
 
   .pangram-gallery-card__title {
-    font-size: 20px;
+    font-size: 24px;
+  }
+
+  .pangram-gallery-card__description {
+    font-size: 17px;
+  }
+
+  .pangram-gallery-card__post-meta {
+    flex-wrap: wrap;
+    margin-block-start: 24px;
+    font-size: 16px;
+  }
+
+  .pangram-gallery-card__verdict {
+    margin-inline-start: 0;
   }
 
   .pangram-gallery-card__poem {
