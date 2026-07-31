@@ -499,6 +499,72 @@ test('identifies cards whose original feed item was removed', () => {
   );
 });
 
+test('recovers a connected feed item when LinkedIn removes its replacement card', () => {
+  const core = loadCore();
+  const target = { id: 'rerendered-feed-item', isConnected: true };
+  const card = {
+    nodeType: 1,
+    pangramGalleryTarget: target,
+    matches: (selector) => selector === '.pangram-gallery-card',
+    querySelectorAll: () => []
+  };
+  target.pangramGalleryCard = card;
+
+  const recovered = core.collectConnectedTargetsFromRemovedCards(
+    [{ removedNodes: [card] }],
+    '.pangram-gallery-card'
+  );
+
+  assert.equal(recovered.length, 1);
+  assert.equal(recovered[0], target);
+});
+
+test('does not recover a replacement card that LinkedIn only reparented', () => {
+  const core = loadCore();
+  const target = { id: 'reparented-feed-item', isConnected: true };
+  const card = {
+    nodeType: 1,
+    isConnected: true,
+    pangramGalleryTarget: target,
+    matches: (selector) => selector === '.pangram-gallery-card',
+    querySelectorAll: () => []
+  };
+  target.pangramGalleryCard = card;
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectConnectedTargetsFromRemovedCards(
+      [{ removedNodes: [card] }],
+      '.pangram-gallery-card'
+    ))),
+    []
+  );
+});
+
+test('does not recover a stale removed card after a newer card takes ownership', () => {
+  const core = loadCore();
+  const newerCard = { id: 'newer-card' };
+  const target = {
+    id: 'already-replaced-feed-item',
+    isConnected: true,
+    pangramGalleryCard: newerCard
+  };
+  const staleCard = {
+    nodeType: 1,
+    isConnected: false,
+    pangramGalleryTarget: target,
+    matches: (selector) => selector === '.pangram-gallery-card',
+    querySelectorAll: () => []
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectConnectedTargetsFromRemovedCards(
+      [{ removedNodes: [staleCard] }],
+      '.pangram-gallery-card'
+    ))),
+    []
+  );
+});
+
 test('collects a badge when Pangram adds its verdict text after the badge shell', () => {
   const core = loadCore();
   const badge = {

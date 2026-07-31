@@ -13,7 +13,7 @@ assert.ok(manifest.permissions?.includes('storage'));
 assert.equal(
   manifest.content_scripts[0]?.all_frames,
   true,
-  'Pangram Gallery must run in the same child frames that Pangram scans'
+  'De-Slop must run in the same child frames that Pangram scans'
 );
 
 const requiredHosts = [

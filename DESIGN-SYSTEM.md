@@ -1,4 +1,4 @@
-# Pangram Gallery Design System
+# De-Slop Design System
 
 ## Character
 
