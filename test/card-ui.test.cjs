@@ -187,6 +187,41 @@ test('routes suggested cleanup through the selected stream', () => {
   assert.match(contentSource, /replaceCleanupTarget\(target, 'suggested', activeGeneration\)/);
 });
 
+test('remounts only live targets whose replacement card LinkedIn removed', () => {
+  assert.match(contentSource, /collectConnectedTargetsFromRemovedCards/);
+  assert.match(contentSource, /scheduleRemovedCardRecovery\(recoverableTargets\)/);
+  assert.match(contentSource, /classList\?\.contains\(HIDDEN_CLASS\)/);
+  assert.match(contentSource, /pendingRecoveryTargets\.clear\(\)/);
+  assert.doesNotMatch(
+    contentSource,
+    /recoverRemovedCardTargets[\s\S]{0,1200}querySelectorAll\(`?\.fie-impression-container/,
+    'card recovery must revisit only the affected targets, never the feed'
+  );
+});
+
+test('a stale provider response cannot overwrite a newer replacement card', () => {
+  const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
+  const replaceTargetEnd = contentSource.indexOf('\n  function restoreCommentTarget', replaceTargetStart);
+  const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
+
+  assert.match(replaceTargetSource, /!card\.isConnected/);
+  assert.match(replaceTargetSource, /target\.pangramGalleryCard !== card/);
+});
+
+test('clears replacement state from a detached LinkedIn item before it is recycled', () => {
+  const releaseStart = contentSource.indexOf('function releaseCardTarget');
+  const releaseEnd = contentSource.indexOf('\n  function createCard', releaseStart);
+  const releaseSource = contentSource.slice(releaseStart, releaseEnd);
+
+  assert.doesNotMatch(releaseSource, /target\?\.isConnected/);
+  assert.match(releaseSource, /target\.classList\.remove\(HIDDEN_CLASS\)/);
+  assert.match(releaseSource, /target\.removeAttribute\(STATE_ATTRIBUTE\)/);
+  assert.match(
+    contentSource,
+    /if \(card && core\.isOrphanedCard\(card\)\) releaseCardTarget\(card, target\)/
+  );
+});
+
 test('gives promoted cleanup precedence over suggested cleanup', () => {
   assert.match(
     contentSource,
