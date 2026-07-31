@@ -55,6 +55,15 @@
     return element;
   }
 
+  function getOriginalPostAuthor(target) {
+    const link = target.querySelector(
+      '.update-components-actor__title a, .feed-shared-actor__title a, a[href*="/in/"], a[href*="/company/"]'
+    );
+    const name = link?.textContent?.trim().replace(/\s+/g, ' ');
+    if (!name || !link?.href) return null;
+    return { name, href: link.href };
+  }
+
   function unloadCardImage(image) {
     if (!image.dataset.pangramGallerySrc || !image.getAttribute('src')) return;
     image.dataset.pangramGalleryUnloaded = 'true';
@@ -146,10 +155,13 @@
     const location = createText('p', 'pangram-gallery-card__location', '');
     body.append(notice, title, location, toggle);
 
-    const source = document.createElement('a');
+    const source = document.createElement('span');
     source.className = 'pangram-gallery-card__source';
-    source.target = '_blank';
-    source.rel = 'noreferrer';
+    const author = document.createElement('a');
+    author.className = 'pangram-gallery-card__author';
+    author.target = '_blank';
+    author.rel = 'noreferrer';
+    source.append(author);
     body.append(source);
 
     card.append(imageStage, body);
@@ -166,6 +178,7 @@
     );
 
     card.pangramGalleryTarget = target;
+    card.pangramGalleryAuthor = getOriginalPostAuthor(target);
     target.pangramGalleryCard = card;
     residencyObserver?.observe(card);
 
@@ -179,8 +192,9 @@
     const title = card.querySelector('.pangram-gallery-card__title');
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
+    const author = card.querySelector('.pangram-gallery-card__author');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !imageLink || !poem || !title || !location || !source || !notice) return false;
+    if (!image || !imageLink || !poem || !title || !location || !source || !author || !notice) return false;
 
     if (item.kind === 'notice') {
       notice.textContent = item.title || '☢️ Slop cleansed';
@@ -212,8 +226,15 @@
       title.textContent = item.title;
       title.href = item.sourceUrl;
       location.textContent = item.location || item.provider;
-      source.href = item.sourceUrl;
-      source.textContent = `${item.provider} · ${item.rights}`;
+      source.textContent = 'Original post by ';
+      const postAuthor = card.pangramGalleryAuthor;
+      if (postAuthor) {
+        author.href = postAuthor.href;
+        author.textContent = postAuthor.name;
+        source.append(author);
+      } else {
+        source.textContent = 'Original post';
+      }
     }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');

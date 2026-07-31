@@ -158,6 +158,17 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('shows the original post author in the replacement footer', () => {
+  assert.match(contentSource, /function getOriginalPostAuthor\(target\)/);
+  assert.match(contentSource, /card\.pangramGalleryAuthor = getOriginalPostAuthor\(target\)/);
+  assert.match(contentSource, /source\.textContent = 'Original post by ';/);
+  assert.match(contentSource, /author\.href = postAuthor\.href;/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
+  );
+});
+
 test('renders the compact slop-cleansed notice without an original toggle', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
   assert.match(contentSource, /☢️ Slop cleansed/);
