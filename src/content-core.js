@@ -311,8 +311,25 @@
       // a Pangram-scanned feed context before it can produce a cleanup target.
       node.querySelectorAll?.(GENERIC_LABEL_SELECTOR).forEach(collectSignal);
     };
+    const inspectNewlyScannedContext = (record) => {
+      const context = record?.target;
+      if (
+        record?.type !== 'attributes' ||
+        record?.attributeName !== 'data-pangram-scanned' ||
+        context?.nodeType !== 1 ||
+        !context.matches?.(SCANNED_FEED_CONTEXT_SELECTOR)
+      ) {
+        return;
+      }
+
+      // Pangram can mark an already-rendered host after its disclosure was
+      // added. Descend only that newly scanned boundary, never its feed root.
+      if (context.matches?.(GENERIC_LABEL_SELECTOR)) collectSignal(context);
+      context.querySelectorAll?.(GENERIC_LABEL_SELECTOR).forEach(collectSignal);
+    };
 
     for (const record of records || []) {
+      inspectNewlyScannedContext(record);
       inspectMutationTarget(record?.target);
       for (const node of record?.addedNodes || []) inspectAddedSubtree(node);
     }

@@ -272,6 +272,43 @@ test('collects an obfuscated Suggested label from a Pangram-scanned feed context
   );
 });
 
+test('collects a promoted post when Pangram marks an existing host as scanned', () => {
+  const core = loadCore();
+  const feedItem = { id: 'late-scanned-promoted-post' };
+  const scannedContext = {
+    nodeType: 1,
+    matches: (selector) => selector === '[data-pangram-scanned="true"]',
+    closest: () => null,
+    querySelectorAll: (selector) =>
+      selector === 'p, span' ? [promotedLabel] : []
+  };
+  const promotedLabel = {
+    textContent: 'Promoted',
+    matches: (selector) => selector === 'p, span',
+    closest: (selector) => {
+      if (selector === '[data-pangram-scanned="true"]') return scannedContext;
+      if (selector.includes('[role="listitem"]')) return feedItem;
+      return null;
+    }
+  };
+
+  assert.deepEqual(
+    JSON.parse(
+      JSON.stringify(
+        core.collectPromotedTargetsFromMutationRecords([
+          {
+            type: 'attributes',
+            attributeName: 'data-pangram-scanned',
+            target: scannedContext,
+            addedNodes: []
+          }
+        ])
+      )
+    ),
+    [{ id: 'late-scanned-promoted-post' }]
+  );
+});
+
 test('disabled mode never replaces a verdict', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({ enabled: false, replaceMixed: true });

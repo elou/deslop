@@ -171,6 +171,14 @@ test('gives promoted cleanup precedence over suggested cleanup', () => {
   );
 });
 
+test('observes Pangram scanning an existing feed item without rescanning the page', () => {
+  assert.match(contentSource, /attributes:\s*true/);
+  assert.match(
+    contentSource,
+    /attributeFilter:\s*\[\s*['"]data-pangram-scanned['"]\s*\]/
+  );
+});
+
 test('clowns only Pangram-marked AI comments and keeps their words accessible', () => {
   assert.match(contentSource, /core\.findCommentTarget\(badge\)/);
   assert.match(contentSource, /clownCommentTarget\(commentTarget, badge\)/);
