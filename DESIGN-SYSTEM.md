@@ -1,4 +1,4 @@
-# Pangram Gallery Design System
+# De-Slop Design System
 
 ## Character
 
@@ -20,11 +20,11 @@ Quiet, editorial, and gallery-like. The replacement should feel like a small pau
 
 ## Geometry
 
-- Cards use 8px outer radii and 1px neutral borders.
+- Cards use 14px outer radii and 1px neutral borders; artwork uses the same radius.
 - Use a 4px and 8px spacing rhythm.
 - Center artwork at 90% width inside a generously padded stage.
 - Use the speaking-page soft lit-image shadow plus a 1px translucent image edge.
-- Place `Show original` at the lower-right corner of the artwork.
+- Use a three-part metadata area below every replacement stage: title, creator/date line, then an original-post row with an underlined author link, `Unhide`, and a right-aligned Pangram verdict.
 
 ## Motion
 
