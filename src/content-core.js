@@ -2,11 +2,24 @@
   const DEFAULT_SETTINGS = Object.freeze({
     enabled: true,
     replaceMixed: false,
+    styleMode: 'same',
+    streams: Object.freeze({
+      ai: 'art',
+      mixed: 'art'
+    }),
     providers: Object.freeze({
       met: true,
       artic: true
     })
   });
+
+  const STREAM_IDS = Object.freeze([
+    'art',
+    'poetry',
+    'nasa',
+    'newyorker-latest',
+    'newyorker-cartoons'
+  ]);
 
   const VERDICTS = new Map([
     ['ai', 'ai'],
@@ -21,6 +34,8 @@
 
   function normalizeSettings(value = {}) {
     const input = value && typeof value === 'object' ? value : {};
+    const inputStreams =
+      input.streams && typeof input.streams === 'object' ? input.streams : {};
     const inputProviders =
       input.providers && typeof input.providers === 'object'
         ? input.providers
@@ -50,8 +65,23 @@
         typeof input.replaceMixed === 'boolean'
           ? input.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
+      styleMode: input.styleMode === 'different' ? 'different' : 'same',
+      streams: {
+        ai: STREAM_IDS.includes(inputStreams.ai)
+          ? inputStreams.ai
+          : DEFAULT_SETTINGS.streams.ai,
+        mixed: STREAM_IDS.includes(inputStreams.mixed)
+          ? inputStreams.mixed
+          : DEFAULT_SETTINGS.streams.mixed
+      },
       providers
     };
+  }
+
+  function getStreamForVerdict(settingsValue, verdict) {
+    const settings = normalizeSettings(settingsValue);
+    if (settings.styleMode === 'same') return settings.streams.ai;
+    return verdict === 'mixed' ? settings.streams.mixed : settings.streams.ai;
   }
 
   function shouldReplace(verdict, settingsValue) {
@@ -65,12 +95,18 @@
     const badges = new Set();
 
     for (const record of records || []) {
-      if (
-        record?.target?.nodeType === 1 &&
-        typeof record.target.matches === 'function' &&
-        record.target.matches('.pangram-feed-badge')
-      ) {
-        badges.add(record.target);
+      const target = record?.target;
+      if (target?.nodeType === 1) {
+        const badge =
+          typeof target.matches === 'function' &&
+          target.matches('.pangram-feed-badge')
+            ? target
+            : typeof target.closest === 'function'
+              ? target.closest('.pangram-feed-badge')
+              : null;
+        if (badge) {
+          badges.add(badge);
+        }
       }
 
       for (const node of record.addedNodes || []) {
@@ -111,8 +147,10 @@
 
   root.PangramGalleryCore = Object.freeze({
     DEFAULT_SETTINGS,
+    STREAM_IDS,
     classifyBadgeText,
     normalizeSettings,
+    getStreamForVerdict,
     shouldReplace,
     collectBadgesFromMutationRecords,
     isOrphanedCard,

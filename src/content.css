@@ -48,6 +48,35 @@
     -20px 20px 28.28425px -1px #00000019;
 }
 
+.pangram-gallery-card__poem {
+  all: initial;
+  display: block;
+  max-inline-size: 72%;
+  max-block-size: calc(100% - 76px);
+  margin: 0;
+  overflow: hidden;
+  color: oklch(0.25 0.018 55);
+  font: 400 clamp(17px, 2.8vw, 24px)/1.5 Georgia, "Times New Roman", serif;
+  text-wrap: balance;
+  white-space: pre-line;
+}
+
+.pangram-gallery-card__poem[hidden] {
+  display: none;
+}
+
+.pangram-gallery-card--poem .pangram-gallery-card__image-frame {
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, transparent 49.8%, oklch(0.89 0.008 65) 50%, transparent 50.2%)
+      50% 28px / 100% 1px no-repeat,
+    #fff;
+}
+
+.pangram-gallery-card--poem .pangram-gallery-card__image {
+  display: none;
+}
+
 .pangram-gallery-card__image-stage {
   all: initial;
   display: grid;
@@ -91,6 +120,7 @@
 }
 
 .pangram-gallery-card--loading .pangram-gallery-card__image,
+.pangram-gallery-card--loading .pangram-gallery-card__poem,
 .pangram-gallery-card--loading .pangram-gallery-card__toggle,
 .pangram-gallery-card--loading .pangram-gallery-card__title,
 .pangram-gallery-card--loading .pangram-gallery-card__location,
@@ -195,6 +225,7 @@
 }
 
 .pangram-gallery-card--original-visible .pangram-gallery-card__image,
+.pangram-gallery-card--original-visible .pangram-gallery-card__poem,
 .pangram-gallery-card--original-visible .pangram-gallery-card__body {
   display: none;
 }
@@ -248,6 +279,11 @@
 
   .pangram-gallery-card__title {
     font-size: 20px;
+  }
+
+  .pangram-gallery-card__poem {
+    max-inline-size: 78%;
+    font-size: 17px;
   }
 
   .pangram-gallery-card__toggle {

@@ -3,8 +3,18 @@ import { getReplacement } from './providers.mjs';
 const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
+  styleMode: 'same',
+  streams: { ai: 'art', mixed: 'art' },
   providers: { met: true, artic: true }
 };
+
+const STREAM_IDS = new Set([
+  'art',
+  'poetry',
+  'nasa',
+  'newyorker-latest',
+  'newyorker-cartoons'
+]);
 
 function readSettings() {
   return new Promise((resolve) => {
@@ -12,6 +22,11 @@ function readSettings() {
       resolve({
         enabled: value.enabled !== false,
         replaceMixed: value.replaceMixed === true,
+        styleMode: value.styleMode === 'different' ? 'different' : 'same',
+        streams: {
+          ai: STREAM_IDS.has(value.streams?.ai) ? value.streams.ai : 'art',
+          mixed: STREAM_IDS.has(value.streams?.mixed) ? value.streams.mixed : 'art'
+        },
         providers: {
           met: value.providers?.met !== false,
           artic: value.providers?.artic !== false
@@ -32,6 +47,13 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.replaceMixed === 'boolean'
           ? current.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
+      styleMode: current.styleMode === 'different' ? 'different' : 'same',
+      streams: {
+        ai: STREAM_IDS.has(current.streams?.ai) ? current.streams.ai : 'art',
+        mixed: STREAM_IDS.has(current.streams?.mixed)
+          ? current.streams.mixed
+          : 'art'
+      },
       providers: {
         met:
           typeof current.providers?.met === 'boolean'
@@ -52,7 +74,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     try {
       const settings = await readSettings();
-      const item = await getReplacement(settings);
+      const verdict = message.verdict === 'mixed' ? 'mixed' : 'ai';
+      const item = await getReplacement(settings, verdict);
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({

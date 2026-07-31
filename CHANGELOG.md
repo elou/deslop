@@ -2,6 +2,15 @@
 
 Pangram Gallery follows semantic versioning from its first cumulative GitHub release.
 
+## 0.2.0 — 2026-07-30
+
+- Added Art, Poetry, NASA Space, New Yorker Latest, and NextML Caption Contest cartoon streams.
+- Added a compact same-versus-different mode for routing AI and Mixed verdicts.
+- Added stable poetry cards with preserved line breaks and source attribution.
+- Capped New Yorker feed images at 960px and skipped animated GIF thumbnails to limit feed memory use.
+- Used AI2's 600px research mirror for NextML cartoons instead of NextML's multi-megabyte originals.
+- Continued to fetch content directly from provider APIs and RSS without a media store.
+
 ## 0.1.4 — 2026-07-30
 
 - Constrained portrait and landscape artwork to the reserved 4:3 frame.

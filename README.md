@@ -1,15 +1,17 @@
 # Pangram Gallery
 
-Pangram Gallery replaces feed posts that Pangram labels as AI with full-size public-domain artwork. It works by reading the verdict markers Pangram already adds to pages. It does not run its own AI detector.
+Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, poetry, space photography, or New Yorker feed cards. It works by reading the verdict markers Pangram already adds to pages. It does not run its own AI detector.
 
-## What v1 does
+## What it does
 
 - Replaces `AI` posts by default.
 - Can also replace `Mixed` posts.
-- Uses public-domain works from The Met and Art Institute of Chicago.
+- Uses one content stream for every verdict by default.
+- Can route `AI` and `Mixed` verdicts to different streams.
+- Offers Art, Poetry, NASA Space, New Yorker Latest, and New Yorker Cartoons.
 - Keeps the original post behind a `Show original` button.
 - Watches for new posts in infinite-scroll feeds.
-- Stores preferences, but does not store downloaded artwork.
+- Stores preferences, but does not store downloaded content.
 
 The extension is designed to work anywhere Pangram adds its feed badges. LinkedIn, Medium, and X are the first verification targets.
 
@@ -22,22 +24,23 @@ The extension is designed to work anywhere Pangram adds its feed badges. LinkedI
 5. Select the unzipped `pangram-gallery` folder.
 6. Keep the Pangram extension installed and signed in.
 
-Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and artwork sources.
+Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI and another for Mixed.
 
 Chrome will report that the extension can read and change data on websites. That broad permission is required because Pangram can label feeds on any site. Pangram Gallery looks only for Pangram's verdict markers and does not collect or transmit post text.
 
 ## Privacy and storage
 
-Pangram Gallery reads verdict labels that Pangram injects into the current page. It sends no page or post text to its own server because it has no server. Artwork metadata comes directly from museum APIs, and images load from the museums' image services. Chrome sync stores only the extension settings.
+Pangram Gallery reads verdict labels that Pangram injects into the current page. It sends no page or post text to its own server because it has no server. Content comes directly from the selected provider, and Chrome sync stores only the extension settings.
 
-## Source rights
+## Content streams
 
-The default providers expose explicit CC0 or public-domain records:
+- **Art** — explicit CC0 or public-domain records from [The Met Open Access](https://www.metmuseum.org/policies/frequently-asked-questions-image-and-data-resources) and the [Art Institute of Chicago](https://www.artic.edu/image-licensing).
+- **Poetry** — random poems from the [PoetryDB API](https://poetrydb.org).
+- **NASA space** — images and credits from [NASA Astronomy Picture of the Day](https://apod.nasa.gov/apod/). NASA's `DEMO_KEY` is used, so the stream may temporarily pause under its public rate limit.
+- **New Yorker latest** — headlines and thumbnails from [The New Yorker's official RSS feed](https://www.newyorker.com/about/feeds).
+- **New Yorker cartoons** — noncommercial Caption Contest cartoons and winning captions from the [NextML dataset](https://nextml.github.io/caption-contest-data/), delivered through AI2's bounded research mirror.
 
-- [The Met Open Access](https://www.metmuseum.org/policies/frequently-asked-questions-image-and-data-resources)
-- [Art Institute of Chicago image licensing](https://www.artic.edu/image-licensing)
-
-New Yorker and Far Side cartoons are not included. Publicly viewable cartoons are still copyrighted, and neither publisher offers a public-domain feed for this use.
+New Yorker content remains copyrighted. Latest items behave like an RSS reader: the extension fetches the publisher's official feed at display time, retains the source label, and links to the original. Caption Contest cartoons use NextML's explicitly noncommercial dataset. New Yorker covers are not included because the cover gallery does not expose a comparable official feed. Far Side cartoons are not included.
 
 ## Development
 
@@ -51,4 +54,4 @@ See [CHANGELOG.md](CHANGELOG.md) for the cumulative release history.
 
 ## License
 
-Extension code is released under the MIT License. Museum artwork retains the rights status stated by its source record.
+Extension code is released under the MIT License. Stream content retains the rights status stated by its source or publisher.

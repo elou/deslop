@@ -67,3 +67,23 @@ test('constrains portrait and landscape artwork to the reserved frame', () => {
     /\.pangram-gallery-card__image-frame\s*\{[^}]*position:\s*relative;/s
   );
 });
+
+test('renders poem lines inside the same stable replacement frame', () => {
+  assert.match(contentSource, /item\.kind === 'poem'/);
+  assert.match(contentSource, /lines\.slice\(0,\s*12\)\.join\('\\n'\)/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__poem\s*\{[^}]*white-space:\s*pre-line;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card--poem\s+\.pangram-gallery-card__image-frame/
+  );
+});
+
+test('sends each Pangram verdict to the selected stream router', () => {
+  assert.match(
+    contentSource,
+    /type:\s*'PANGRAM_GALLERY_GET_REPLACEMENT',\s*verdict/s
+  );
+});

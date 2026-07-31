@@ -35,9 +35,41 @@ test('defaults to AI-only replacement', () => {
     met: true,
     artic: true
   });
+  assert.equal(settings.styleMode, 'same');
+  assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
+    ai: 'art',
+    mixed: 'art'
+  });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
   assert.equal(core.shouldReplace('human', settings), false);
+});
+
+test('routes one shared stream or separate streams per verdict', () => {
+  const core = loadCore();
+  const shared = core.normalizeSettings({
+    streams: { ai: 'poetry', mixed: 'nasa' }
+  });
+  const separate = core.normalizeSettings({
+    styleMode: 'different',
+    streams: { ai: 'poetry', mixed: 'nasa' }
+  });
+
+  assert.equal(core.getStreamForVerdict(shared, 'mixed'), 'poetry');
+  assert.equal(core.getStreamForVerdict(separate, 'ai'), 'poetry');
+  assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'nasa');
+});
+
+test('falls back to art for unknown stream choices', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({
+    styleMode: 'surprise',
+    streams: { ai: 'unknown', mixed: 'newyorker-cartoons' }
+  });
+
+  assert.equal(settings.styleMode, 'same');
+  assert.equal(settings.streams.ai, 'art');
+  assert.equal(settings.streams.mixed, 'newyorker-cartoons');
 });
 
 test('can opt into Mixed verdicts and disable a provider', () => {
@@ -126,6 +158,30 @@ test('collects a badge when Pangram adds its verdict text after the badge shell'
   assert.deepEqual(
     JSON.parse(JSON.stringify(badges)),
     [{ nodeType: 1, id: 'late-verdict' }]
+  );
+});
+
+test('collects a suggested-post badge when its nested verdict text hydrates late', () => {
+  const core = loadCore();
+  const badge = {
+    nodeType: 1,
+    id: 'suggested-post-badge',
+    matches: (selector) => selector === '.pangram-feed-badge'
+  };
+  const verdictLabel = {
+    nodeType: 1,
+    matches: () => false,
+    closest: (selector) =>
+      selector === '.pangram-feed-badge' ? badge : null
+  };
+
+  const badges = core.collectBadgesFromMutationRecords([
+    { target: verdictLabel, addedNodes: [{ nodeType: 3 }] }
+  ]);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(badges)),
+    [{ nodeType: 1, id: 'suggested-post-badge' }]
   );
 });
 

@@ -100,6 +100,10 @@
     image.decoding = 'async';
     image.loading = 'lazy';
 
+    const poem = document.createElement('blockquote');
+    poem.className = 'pangram-gallery-card__poem';
+    poem.hidden = true;
+
     const toggle = document.createElement('button');
     toggle.className = 'pangram-gallery-card__toggle';
     toggle.type = 'button';
@@ -114,7 +118,7 @@
 
     const imageFrame = document.createElement('div');
     imageFrame.className = 'pangram-gallery-card__image-frame';
-    imageFrame.append(image, toggle);
+    imageFrame.append(image, poem, toggle);
 
     const imageStage = document.createElement('div');
     imageStage.className = 'pangram-gallery-card__image-stage';
@@ -154,21 +158,33 @@
 
   function hydrateCard(card, item) {
     const image = card.querySelector('.pangram-gallery-card__image');
+    const poem = card.querySelector('.pangram-gallery-card__poem');
     const title = card.querySelector('.pangram-gallery-card__title');
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
-    if (!image || !title || !location || !source) return false;
+    if (!image || !poem || !title || !location || !source) return false;
 
-    image.dataset.pangramGallerySrc = item.assetUrl;
-    image.alt = item.title ? `${item.title} by ${item.creator}` : 'Public-domain artwork';
-    image.removeAttribute('aria-hidden');
+    if (item.kind === 'poem') {
+      const lines = Array.isArray(item.lines) ? item.lines : [];
+      if (!lines.length) return false;
+      poem.textContent = lines.slice(0, 12).join('\n');
+      poem.hidden = false;
+      card.classList.add('pangram-gallery-card--poem');
+    } else {
+      if (!item.assetUrl) return false;
+      image.dataset.pangramGallerySrc = item.assetUrl;
+      image.alt = item.title
+        ? `${item.title}${item.creator ? ` by ${item.creator}` : ''}`
+        : 'Replacement image';
+      image.removeAttribute('aria-hidden');
+    }
     title.textContent = item.title;
     location.textContent = item.location || item.provider;
     source.href = item.sourceUrl;
     source.textContent = `${item.provider} · ${item.rights}`;
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');
-    restoreCardImage(image);
+    if (item.kind !== 'poem') restoreCardImage(image);
     return true;
   }
 
@@ -193,7 +209,8 @@
 
     try {
       const response = await sendMessage({
-        type: 'PANGRAM_GALLERY_GET_REPLACEMENT'
+        type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
+        verdict
       });
       if (activeGeneration !== generation || !target.isConnected) {
         disposeCard(card);

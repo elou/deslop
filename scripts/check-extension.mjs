@@ -10,6 +10,11 @@ assert.equal(manifest.manifest_version, 3);
 assert.ok(manifest.background?.service_worker);
 assert.ok(Array.isArray(manifest.content_scripts));
 assert.ok(manifest.permissions?.includes('storage'));
+assert.equal(
+  manifest.content_scripts[0]?.all_frames,
+  true,
+  'Pangram Gallery must run in the same child frames that Pangram scans'
+);
 
 const referencedFiles = [
   manifest.background.service_worker,

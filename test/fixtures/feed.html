@@ -49,17 +49,42 @@
     <script>
       const fixtureSettings = {
         enabled: true,
-        replaceMixed: false,
+        replaceMixed: true,
+        styleMode: 'different',
+        streams: { ai: 'art', mixed: 'poetry' },
         providers: { met: true, artic: true }
       };
       globalThis.chrome = {
         runtime: {
           id: 'fixture',
           lastError: null,
-          sendMessage(_message, callback) {
+          sendMessage(message, callback) {
+            if (message.verdict === 'mixed') {
+              callback({
+                ok: true,
+                item: {
+                  kind: 'poem',
+                  id: 'poetry-hope',
+                  title: '“Hope” is the thing with feathers',
+                  creator: 'Emily Dickinson',
+                  lines: [
+                    '“Hope” is the thing with feathers –',
+                    'That perches in the soul –',
+                    'And sings the tune without the words –',
+                    'And never stops – at all –'
+                  ],
+                  location: 'Emily Dickinson',
+                  sourceUrl: 'https://poetrydb.org',
+                  rights: 'PoetryDB API',
+                  provider: 'PoetryDB'
+                }
+              });
+              return;
+            }
             callback({
               ok: true,
               item: {
+                kind: 'image',
                 id: 'met-436535',
                 assetUrl: 'https://images.metmuseum.org/CRDImages/ep/web-large/DT1567.jpg',
                 title: 'Wheat Field with Cypresses',
@@ -86,7 +111,7 @@
     <main>
       <header>
         <h1>Infinite feed fixture</h1>
-        <p>AI posts become full-size gallery interludes. Human and Mixed posts remain.</p>
+        <p>AI posts become art; Mixed posts become poetry. Human posts remain.</p>
       </header>
       <section id="feed" aria-label="Feed">
         <article>
@@ -104,7 +129,7 @@
         <article>
           <div data-pangram-scanned="true" data-pangram-post-id="fixture-mixed-1">
             <h2>Third post <span class="pangram-feed-badge">Mixed</span></h2>
-            <p>This Mixed post should remain visible under the default setting.</p>
+            <p>This Mixed post should become a poetry interlude.</p>
           </div>
         </article>
       </section>
