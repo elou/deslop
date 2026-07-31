@@ -105,6 +105,13 @@
     image.decoding = 'async';
     image.loading = 'lazy';
 
+    const imageLink = document.createElement('a');
+    imageLink.className = 'pangram-gallery-card__image-link';
+    imageLink.target = '_blank';
+    imageLink.rel = 'noreferrer';
+    imageLink.hidden = true;
+    imageLink.append(image);
+
     const poem = document.createElement('blockquote');
     poem.className = 'pangram-gallery-card__poem';
     poem.hidden = true;
@@ -123,7 +130,7 @@
 
     const imageFrame = document.createElement('div');
     imageFrame.className = 'pangram-gallery-card__image-frame';
-    imageFrame.append(image, poem);
+    imageFrame.append(imageLink, poem);
 
     const imageStage = document.createElement('div');
     imageStage.className = 'pangram-gallery-card__image-stage';
@@ -133,7 +140,9 @@
     body.className = 'pangram-gallery-card__body';
     const notice = createText('p', 'pangram-gallery-card__notice', '');
     notice.hidden = true;
-    const title = createText('p', 'pangram-gallery-card__title', '');
+    const title = createText('a', 'pangram-gallery-card__title', '');
+    title.target = '_blank';
+    title.rel = 'noreferrer';
     const location = createText('p', 'pangram-gallery-card__location', '');
     body.append(notice, title, location, toggle);
 
@@ -165,12 +174,13 @@
 
   function hydrateCard(card, item) {
     const image = card.querySelector('.pangram-gallery-card__image');
+    const imageLink = card.querySelector('.pangram-gallery-card__image-link');
     const poem = card.querySelector('.pangram-gallery-card__poem');
     const title = card.querySelector('.pangram-gallery-card__title');
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !poem || !title || !location || !source || !notice) return false;
+    if (!image || !imageLink || !poem || !title || !location || !source || !notice) return false;
 
     if (item.kind === 'notice') {
       notice.textContent = item.title || '☢️ Slop cleansed';
@@ -191,6 +201,8 @@
     } else {
       if (!item.assetUrl) return false;
       image.dataset.pangramGallerySrc = item.assetUrl;
+      imageLink.href = item.sourceUrl;
+      imageLink.hidden = false;
       image.alt = item.title
         ? `${item.title}${item.creator ? ` by ${item.creator}` : ''}`
         : 'Replacement image';
@@ -198,6 +210,7 @@
     }
     if (item.kind !== 'notice') {
       title.textContent = item.title;
+      title.href = item.sourceUrl;
       location.textContent = item.location || item.provider;
       source.href = item.sourceUrl;
       source.textContent = `${item.provider} · ${item.rights}`;

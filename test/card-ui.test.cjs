@@ -68,7 +68,7 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*border-radius:\s*14px;/s,
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
     'the image frame should be visually bounded without changing the card metadata'
   );
 });
@@ -146,6 +146,16 @@ test('sends each Pangram verdict to the selected stream router', () => {
     contentSource,
     /type:\s*'PANGRAM_GALLERY_GET_REPLACEMENT',\s*verdict/s
   );
+});
+
+test('links replacement artwork and its title to the item source', () => {
+  assert.match(
+    contentSource,
+    /imageFrame\.append\(imageLink, poem\)/,
+    'artwork should be wrapped in its source link'
+  );
+  assert.match(contentSource, /imageLink\.href = item\.sourceUrl/);
+  assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
 test('renders the compact slop-cleansed notice without an original toggle', () => {
