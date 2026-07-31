@@ -158,14 +158,14 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
-test('shows the original post author in the replacement footer', () => {
-  assert.match(contentSource, /function getOriginalPostAuthor\(target\)/);
-  assert.match(contentSource, /card\.pangramGalleryAuthor = getOriginalPostAuthor\(target\)/);
-  assert.match(contentSource, /source\.textContent = 'Original post by ';/);
-  assert.match(contentSource, /author\.href = postAuthor\.href;/);
+test('links the original post footer to the hidden post permalink', () => {
+  assert.match(contentSource, /function getOriginalPostPermalink\(target\)/);
+  assert.match(contentSource, /card\.pangramGalleryPermalink = getOriginalPostPermalink\(target\)/);
+  assert.match(contentSource, /source\.textContent = 'Original post';/);
+  assert.match(contentSource, /source\.href = card\.pangramGalleryPermalink;/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
+    /\.pangram-gallery-card__source\s*\{[^}]*text-decoration:\s*underline;/s
   );
 });
 
