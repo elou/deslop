@@ -3,13 +3,133 @@ import test from 'node:test';
 
 import {
   buildFreeverseReplacement,
+  buildFarSideReplacement,
+  buildGarrosGalleryReplacement,
+  buildHideReplacement,
+  buildNationalGalleryReplacement,
   buildModernArtReplacement,
   buildNasaDeepSpaceReplacement,
   buildNextMlReplacement,
   buildPaintingClassicsReplacement,
+  buildRijksmuseumReplacement,
   getReplacement,
-  parseNewYorkerFeed
+  normalizeCard,
+  parseGarrosGallery,
+  parseNgaPublishedImagesChunk,
+  parseNewYorkerFeed,
+  PROVIDER_REGISTRY,
+  STREAM_REGISTRY
 } from '../src/background/providers.mjs';
+
+test('normalizes provider cards to one stable shape', () => {
+  const item = normalizeCard({
+    kind: 'image',
+    id: 'example',
+    assetUrl: 'https://example.com/image.jpg',
+    title: 'Example',
+    provider: 'Example provider',
+    rights: 'CC0',
+    caption: 'Optional metadata'
+  });
+
+  assert.deepEqual(item, {
+    kind: 'image',
+    id: 'example',
+    title: 'Example',
+    creator: '',
+    date: '',
+    location: '',
+    sourceUrl: '',
+    rights: 'CC0',
+    credit: '',
+    provider: 'Example provider',
+    assetUrl: 'https://example.com/image.jpg',
+    caption: 'Optional metadata'
+  });
+});
+
+test('parses and builds an open-access National Gallery image row', () => {
+  const csv = [
+    'uuid,iiifurl,iiifthumburl,viewtype,sequence,width,height,maxpixels,openaccess,created,modified,depictstmsobjectid,assistivetext',
+    '00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c,"https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c/full/!200,200/0/default.jpg",Image,1,1000,800,0,1,2020-01-01,2020-01-02,17387,"Study of a landscape, open access."'
+  ].join('\n');
+  const rows = parseNgaPublishedImagesChunk(csv);
+  const item = buildNationalGalleryReplacement(rows[0]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(item.provider, 'National Gallery of Art');
+  assert.equal(item.rights, 'CC0');
+  assert.match(item.assetUrl, /api\.nga\.gov\/iiif\/00007f61/);
+  assert.match(item.sourceUrl, /art-object-page\.17387/);
+});
+
+test('builds a public-domain Rijksmuseum IIIF image', () => {
+  const item = buildRijksmuseumReplacement(
+    {
+      id: 'https://id.rijksmuseum.nl/200100988',
+      identified_by: [
+        { type: 'Name', content: 'The Night Watch' },
+        { type: 'Identifier', content: 'SK-C-5' }
+      ],
+      produced_by: {
+        part: [{ carried_out_by: [{ notation: [{ '@language': 'en', '@value': 'Rembrandt van Rijn' }] }] }],
+        timespan: { identified_by: [{ content: '1642' }] }
+      }
+    },
+    { subject_to: [{ id: 'https://creativecommons.org/publicdomain/zero/1.0/' }] },
+    { access_point: [{ id: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg' }] }
+  );
+
+  assert.equal(item.provider, 'Rijksmuseum');
+  assert.equal(item.rights, 'Public domain');
+  assert.equal(item.creator, 'Rembrandt van Rijn');
+  assert.equal(item.title, 'The Night Watch');
+  assert.match(item.assetUrl, /full\/960,/);
+  assert.match(item.sourceUrl, /SK-C-5/);
+});
+
+test('parses and labels Garross Gallery records as research link-backs', () => {
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    mainEntity: { itemListElement: [{ item: {
+      name: '2026 poster',
+      creator: { name: 'Example artist' },
+      dateCreated: '2026',
+      image: 'https://smlneelkaujgtwoe.public.blob.vercel-storage.com/posters/rg2026.webp',
+      url: 'https://www.garros.gallery/poster/2026'
+    } }] }
+  })}</script>`;
+  const [record] = parseGarrosGallery(html);
+  const item = buildGarrosGalleryReplacement(record);
+
+  assert.equal(item.provider, '🎾 Garross Gallery');
+  assert.equal(item.rights, 'Copyrighted · research link-back');
+  assert.equal(item.creator, 'Example artist');
+  assert.match(item.sourceUrl, /garros\.gallery\/poster\/2026/);
+});
+
+test('registers pooled categories and keeps Surprise me rights-safe', () => {
+  assert.deepEqual(STREAM_REGISTRY['art-2'].providerIds, [
+    'national-gallery',
+    'rijksmuseum'
+  ]);
+  assert.deepEqual(STREAM_REGISTRY['surprise-me'].providerIds, [
+    'painting-classics',
+    'national-gallery',
+    'rijksmuseum',
+    'freeverse',
+    'deep-space'
+  ]);
+  assert.ok(
+    STREAM_REGISTRY['surprise-me'].providerIds.every(
+      (providerId) => PROVIDER_REGISTRY[providerId].rightsSafe
+    )
+  );
+  assert.equal(PROVIDER_REGISTRY['national-gallery'].rightsSafe, true);
+  assert.equal(PROVIDER_REGISTRY['garros-gallery'].rightsSafe, false);
+  for (const provider of Object.values(PROVIDER_REGISTRY)) {
+    assert.equal(typeof provider.fetch, 'function');
+  }
+});
 
 test('builds a Freeverse poem with its original line breaks', () => {
   const item = buildFreeverseReplacement(
@@ -147,6 +267,32 @@ test('builds a bounded NextML Caption Contest replacement', () => {
   assert.equal(item.rights, 'Noncommercial dataset');
 });
 
+test('builds an explicitly labeled Far Side research replacement', () => {
+  const item = buildFarSideReplacement(
+    {
+      image: {
+        src: 'https://datasets-server.huggingface.co/cached-assets/farside.jpg'
+      },
+      text: 'a person with an old tree and another with a ladder'
+    },
+    12
+  );
+
+  assert.equal(item.kind, 'image');
+  assert.equal(item.id, 'far-side-12');
+  assert.equal(item.provider, 'Far Side (experimental)');
+  assert.equal(item.creator, 'Gary Larson');
+  assert.equal(item.rights, 'Copyrighted · noncommercial dataset');
+  assert.equal(item.caption, 'a person with an old tree and another with a ladder');
+});
+
+test('builds the compact Hide AI replacement notice', () => {
+  const item = buildHideReplacement();
+
+  assert.equal(item.kind, 'notice');
+  assert.equal(item.title, '☢️ Slop cleansed');
+});
+
 test('parses official New Yorker RSS thumbnails and caps image width', () => {
   const xml = `<rss><channel>
     <item><title><![CDATA[The Cartoon Caption Contest]]></title>
@@ -199,6 +345,114 @@ test('routes Classic Poetry through the Freeverse index and raw poem', async () 
   );
   assert.equal(item.provider, 'Freeverse');
   assert.deepEqual(item.lines, ['A line', 'Another line']);
+});
+
+test('routes Art 2 to the National Gallery adapter', async () => {
+  const csv = [
+    'uuid,iiifurl,iiifthumburl,viewtype,sequence,width,height,maxpixels,openaccess,created,modified,depictstmsobjectid,assistivetext',
+    '00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/iiif/00007f61-4922-417b-8f27-893ea328206c,https://api.nga.gov/thumb,Image,1,1000,800,0,1,2020-01-01,2020-01-02,17387,"Landscape study."'
+  ].join('\n');
+  const fetchFn = async (url) => {
+    assert.match(url, /raw\.githubusercontent\.com\/NationalGalleryOfArt\/opendata/);
+    return {
+      ok: true,
+      status: 206,
+      headers: { get: (name) => name === 'content-range' ? 'bytes 0-4095/89200527' : '' },
+      text: async () => csv
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'art-2' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+  assert.equal(item.provider, 'National Gallery of Art');
+});
+
+test('routes Art 2 to the Rijksmuseum adapter when the pooled choice lands there', async () => {
+  const fetchFn = async (url) => {
+    if (url.includes('/search/collection')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ orderedItems: [{ id: 'https://id.rijksmuseum.nl/200100988' }] })
+      };
+    }
+    if (url.includes('/200100988?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          id: 'https://id.rijksmuseum.nl/200100988',
+          identified_by: [{ type: 'Name', content: 'The Night Watch' }, { type: 'Identifier', content: 'SK-C-5' }],
+          produced_by: { part: [{ carried_out_by: [{ notation: [{ '@language': 'en', '@value': 'Rembrandt van Rijn' }] }] }] },
+          shows: [{ id: 'https://id.rijksmuseum.nl/202100988' }]
+        })
+      };
+    }
+    if (url.includes('/202100988?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          subject_to: [{ id: 'https://creativecommons.org/publicdomain/zero/1.0/' }],
+          digitally_shown_by: [{ id: 'https://id.rijksmuseum.nl/5008910398567010810098' }]
+        })
+      };
+    }
+    assert.match(url, /5008910398567010810098/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ access_point: [{ id: 'https://iiif.micr.io/mPymb/full/max/0/default.jpg' }] })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'art-2' } },
+    'ai',
+    fetchFn,
+    () => 0.99
+  );
+  assert.equal(item.provider, 'Rijksmuseum');
+});
+
+test('routes Garross Gallery through its explicit research stream', async () => {
+  const html = `<script type="application/ld+json">${JSON.stringify({
+    mainEntity: { itemListElement: [{ item: {
+      name: '2026 poster',
+      creator: { name: 'Example artist' },
+      dateCreated: '2026',
+      image: 'https://smlneelkaujgtwoe.public.blob.vercel-storage.com/posters/rg2026.webp',
+      url: 'https://www.garros.gallery/poster/2026'
+    } }] }
+  })}</script>`;
+  const item = await getReplacement(
+    { streams: { ai: 'garros-gallery' } },
+    'ai',
+    async (url) => {
+      assert.equal(url, 'https://www.garros.gallery/');
+      return { ok: true, status: 200, text: async () => html };
+    },
+    () => 0
+  );
+  assert.equal(item.provider, '🎾 Garross Gallery');
+});
+
+test('routes the Hide AI stream to a compact notice', async () => {
+  const item = await getReplacement(
+    { streams: { ai: 'hide-ai' } },
+    'ai',
+    async () => {
+      throw new Error('Hide AI should not request a remote provider');
+    },
+    () => 0
+  );
+
+  assert.equal(item.kind, 'notice');
+  assert.equal(item.title, '☢️ Slop cleansed');
 });
 
 test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {
@@ -294,4 +548,32 @@ test('loads the New Yorker cartoons stream from the NextML research corpus', asy
 
   assert.equal(item.provider, 'NextML Caption Contest');
   assert.equal(item.title, 'Winner');
+});
+
+test('loads the Far Side stream from the Hugging Face dataset server', async () => {
+  const fetchFn = async (url) => {
+    assert.match(url, /datasets-server\.huggingface\.co\/rows/);
+    assert.match(url, /dataset=maderix%2Ffarsidecomics-blip-captions/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ rows: [{
+        row_idx: 7,
+        row: {
+          image: { src: 'https://datasets-server.huggingface.co/cached-assets/farside.jpg' },
+          text: 'a bear on the road in the dark'
+        }
+      }] })
+    };
+  };
+
+  const item = await getReplacement(
+    { streams: { ai: 'far-side' } },
+    'ai',
+    fetchFn,
+    () => 0
+  );
+
+  assert.equal(item.provider, 'Far Side (experimental)');
+  assert.equal(item.id, 'far-side-7');
 });

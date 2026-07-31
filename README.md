@@ -8,7 +8,9 @@ Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, po
 - Can also replace `Mixed` posts.
 - Uses one content stream for every verdict by default.
 - Can route `AI` and `Mixed` verdicts to different streams.
-- Offers Painting Classics, Classic Poetry, Modern Art (experimental), Deep Space, New Yorker Latest, and New Yorker Cartoons.
+- Offers 🖼️ Art, 🖼️ Art 2, 📜 Poetry, 🎨 Modern Art (experimental), 🌌 Deep Space, 🗞️ Publisher feeds, 🃏 New Yorker cartoons, 🃏 Far Side (experimental), 🎾 Garross Gallery, and ✨ Surprise me.
+- Can replace selected verdicts with a compact `☢️ Slop cleansed` notice instead of loading a source.
+- Can hide promoted impressions with `💸 Hide promoted posts`.
 - Keeps the original post behind a `Show original` button.
 - Watches for new posts in infinite-scroll feeds.
 - Stores preferences, but does not store downloaded content.
@@ -24,7 +26,7 @@ The extension is designed to work anywhere Pangram adds its feed badges. LinkedI
 5. Select the unzipped `pangram-gallery` folder.
 6. Keep the Pangram extension installed and signed in.
 
-Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI and another for Mixed.
+Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI and another for Mixed. Choose **❌ Hide AI completely** in either dropdown to remove matching posts and leave the cleansing notice; the separate **💸 Hide promoted posts** filter replaces promoted impressions with `💸 Unpromoted a post`.
 
 Chrome will report that the extension can read and change data on websites. That broad permission is required because Pangram can label feeds on any site. Pangram Gallery looks only for Pangram's verdict markers and does not collect or transmit post text.
 
@@ -34,14 +36,20 @@ Pangram Gallery reads verdict labels that Pangram injects into the current page.
 
 ## Content streams
 
-- **Painting Classics** — a recognizable canon from Wikidata's bot-maintained famous-paintings catalog, with live Wikimedia Commons image and public-domain checks.
-- **Classic Poetry** — author-balanced poems from [Freeverse](https://thefreeverse.org/), a 1,009-poem public-domain collection with source provenance.
+- **🖼️ Art** — a recognizable canon from Wikidata's bot-maintained famous-paintings catalog, with live Wikimedia Commons image and public-domain checks.
+- **🖼️ Art 2** — a pooled art category that randomly chooses between National Gallery of Art Open Data (CC0) and Rijksmuseum public-domain IIIF paintings; the selected provider remains in the card attribution.
+- **📜 Poetry** — author-balanced poems from [Freeverse](https://thefreeverse.org/), a 1,009-poem public-domain collection with source provenance.
 - **Modern Art (experimental)** — a curated modern-style slice of the [WikiArt research corpus](https://huggingface.co/datasets/huggan/wikiart). It is labeled noncommercial research because the dataset's rights vary.
 - **Deep Space** — optimized nebula, supernova-remnant, galaxy, and deep-field images from the official [NASA Image and Video Library](https://images.nasa.gov/), rather than weather-focused APOD rotation.
-- **New Yorker latest** — headlines and thumbnails from [The New Yorker's official RSS feed](https://www.newyorker.com/about/feeds).
+- **🗞️ Publisher feeds** — headlines and thumbnails from [The New Yorker's official RSS feed](https://www.newyorker.com/about/feeds).
 - **New Yorker cartoons** — noncommercial Caption Contest cartoons and winning captions from the [NextML dataset](https://nextml.github.io/caption-contest-data/), delivered through AI2's bounded research mirror.
+- **Far Side (experimental)** — 354 Far Side comic images from the [Hugging Face dataset](https://huggingface.co/datasets/maderix/farsidecomics-blip-captions). The dataset card does not state a license; the underlying comics are copyrighted, so this stream is labeled experimental/noncommercial and is not part of the rights-cleared Art pool.
+- **🎾 Garross Gallery** — Roland-Garros poster records from [The Art of Roland-Garros](https://www.garros.gallery/), with a direct link back to each poster. It is an explicit research stream, not part of the rights-safe pool.
+- **✨ Surprise me** — a global random draw across the rights-safe Art, Art 2, Poetry, and Deep Space providers. Publisher, modern-art, Far Side, New Yorker cartoons, and Garross sources stay opt-in because their source terms are different.
 
-New Yorker content remains copyrighted. Latest items behave like an RSS reader: the extension fetches the publisher's official feed at display time, retains the source label, and links to the original. Caption Contest cartoons use NextML's explicitly noncommercial dataset. New Yorker covers are not included because the cover gallery does not expose a comparable official feed. Far Side cartoons are not included.
+The runtime uses a provider registry: every adapter returns the same normalized card shape (`kind`, title, creator, location, source URL, rights, credit, provider, and media/text payload). Category labels hide provider selection for normal use, while the provider name and original link remain visible for attribution.
+
+National Gallery images are sourced from its open-access data release and served through IIIF. Rijksmuseum images are checked for public-domain rights in the resolved visual record before use. New Yorker content remains copyrighted. Latest items behave like an RSS reader: the extension fetches the publisher's official feed at display time, retains the source label, and links to the original. Caption Contest cartoons use NextML's explicitly noncommercial dataset. New Yorker covers are not included because the cover gallery does not expose a comparable official feed. Far Side uses the experimental Hugging Face dataset described above. Garross Gallery is link-back research content and is excluded from Surprise me.
 
 ## Development
 

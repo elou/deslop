@@ -31,6 +31,7 @@ test('defaults to AI-only replacement', () => {
 
   assert.equal(settings.enabled, true);
   assert.equal(settings.replaceMixed, false);
+  assert.equal(settings.hidePromoted, false);
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
@@ -77,6 +78,21 @@ test('can opt into Mixed verdicts', () => {
   assert.equal(core.shouldReplace('mixed', settings), true);
 });
 
+test('can opt into hiding promoted impressions', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({ hidePromoted: true });
+
+  assert.equal(settings.hidePromoted, true);
+  assert.equal(
+    core.isPromotedTarget({
+      matches: (selector) =>
+        selector ===
+        '.fie-impression-container, li[data-testid="carousel-child-container"]'
+    }),
+    true
+  );
+});
+
 test('disabled mode never replaces a verdict', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({ enabled: false, replaceMixed: true });
@@ -108,6 +124,28 @@ test('collects Pangram badges only from added mutation subtrees', () => {
   assert.deepEqual(
     JSON.parse(JSON.stringify(badges)),
     [{ id: 'nested-badge' }]
+  );
+});
+
+test('collects promoted impressions from appended feed subtrees', () => {
+  const core = loadCore();
+  const promoted = { id: 'promoted' };
+  const subtree = {
+    nodeType: 1,
+    matches: () => false,
+    closest: () => null,
+    querySelectorAll: (selector) =>
+      selector ===
+      '.fie-impression-container, li[data-testid="carousel-child-container"]'
+        ? [promoted]
+        : []
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectPromotedTargetsFromMutationRecords([
+      { target: subtree, addedNodes: [] }
+    ]))),
+    [{ id: 'promoted' }]
   );
 });
 

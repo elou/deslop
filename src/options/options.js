@@ -1,16 +1,22 @@
 (function setUpOptions() {
   const core = globalThis.PangramGalleryCore;
   const STREAM_OPTIONS = [
-    ['painting-classics', 'Painting Classics'],
-    ['classic-poetry', 'Classic Poetry'],
-    ['modern-art', 'Modern Art (experimental)'],
-    ['deep-space', 'Deep Space'],
-    ['newyorker-latest', 'New Yorker latest'],
-    ['newyorker-cartoons', 'New Yorker cartoons']
+    ['painting-classics', '🖼️ Art'],
+    ['art-2', '🖼️ Art 2'],
+    ['classic-poetry', '📜 Poetry'],
+    ['modern-art', '🎨 Modern Art (experimental)'],
+    ['deep-space', '🌌 Deep Space'],
+    ['newyorker-latest', '🗞️ Publisher feeds'],
+    ['newyorker-cartoons', '🃏 New Yorker cartoons'],
+    ['far-side', '🃏 Far Side (experimental)'],
+    ['garros-gallery', '🎾 Garross Gallery'],
+    ['surprise-me', '✨ Surprise me'],
+    ['hide-ai', '❌ Hide AI completely']
   ];
   const controls = {
     enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
+    hidePromoted: document.querySelector('#hide-promoted'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
@@ -49,6 +55,7 @@
     styleMode = settings.styleMode;
     controls.enabled.checked = settings.enabled;
     controls.replaceMixed.checked = settings.replaceMixed;
+    controls.hidePromoted.checked = settings.hidePromoted;
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
@@ -69,6 +76,7 @@
     const settings = core.normalizeSettings({
       enabled: controls.enabled.checked,
       replaceMixed: controls.replaceMixed.checked,
+      hidePromoted: controls.hidePromoted.checked,
       styleMode,
       streams: {
         ai:
@@ -86,6 +94,7 @@
   for (const control of [
     controls.enabled,
     controls.replaceMixed,
+    controls.hidePromoted,
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed

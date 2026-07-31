@@ -118,7 +118,7 @@
 
     const imageFrame = document.createElement('div');
     imageFrame.className = 'pangram-gallery-card__image-frame';
-    imageFrame.append(image, poem, toggle);
+    imageFrame.append(image, poem);
 
     const imageStage = document.createElement('div');
     imageStage.className = 'pangram-gallery-card__image-stage';
@@ -126,9 +126,11 @@
 
     const body = document.createElement('div');
     body.className = 'pangram-gallery-card__body';
+    const notice = createText('p', 'pangram-gallery-card__notice', '');
+    notice.hidden = true;
     const title = createText('p', 'pangram-gallery-card__title', '');
     const location = createText('p', 'pangram-gallery-card__location', '');
-    body.append(title, location);
+    body.append(notice, title, location, toggle);
 
     const source = document.createElement('a');
     source.className = 'pangram-gallery-card__source';
@@ -162,9 +164,20 @@
     const title = card.querySelector('.pangram-gallery-card__title');
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
-    if (!image || !poem || !title || !location || !source) return false;
+    const notice = card.querySelector('.pangram-gallery-card__notice');
+    if (!image || !poem || !title || !location || !source || !notice) return false;
 
-    if (item.kind === 'poem') {
+    if (item.kind === 'notice') {
+      notice.textContent = item.title || '☢️ Slop cleansed';
+      notice.hidden = false;
+      title.hidden = true;
+      location.hidden = true;
+      source.hidden = true;
+      image.hidden = true;
+      poem.hidden = true;
+      card.querySelector('.pangram-gallery-card__toggle').hidden = true;
+      card.classList.add('pangram-gallery-card--notice');
+    } else if (item.kind === 'poem') {
       const lines = Array.isArray(item.lines) ? item.lines : [];
       if (!lines.length) return false;
       poem.textContent = lines.slice(0, 12).join('\n');
@@ -178,10 +191,12 @@
         : 'Replacement image';
       image.removeAttribute('aria-hidden');
     }
-    title.textContent = item.title;
-    location.textContent = item.location || item.provider;
-    source.href = item.sourceUrl;
-    source.textContent = `${item.provider} · ${item.rights}`;
+    if (item.kind !== 'notice') {
+      title.textContent = item.title;
+      location.textContent = item.location || item.provider;
+      source.href = item.sourceUrl;
+      source.textContent = `${item.provider} · ${item.rights}`;
+    }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');
     if (item.kind !== 'poem') restoreCardImage(image);
@@ -238,6 +253,11 @@
       const target = core.findReplacementTarget(badge);
       if (!target) continue;
 
+      if (settings.hidePromoted && core.isPromotedTarget(target)) {
+        hidePromotedTarget(target);
+        continue;
+      }
+
       if (core.shouldReplace(verdict, settings)) {
         void replaceTarget(target, verdict, activeGeneration);
       } else {
@@ -248,7 +268,31 @@
 
   function scanInitialDocument() {
     scanTimer = null;
+    processPromotedTargets(document.querySelectorAll(
+      '.fie-impression-container, li[data-testid="carousel-child-container"]'
+    ));
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
+  }
+
+  function hidePromotedTarget(target) {
+    if (target.getAttribute(STATE_ATTRIBUTE) === 'hidden-promoted') return;
+    restoreTarget(target);
+    const card = createCard('promoted', target);
+    card.setAttribute('aria-label', 'Promoted post hidden');
+    target.before(card);
+    if (!hydrateCard(card, { kind: 'notice', title: '💸 Unpromoted a post' })) {
+      disposeCard(card);
+      return;
+    }
+    target.classList.add(HIDDEN_CLASS);
+    target.setAttribute(STATE_ATTRIBUTE, 'hidden-promoted');
+  }
+
+  function processPromotedTargets(targets) {
+    if (!settings.hidePromoted) return;
+    for (const target of targets || []) {
+      if (target.isConnected) hidePromotedTarget(target);
+    }
   }
 
   function removeOrphanedCardsFromRemovedSubtrees(records) {
@@ -307,6 +351,9 @@
 
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
+    processPromotedTargets(
+      core.collectPromotedTargetsFromMutationRecords(records)
+    );
     processBadges(core.collectBadgesFromMutationRecords(records));
   }
 

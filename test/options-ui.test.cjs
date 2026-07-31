@@ -18,12 +18,16 @@ const optionsCss = fs.readFileSync(
 
 test('offers the supported live streams', () => {
   for (const label of [
-    'Painting Classics',
-    'Classic Poetry',
-    'Modern Art (experimental)',
-    'Deep Space',
-    'New Yorker latest',
-    'New Yorker cartoons'
+    '🖼️ Art',
+    '🖼️ Art 2',
+    '📜 Poetry',
+    '🎨 Modern Art (experimental)',
+    '🌌 Deep Space',
+    '🗞️ Publisher feeds',
+    '🃏 New Yorker cartoons',
+    '🃏 Far Side (experimental)',
+    '🎾 Garross Gallery',
+    '✨ Surprise me'
   ]) {
     assert.ok(optionsSource.includes(`'${label}'`), `missing stream label: ${label}`);
   }
@@ -45,4 +49,10 @@ test('switches between one shared stream and per-verdict stream menus', () => {
 test('does not expose removed museum source controls', () => {
   assert.doesNotMatch(optionsHtml, /provider-met|provider-artic|art-sources/);
   assert.doesNotMatch(optionsSource, /PoetryDB|NASA space|museum/i);
+});
+
+test('offers the explicit cleanup controls', () => {
+  assert.match(optionsSource, /Hide AI completely/);
+  assert.match(optionsHtml, /id="hide-promoted"/);
+  assert.match(optionsHtml, /💸 Hide promoted posts/);
 });

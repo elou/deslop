@@ -3,17 +3,23 @@ import { getReplacement } from './providers.mjs';
 const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
+  hidePromoted: false,
   styleMode: 'same',
   streams: { ai: 'painting-classics', mixed: 'painting-classics' }
 };
 
 const STREAM_IDS = new Set([
   'painting-classics',
+  'art-2',
   'classic-poetry',
   'modern-art',
   'deep-space',
   'newyorker-latest',
-  'newyorker-cartoons'
+  'newyorker-cartoons',
+  'far-side',
+  'garros-gallery',
+  'surprise-me',
+  'hide-ai'
 ]);
 
 function readSettings() {
@@ -22,6 +28,7 @@ function readSettings() {
       resolve({
         enabled: value.enabled !== false,
         replaceMixed: value.replaceMixed === true,
+        hidePromoted: value.hidePromoted === true,
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
           ai: STREAM_IDS.has(value.streams?.ai)
@@ -47,6 +54,10 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.replaceMixed === 'boolean'
           ? current.replaceMixed
           : DEFAULT_SETTINGS.replaceMixed,
+      hidePromoted:
+        typeof current.hidePromoted === 'boolean'
+          ? current.hidePromoted
+          : DEFAULT_SETTINGS.hidePromoted,
       styleMode: current.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.has(current.streams?.ai)

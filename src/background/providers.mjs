@@ -8,6 +8,17 @@ const WIKIART_FILTER_API =
 const WIKIART_MODERN_STYLE_IDS = Object.freeze([
   0, 1, 2, 5, 6, 7, 9, 10, 14, 16, 19, 25
 ]);
+const FAR_SIDE_ROWS_API =
+  'https://datasets-server.huggingface.co/rows?dataset=maderix%2Ffarsidecomics-blip-captions&config=default&split=train';
+const FAR_SIDE_ROW_COUNT = 354;
+const NGA_PUBLISHED_IMAGES_URL =
+  'https://raw.githubusercontent.com/NationalGalleryOfArt/opendata/main/data/published_images.csv';
+const NGA_PUBLISHED_IMAGES_FALLBACK_BYTES = 89_200_527;
+const RIJKSMUSEUM_SEARCH_API = 'https://data.rijksmuseum.nl/search/collection';
+const RIJKSMUSEUM_DATA_API = 'https://data.rijksmuseum.nl';
+const GARROS_GALLERY_URL = 'https://www.garros.gallery/';
+const HIDE_STREAM_ID = 'hide-ai';
+const SURPRISE_STREAM_ID = 'surprise-me';
 const NASA_SEARCH_API = 'https://images-api.nasa.gov/search';
 const NASA_ASSET_API = 'https://images-api.nasa.gov/asset';
 const NASA_DEEP_SPACE_QUERIES = Object.freeze([
@@ -121,6 +132,40 @@ function textOr(value, fallback) {
   return typeof value === 'string' && value.trim()
     ? value.trim().replace(/\s+/g, ' ')
     : fallback;
+}
+
+export function normalizeCard(card) {
+  if (!card || !['image', 'poem', 'notice'].includes(card.kind)) return null;
+
+  const normalized = {
+    kind: card.kind,
+    id: textOr(String(card.id || ''), 'replacement'),
+    title: textOr(card.title, card.kind === 'notice' ? 'Replacement' : 'Untitled'),
+    creator: textOr(card.creator, ''),
+    date: textOr(card.date, ''),
+    location: textOr(card.location, ''),
+    sourceUrl: textOr(card.sourceUrl, ''),
+    rights: textOr(card.rights, 'Source terms apply'),
+    credit: textOr(card.credit, ''),
+    provider: textOr(card.provider, 'Pangram Gallery')
+  };
+
+  if (card.kind === 'image') {
+    normalized.assetUrl = textOr(card.assetUrl, '');
+    if (!normalized.assetUrl.startsWith('https://')) return null;
+  }
+
+  if (card.kind === 'poem') {
+    normalized.lines = Array.isArray(card.lines)
+      ? card.lines.filter((line) => typeof line === 'string')
+      : [];
+    if (!normalized.lines.length) return null;
+  }
+
+  for (const [key, value] of Object.entries(card)) {
+    if (!(key in normalized) && value !== undefined) normalized[key] = value;
+  }
+  return normalized;
 }
 
 function stripMarkup(value) {
@@ -301,6 +346,228 @@ export function buildNextMlReplacement(record) {
   };
 }
 
+export function buildFarSideReplacement(row, rowIndex = 0) {
+  const assetUrl = row?.image?.src;
+  if (!assetUrl?.startsWith('https://')) return null;
+
+  return {
+    kind: 'image',
+    id: `far-side-${rowIndex}`,
+    assetUrl,
+    title: 'The Far Side',
+    creator: 'Gary Larson',
+    location: 'Far Side comics · experimental dataset',
+    sourceUrl: 'https://huggingface.co/datasets/maderix/farsidecomics-blip-captions',
+    rights: 'Copyrighted · noncommercial dataset',
+    credit: 'maderix/farsidecomics-blip-captions',
+    provider: 'Far Side (experimental)',
+    caption: textOr(row.text, '')
+  };
+}
+
+function parseCsvLine(line) {
+  const fields = [];
+  let field = '';
+  let quoted = false;
+  for (let index = 0; index < String(line || '').length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === ',' && !quoted) {
+      fields.push(field);
+      field = '';
+    } else {
+      field += character;
+    }
+  }
+  fields.push(field);
+  return fields;
+}
+
+export function parseNgaPublishedImagesChunk(csv) {
+  const lines = String(csv || '').split(/\r?\n/);
+  return lines
+    .slice(lines[0]?.startsWith('uuid,') ? 1 : 0)
+    .map(parseCsvLine)
+    .filter((fields) => fields.length >= 13 && /^[\da-f-]{36}$/i.test(fields[0]))
+    .map((fields) => ({
+      uuid: fields[0],
+      iiifUrl: fields[1],
+      iiifThumbUrl: fields[2],
+      viewType: fields[3],
+      width: fields[5],
+      height: fields[6],
+      openAccess: fields[8],
+      objectId: fields[11],
+      assistiveText: fields[12]
+    }));
+}
+
+export function buildNationalGalleryReplacement(row) {
+  if (
+    row?.openAccess !== '1' ||
+    !row.uuid ||
+    !row.iiifUrl?.startsWith('https://') ||
+    !/^\d+$/.test(String(row.objectId || ''))
+  ) {
+    return null;
+  }
+
+  const description = textOr(row.assistiveText, 'National Gallery of Art study');
+  const title = textOr(
+    description.split(/(?<=[.!?])\s+/)[0],
+    'National Gallery of Art study'
+  );
+  return {
+    kind: 'image',
+    id: `national-gallery-${row.uuid}`,
+    assetUrl: `${row.iiifUrl}/full/!960,960/0/default.jpg`,
+    title,
+    creator: 'National Gallery of Art',
+    location: 'National Gallery of Art · open access',
+    sourceUrl: `https://www.nga.gov/collection/art-object-page.${row.objectId}.html`,
+    rights: 'CC0',
+    credit: 'National Gallery of Art Open Data',
+    provider: 'National Gallery of Art'
+  };
+}
+
+function linkedDataUrl(identifier) {
+  if (typeof identifier !== 'string') return null;
+  return identifier.replace('https://id.rijksmuseum.nl/', `${RIJKSMUSEUM_DATA_API}/`);
+}
+
+function rijksName(record) {
+  const names = (record?.identified_by || []).filter((item) => item?.type === 'Name');
+  const english = names.find((item) =>
+    item.language?.some((language) => language.id?.endsWith('300388277'))
+  );
+  return textOr(english?.content, textOr(names[0]?.content, 'Rijksmuseum artwork'));
+}
+
+function rijksObjectNumber(record) {
+  const identifier = (record?.identified_by || []).find((item) =>
+    item?.type === 'Identifier' && /^\S/.test(String(item.content || ''))
+  );
+  return textOr(identifier?.content, '');
+}
+
+function rijksCreator(record) {
+  const creators = (record?.produced_by?.part || [])
+    .flatMap((part) => part.carried_out_by || [])
+    .flatMap((person) => person.notation || [])
+    .filter((notation) => notation?.['@language'] === 'en')
+    .map((notation) => notation['@value']);
+  if (creators.length) return textOr(creators[0], 'Unknown maker');
+
+  const referred = (record?.produced_by?.referred_to_by || [])
+    .filter((item) => item?.classified_as?.some((type) => type.id?.endsWith('300435416')))
+    .map((item) => item.content);
+  return textOr(referred[0], 'Unknown maker');
+}
+
+function rijksDate(record) {
+  const names = record?.produced_by?.timespan?.identified_by || [];
+  const english = names.find((item) =>
+    item.language?.some((language) => language.id?.endsWith('300388277'))
+  );
+  return textOr(english?.content, textOr(names[0]?.content, ''));
+}
+
+function hasRijksPublicDomainRights(record) {
+  const rightsText = JSON.stringify(record?.subject_to || []).toLowerCase();
+  return rightsText.includes('public domain') || rightsText.includes('publicdomain/zero');
+}
+
+export function buildRijksmuseumReplacement(objectRecord, visualRecord, digitalRecord) {
+  const imageUrl = digitalRecord?.access_point
+    ?.map((item) => item?.id)
+    .find((url) => typeof url === 'string' && url.startsWith('https://iiif.micr.io/'));
+  if (!objectRecord?.id || !imageUrl || !hasRijksPublicDomainRights(visualRecord)) {
+    return null;
+  }
+
+  const objectNumber = rijksObjectNumber(objectRecord);
+  const objectId = objectRecord.id.split('/').at(-1);
+  return {
+    kind: 'image',
+    id: `rijksmuseum-${objectId}`,
+    assetUrl: imageUrl.replace('/full/max/', '/full/960,/'),
+    title: rijksName(objectRecord),
+    creator: rijksCreator(objectRecord),
+    date: rijksDate(objectRecord),
+    location: 'Rijksmuseum Amsterdam · public domain',
+    sourceUrl: objectNumber
+      ? `https://www.rijksmuseum.nl/en/collection/${encodeURIComponent(objectNumber)}`
+      : objectRecord.id,
+    rights: 'Public domain',
+    credit: 'Rijksmuseum Data Services',
+    provider: 'Rijksmuseum'
+  };
+}
+
+export function parseGarrosGallery(html) {
+  const records = [];
+  const scripts = String(html || '').matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+  );
+  for (const match of scripts) {
+    try {
+      const value = JSON.parse(match[1]);
+      const itemList = value?.itemListElement || value?.mainEntity;
+      const items = Array.isArray(itemList?.itemListElement)
+        ? itemList.itemListElement
+        : Array.isArray(itemList)
+          ? itemList
+          : Array.isArray(value?.itemListElement)
+            ? value.itemListElement
+            : [];
+      for (const item of items) {
+        const artwork = item?.item;
+        if (artwork?.image && artwork?.url) records.push(artwork);
+      }
+    } catch (_error) {
+      // Ignore unrelated JSON-LD blocks and keep searching the page.
+    }
+  }
+  return records;
+}
+
+export function buildGarrosGalleryReplacement(record) {
+  if (!record?.image?.startsWith('https://') || !record?.url?.startsWith('https://')) {
+    return null;
+  }
+  const year = textOr(record.dateCreated, '');
+  return {
+    kind: 'image',
+    id: `garros-gallery-${year || encodeURIComponent(record.url)}`,
+    assetUrl: record.image,
+    title: textOr(record.name, 'Roland-Garros poster'),
+    creator: textOr(record.creator?.name, 'Unknown artist'),
+    date: year,
+    location: 'Roland-Garros poster collection',
+    sourceUrl: record.url,
+    rights: 'Copyrighted · research link-back',
+    credit: 'The Art of Roland-Garros',
+    provider: '🎾 Garross Gallery'
+  };
+}
+
+export function buildHideReplacement() {
+  return {
+    kind: 'notice',
+    id: 'slop-cleansed',
+    title: '☢️ Slop cleansed',
+    provider: 'Pangram Gallery',
+    rights: 'Local filter'
+  };
+}
+
 function decodeXml(value) {
   return String(value || '')
     .trim()
@@ -361,14 +628,15 @@ export function parseNewYorkerFeed(xml) {
     .filter(Boolean);
 }
 
-async function fetchText(url, fetchFn, timeoutMs = 8000) {
+async function fetchText(url, fetchFn, timeoutMs = 8000, headers = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetchFn(url, {
       headers: {
-        Accept: 'application/rss+xml, application/xml, text/xml, text/plain'
+        Accept: 'application/rss+xml, application/xml, text/xml, text/plain',
+        ...headers
       },
       signal: controller.signal
     });
@@ -376,6 +644,28 @@ async function fetchText(url, fetchFn, timeoutMs = 8000) {
       throw new Error(`Provider request failed with ${response.status}`);
     }
     return await response.text();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchRangeText(url, start, end, fetchFn) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetchFn(url, {
+      headers: {
+        Accept: 'text/csv',
+        Range: `bytes=${start}-${end}`
+      },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`Provider request failed with ${response.status}`);
+    }
+    const rangeHeader = response.headers?.get?.('content-range') || '';
+    const total = Number(rangeHeader.match(/\/(\d+)$/)?.[1] || 0);
+    return { text: await response.text(), total };
   } finally {
     clearTimeout(timeout);
   }
@@ -511,7 +801,7 @@ function isDeepSpaceRecord(record) {
     .join(' ')
     .toLowerCase();
   if (
-    /\b(earth|weather|storm|hurricane|launch|telescope|spacecraft|rocket|astronaut|diagram|illustration|map|concept|rollout|deployment)\b/i.test(
+    /\b(earth|weather|storm|hurricane|launch|spacecraft|rocket|astronaut|diagram|illustration|map|concept|rollout|deployment)\b/i.test(
       text
     )
   ) {
@@ -578,6 +868,84 @@ async function fetchNextMlReplacement(fetchFn, random) {
   return replacement;
 }
 
+async function fetchFarSideReplacement(fetchFn, random) {
+  const offset = chooseIndex(FAR_SIDE_ROW_COUNT, random);
+  const payload = await fetchJson(
+    `${FAR_SIDE_ROWS_API}&offset=${offset}&length=1`,
+    fetchFn
+  );
+  const replacement = buildFarSideReplacement(
+    payload?.rows?.[0]?.row,
+    payload?.rows?.[0]?.row_idx ?? offset
+  );
+  if (!replacement) throw new Error('Far Side returned no usable comic');
+  return replacement;
+}
+
+async function fetchNationalGalleryReplacement(fetchFn, random) {
+  const probe = await fetchRangeText(NGA_PUBLISHED_IMAGES_URL, 0, 0, fetchFn);
+  const totalBytes = probe.total || NGA_PUBLISHED_IMAGES_FALLBACK_BYTES;
+  let start = chooseIndex(Math.max(1, totalBytes - 16_384), random);
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const chunk = await fetchRangeText(
+      NGA_PUBLISHED_IMAGES_URL,
+      start,
+      start + 16_383,
+      fetchFn
+    );
+    const rows = parseNgaPublishedImagesChunk(chunk.text);
+    for (const row of rows) {
+      const replacement = buildNationalGalleryReplacement(row);
+      if (replacement) return replacement;
+    }
+    start = (start + 16_384) % Math.max(1, totalBytes - 16_384);
+  }
+  throw new Error('National Gallery returned no usable open-access image');
+}
+
+async function fetchRijksmuseumReplacement(fetchFn, random) {
+  const searchUrl = new URL(RIJKSMUSEUM_SEARCH_API);
+  searchUrl.searchParams.set('type', 'painting');
+  searchUrl.searchParams.set('imageAvailable', 'true');
+  const payload = await fetchJson(searchUrl.toString(), fetchFn);
+  const items = Array.isArray(payload?.orderedItems) ? payload.orderedItems : [];
+  if (!items.length) throw new Error('Rijksmuseum returned no paintings');
+
+  const start = chooseIndex(items.length, random);
+  for (let attempt = 0; attempt < Math.min(12, items.length); attempt += 1) {
+    const identifier = items[(start + attempt) % items.length]?.id;
+    const objectUrl = linkedDataUrl(identifier);
+    if (!objectUrl) continue;
+    const objectRecord = await fetchJson(`${objectUrl}?_profile=la-framed`, fetchFn);
+    const visualUrl = linkedDataUrl(objectRecord?.shows?.[0]?.id);
+    if (!visualUrl) continue;
+    const visualRecord = await fetchJson(`${visualUrl}?_profile=la-framed`, fetchFn);
+    if (!hasRijksPublicDomainRights(visualRecord)) continue;
+    const digitalUrl = linkedDataUrl(visualRecord?.digitally_shown_by?.[0]?.id);
+    if (!digitalUrl) continue;
+    const digitalRecord = await fetchJson(`${digitalUrl}?_profile=la-framed`, fetchFn);
+    const replacement = buildRijksmuseumReplacement(
+      objectRecord,
+      visualRecord,
+      digitalRecord
+    );
+    if (replacement) return replacement;
+  }
+  throw new Error('Rijksmuseum returned no usable public-domain painting');
+}
+
+async function fetchGarrosGalleryReplacement(fetchFn, random) {
+  const html = await fetchText(GARROS_GALLERY_URL, fetchFn);
+  const records = parseGarrosGallery(html);
+  if (!records.length) throw new Error('Garross Gallery returned no posters');
+  const replacement = buildGarrosGalleryReplacement(
+    records[chooseIndex(records.length, random)]
+  );
+  if (!replacement) throw new Error('Garross Gallery returned no usable poster');
+  return replacement;
+}
+
 async function fetchNewYorkerReplacement(stream, fetchFn, random) {
   const feeds = {
     'newyorker-latest': 'https://www.newyorker.com/feed/latest/rss'
@@ -587,6 +955,133 @@ async function fetchNewYorkerReplacement(stream, fetchFn, random) {
   if (!items.length) throw new Error('The New Yorker feed returned no usable items');
   return items[chooseIndex(items.length, random)];
 }
+
+function providerAdapter(fetcher) {
+  return async (fetchFn, random) => {
+    const card = await fetcher(fetchFn, random);
+    const normalized = normalizeCard(card);
+    if (!normalized) throw new Error('Provider returned an invalid card');
+    return normalized;
+  };
+}
+
+export const PROVIDER_REGISTRY = Object.freeze({
+  'painting-classics': {
+    id: 'painting-classics',
+    category: 'art',
+    rightsSafe: true,
+    fetch: providerAdapter(fetchPaintingClassicsReplacement)
+  },
+  'national-gallery': {
+    id: 'national-gallery',
+    category: 'art',
+    rightsSafe: true,
+    fetch: providerAdapter(fetchNationalGalleryReplacement)
+  },
+  rijksmuseum: {
+    id: 'rijksmuseum',
+    category: 'art',
+    rightsSafe: true,
+    fetch: providerAdapter(fetchRijksmuseumReplacement)
+  },
+  freeverse: {
+    id: 'freeverse',
+    category: 'poetry',
+    rightsSafe: true,
+    fetch: providerAdapter(fetchFreeverseReplacement)
+  },
+  'modern-art': {
+    id: 'modern-art',
+    category: 'art',
+    rightsSafe: false,
+    fetch: providerAdapter(fetchModernArtReplacement)
+  },
+  'deep-space': {
+    id: 'deep-space',
+    category: 'space',
+    rightsSafe: true,
+    fetch: providerAdapter(fetchDeepSpaceReplacement)
+  },
+  'newyorker-latest': {
+    id: 'newyorker-latest',
+    category: 'publisher',
+    rightsSafe: false,
+    fetch: providerAdapter((fetchFn, random) =>
+      fetchNewYorkerReplacement('newyorker-latest', fetchFn, random)
+    )
+  },
+  'newyorker-cartoons': {
+    id: 'newyorker-cartoons',
+    category: 'cartoons',
+    rightsSafe: false,
+    fetch: providerAdapter(fetchNextMlReplacement)
+  },
+  'far-side': {
+    id: 'far-side',
+    category: 'cartoons',
+    rightsSafe: false,
+    fetch: providerAdapter(fetchFarSideReplacement)
+  },
+  'garros-gallery': {
+    id: 'garros-gallery',
+    category: 'art',
+    rightsSafe: false,
+    fetch: providerAdapter(fetchGarrosGalleryReplacement)
+  }
+});
+
+const RIGHTS_SAFE_PROVIDER_IDS = Object.freeze(
+  Object.values(PROVIDER_REGISTRY)
+    .filter((provider) => provider.rightsSafe)
+    .map((provider) => provider.id)
+);
+
+export const STREAM_REGISTRY = Object.freeze({
+  'painting-classics': {
+    label: '🖼️ Art',
+    providerIds: ['painting-classics']
+  },
+  'art-2': {
+    label: '🖼️ Art 2',
+    providerIds: ['national-gallery', 'rijksmuseum']
+  },
+  'classic-poetry': {
+    label: '📜 Poetry',
+    providerIds: ['freeverse']
+  },
+  'modern-art': {
+    label: '🎨 Modern Art (experimental)',
+    providerIds: ['modern-art']
+  },
+  'deep-space': {
+    label: '🌌 Deep Space',
+    providerIds: ['deep-space']
+  },
+  'newyorker-latest': {
+    label: '🗞️ Publisher feeds',
+    providerIds: ['newyorker-latest']
+  },
+  'newyorker-cartoons': {
+    label: '🃏 New Yorker cartoons',
+    providerIds: ['newyorker-cartoons']
+  },
+  'far-side': {
+    label: '🃏 Far Side (experimental)',
+    providerIds: ['far-side']
+  },
+  'garros-gallery': {
+    label: '🎾 Garross Gallery',
+    providerIds: ['garros-gallery']
+  },
+  [SURPRISE_STREAM_ID]: {
+    label: '✨ Surprise me',
+    providerIds: RIGHTS_SAFE_PROVIDER_IDS
+  },
+  [HIDE_STREAM_ID]: {
+    label: '❌ Hide AI completely',
+    providerIds: []
+  }
+});
 
 function streamForVerdict(settings, verdict) {
   const streams = settings?.streams || {};
@@ -605,23 +1100,14 @@ export async function getReplacement(
   random = Math.random
 ) {
   const stream = streamForVerdict(settings, verdict);
-  if (stream === 'painting-classics') {
-    return fetchPaintingClassicsReplacement(fetchFn, random);
+  const streamConfig = STREAM_REGISTRY[stream] || STREAM_REGISTRY['painting-classics'];
+  if (stream === HIDE_STREAM_ID) {
+    return normalizeCard(buildHideReplacement());
   }
-  if (stream === 'classic-poetry') {
-    return fetchFreeverseReplacement(fetchFn, random);
-  }
-  if (stream === 'modern-art') {
-    return fetchModernArtReplacement(fetchFn, random);
-  }
-  if (stream === 'deep-space') {
-    return fetchDeepSpaceReplacement(fetchFn, random);
-  }
-  if (stream === 'newyorker-cartoons') {
-    return fetchNextMlReplacement(fetchFn, random);
-  }
-  if (stream === 'newyorker-latest') {
-    return fetchNewYorkerReplacement(stream, fetchFn, random);
-  }
-  return fetchPaintingClassicsReplacement(fetchFn, random);
+  const providerId = streamConfig.providerIds[
+    chooseIndex(streamConfig.providerIds.length, random)
+  ];
+  const provider = PROVIDER_REGISTRY[providerId];
+  if (!provider) throw new Error(`Unknown provider: ${providerId}`);
+  return provider.fetch(fetchFn, random);
 }
