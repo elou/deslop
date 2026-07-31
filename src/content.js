@@ -258,11 +258,6 @@
       const target = core.findReplacementTarget(badge);
       if (!target) continue;
 
-      if (settings.hidePromoted && core.isPromotedTarget(target)) {
-        hidePromotedTarget(target);
-        continue;
-      }
-
       if (core.shouldReplace(verdict, settings)) {
         void replaceTarget(target, verdict, activeGeneration);
       } else {
@@ -273,31 +268,7 @@
 
   function scanInitialDocument() {
     scanTimer = null;
-    processPromotedTargets(document.querySelectorAll(
-      '.fie-impression-container, li[data-testid="carousel-child-container"]'
-    ));
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
-  }
-
-  function hidePromotedTarget(target) {
-    if (target.getAttribute(STATE_ATTRIBUTE) === 'hidden-promoted') return;
-    restoreTarget(target);
-    const card = createCard('promoted', target);
-    card.setAttribute('aria-label', 'Promoted post hidden');
-    target.before(card);
-    if (!hydrateCard(card, { kind: 'notice', title: '💸 Unpromoted a post' })) {
-      disposeCard(card);
-      return;
-    }
-    target.classList.add(HIDDEN_CLASS);
-    target.setAttribute(STATE_ATTRIBUTE, 'hidden-promoted');
-  }
-
-  function processPromotedTargets(targets) {
-    if (!settings.hidePromoted) return;
-    for (const target of targets || []) {
-      if (target.isConnected) hidePromotedTarget(target);
-    }
   }
 
   function removeOrphanedCardsFromRemovedSubtrees(records) {
@@ -356,9 +327,6 @@
 
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
-    processPromotedTargets(
-      core.collectPromotedTargetsFromMutationRecords(records)
-    );
     processBadges(core.collectBadgesFromMutationRecords(records));
   }
 

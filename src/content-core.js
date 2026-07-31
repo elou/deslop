@@ -3,7 +3,6 @@
     enabled: true,
     replaceMixed: false,
     replaceAssisted: false,
-    hidePromoted: false,
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
@@ -55,10 +54,6 @@
         typeof input.replaceAssisted === 'boolean'
           ? input.replaceAssisted
           : DEFAULT_SETTINGS.replaceAssisted,
-      hidePromoted:
-        typeof input.hidePromoted === 'boolean'
-          ? input.hidePromoted
-          : DEFAULT_SETTINGS.hidePromoted,
       styleMode: input.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.includes(inputStreams.ai)
@@ -88,16 +83,6 @@
     if (verdict === 'ai') return true;
     if (verdict === 'mixed') return settings.replaceMixed;
     return verdict === 'ai-assisted' && settings.replaceAssisted;
-  }
-
-  // These are the LinkedIn impression containers Pangram already recognizes
-  // as promoted. Keeping the selector here lets initial and infinite-scroll
-  // scans share the same target contract.
-  const PROMOTED_SELECTOR =
-    '.fie-impression-container, li[data-testid="carousel-child-container"]';
-
-  function isPromotedTarget(target) {
-    return Boolean(target?.matches?.(PROMOTED_SELECTOR));
   }
 
   function collectBadgesFromMutationRecords(records) {
@@ -135,25 +120,6 @@
     return [...badges];
   }
 
-  function collectPromotedTargetsFromMutationRecords(records) {
-    const targets = new Set();
-    const collect = (node) => {
-      if (!node || node.nodeType !== 1) return;
-      if (node.matches?.(PROMOTED_SELECTOR)) targets.add(node);
-      const ancestor = node.closest?.(PROMOTED_SELECTOR);
-      if (ancestor) targets.add(ancestor);
-      node.querySelectorAll?.(PROMOTED_SELECTOR).forEach((target) => {
-        targets.add(target);
-      });
-    };
-
-    for (const record of records || []) {
-      collect(record?.target);
-      for (const node of record?.addedNodes || []) collect(node);
-    }
-    return [...targets];
-  }
-
   function isOrphanedCard(card) {
     return Boolean(card?.pangramGalleryTarget && !card.pangramGalleryTarget.isConnected);
   }
@@ -184,9 +150,7 @@
     normalizeSettings,
     getStreamForVerdict,
     shouldReplace,
-    isPromotedTarget,
     collectBadgesFromMutationRecords,
-    collectPromotedTargetsFromMutationRecords,
     isOrphanedCard,
     findReplacementTarget
   });

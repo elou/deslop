@@ -27,6 +27,24 @@ test('mounts a reserved replacement card before requesting museum content', () =
   );
 });
 
+test('core QA baseline does not scan or process promoted cleanup targets', () => {
+  const initialStart = contentSource.indexOf('function scanInitialDocument');
+  const initialEnd = contentSource.indexOf('\n  function hidePromotedTarget', initialStart);
+  const mutationStart = contentSource.indexOf('function handleMutations');
+  const mutationEnd = contentSource.indexOf('\n  const observer', mutationStart);
+
+  assert.doesNotMatch(
+    contentSource.slice(initialStart, initialEnd),
+    /processPromotedTargets/,
+    'initial core scans must only evaluate Pangram verdict badges'
+  );
+  assert.doesNotMatch(
+    contentSource.slice(mutationStart, mutationEnd),
+    /processPromotedTargets/,
+    'live core scans must only evaluate Pangram verdict badges'
+  );
+});
+
 test('reserves a stable four-by-three artwork frame while loading', () => {
   assert.match(
     contentCss,
@@ -130,12 +148,8 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
   );
 });
 
-test('defines a compact promoted-post hide state', () => {
-  assert.match(contentSource, /hidden-promoted/);
-  assert.match(contentSource, /collectPromotedTargetsFromMutationRecords/);
-  assert.match(contentSource, /💸 Unpromoted a post/);
-  assert.match(
-    contentSource,
-    /hydrateCard\(card, \{ kind: 'notice', title: '💸 Unpromoted a post' \}\)/
-  );
+test('does not define a promoted-post hide state in the core QA baseline', () => {
+  assert.doesNotMatch(contentSource, /hidden-promoted/);
+  assert.doesNotMatch(contentSource, /collectPromotedTargetsFromMutationRecords/);
+  assert.doesNotMatch(contentSource, /💸 Unpromoted a post/);
 });

@@ -16,6 +16,10 @@ const optionsCss = fs.readFileSync(
   'utf8'
 );
 
+test('keeps the core QA build branded as De-Slop', () => {
+  assert.match(optionsHtml, /💩 De-Slop/);
+});
+
 test('offers the supported live streams', () => {
   for (const label of [
     '🖼️ Art',
@@ -52,10 +56,10 @@ test('does not expose removed museum source controls', () => {
   assert.doesNotMatch(optionsSource, /PoetryDB|NASA space|museum/i);
 });
 
-test('offers the explicit cleanup controls', () => {
+test('does not expose cleanup controls in the core QA baseline', () => {
   assert.match(optionsSource, /Hide AI completely/);
   assert.match(optionsHtml, /AI-Assisted/);
   assert.match(optionsHtml, /id="replace-assisted"/);
-  assert.match(optionsHtml, /id="hide-promoted"/);
-  assert.match(optionsHtml, /💸 Hide promoted posts/);
+  assert.doesNotMatch(optionsHtml, /id="hide-promoted"/);
+  assert.doesNotMatch(optionsHtml, /Feed cleanup/);
 });
