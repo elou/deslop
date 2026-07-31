@@ -40,6 +40,7 @@
   margin: auto;
   object-fit: contain;
   background: var(--pangram-gallery-surface);
+  border-radius: 14px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.1),
     -0.335921px 0.335921px 0.475064px -0.125px #00000007,
@@ -85,7 +86,7 @@
   all: initial;
   display: grid;
   inline-size: 100%;
-  padding: 32px 32px 32px 0;
+  padding: 64px 48px 28px;
   place-items: center;
   background: inherit;
 }
@@ -94,10 +95,11 @@
   all: initial;
   position: relative;
   display: grid;
-  inline-size: 90%;
+  inline-size: min(90%, 560px);
   min-block-size: 280px;
   aspect-ratio: 4 / 3;
   overflow: visible;
+  border-radius: 14px;
   place-items: center;
   background: inherit;
 }

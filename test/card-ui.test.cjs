@@ -63,7 +63,13 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*64px\s+48px\s+28px;[^}]*background:\s*inherit;/s,
+    'the image should sit in a generous, centered stage'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*border-radius:\s*14px;/s,
+    'the image frame should be visually bounded without changing the card metadata'
   );
 });
 
