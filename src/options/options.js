@@ -13,25 +13,21 @@
     ['surprise-me', '✨ Surprise me'],
     ['hide-ai', '❌ Hide AI completely']
   ];
-  const CLEANUP_STREAM_OPTIONS = {
-    promoted: [...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'), ['hide-promoted', '❌ Hide all promoted']],
-    suggested: [...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'), ['hide-suggested', '❌ Hide all suggested']]
-  };
+  const PROMOTED_STREAM_OPTIONS = [
+    ...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'),
+    ['hide-promoted', '❌ Hide all promoted']
+  ];
   const controls = {
     enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
     replaceAssisted: document.querySelector('#replace-assisted'),
     hidePromoted: document.querySelector('#hide-promoted'),
-    hideSuggested: document.querySelector('#hide-suggested'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
     streamMixed: document.querySelector('#stream-mixed'),
     streamAssisted: document.querySelector('#stream-assisted'),
     streamPromoted: document.querySelector('#stream-promoted'),
-    streamSuggested: document.querySelector('#stream-suggested'),
-    cleanupStreamPromoted: document.querySelector('#cleanup-stream-promoted'),
-    cleanupStreamSuggested: document.querySelector('#cleanup-stream-suggested'),
     status: document.querySelector('#save-status')
   };
   let styleMode = 'same';
@@ -50,16 +46,11 @@
       select.append(option);
     }
   }
-  for (const [type, select] of [
-    ['promoted', controls.streamPromoted],
-    ['suggested', controls.streamSuggested]
-  ]) {
-    for (const [value, label] of CLEANUP_STREAM_OPTIONS[type]) {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      select.append(option);
-    }
+  for (const [value, label] of PROMOTED_STREAM_OPTIONS) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    controls.streamPromoted.append(option);
   }
 
   function readSettings() {
@@ -80,15 +71,11 @@
     controls.replaceMixed.checked = settings.replaceMixed;
     controls.replaceAssisted.checked = settings.replaceAssisted;
     controls.hidePromoted.checked = settings.hidePromoted;
-    controls.hideSuggested.checked = settings.hideSuggested;
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
     controls.streamAssisted.value = settings.streams.assisted;
     controls.streamPromoted.value = settings.streams.promoted;
-    controls.streamSuggested.value = settings.streams.suggested;
-    controls.cleanupStreamPromoted.hidden = !settings.hidePromoted;
-    controls.cleanupStreamSuggested.hidden = !settings.hideSuggested;
     controls.styleModeToggle.textContent =
       styleMode === 'same' ? 'Style each differently' : 'Style the same';
     document.body.dataset.styleMode = styleMode;
@@ -108,7 +95,6 @@
       replaceMixed: controls.replaceMixed.checked,
       replaceAssisted: controls.replaceAssisted.checked,
       hidePromoted: controls.hidePromoted.checked,
-      hideSuggested: controls.hideSuggested.checked,
       styleMode,
       streams: {
         ai:
@@ -117,8 +103,7 @@
             : controls.streamAi.value,
         mixed: controls.streamMixed.value,
         assisted: controls.streamAssisted.value,
-        promoted: controls.streamPromoted.value,
-        suggested: controls.streamSuggested.value
+        promoted: controls.streamPromoted.value
       }
     });
     await setSettings(settings);
@@ -131,13 +116,11 @@
     controls.replaceMixed,
     controls.replaceAssisted,
     controls.hidePromoted,
-    controls.hideSuggested,
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed,
     controls.streamAssisted,
-    controls.streamPromoted,
-    controls.streamSuggested
+    controls.streamPromoted
   ]) {
     control.addEventListener('change', () => void save());
   }

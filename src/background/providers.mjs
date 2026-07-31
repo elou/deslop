@@ -19,7 +19,6 @@ const RIJKSMUSEUM_DATA_API = 'https://data.rijksmuseum.nl';
 const GARROS_GALLERY_URL = 'https://www.garros.gallery/';
 const HIDE_STREAM_ID = 'hide-ai';
 const HIDE_PROMOTED_STREAM_ID = 'hide-promoted';
-const HIDE_SUGGESTED_STREAM_ID = 'hide-suggested';
 const SURPRISE_STREAM_ID = 'surprise-me';
 const NASA_SEARCH_API = 'https://images-api.nasa.gov/search';
 const NASA_ASSET_API = 'https://images-api.nasa.gov/asset';
@@ -149,7 +148,7 @@ export function normalizeCard(card) {
     sourceUrl: textOr(card.sourceUrl, ''),
     rights: textOr(card.rights, 'Source terms apply'),
     credit: textOr(card.credit, ''),
-    provider: textOr(card.provider, 'De-Slop')
+    provider: textOr(card.provider, 'Pangram Gallery')
   };
 
   if (card.kind === 'image') {
@@ -560,17 +559,21 @@ export function buildGarrosGalleryReplacement(record) {
   };
 }
 
-export function buildHideReplacement(cleanupType = 'ai') {
-  const notices = {
-    ai: { id: 'de-slopped', title: '☢️ De-slopped your feed' },
-    promoted: { id: 'de-monetized', title: '💸 De-monetized your feed' },
-    suggested: { id: 'de-suggested', title: '🤓 De-suggested your feed' }
-  };
-  const notice = notices[cleanupType] || notices.ai;
+export function buildHideReplacement() {
   return {
     kind: 'notice',
-    id: notice.id,
-    title: notice.title,
+    id: 'slop-cleansed',
+    title: '☢️ Slop cleansed',
+    provider: 'Pangram Gallery',
+    rights: 'Local filter'
+  };
+}
+
+export function buildHidePromotedReplacement() {
+  return {
+    kind: 'notice',
+    id: 'de-monetized',
+    title: '💸 De-monetized your feed',
     provider: 'De-Slop',
     rights: 'Local filter'
   };
@@ -1092,45 +1095,32 @@ export const STREAM_REGISTRY = Object.freeze({
   [HIDE_PROMOTED_STREAM_ID]: {
     label: '❌ Hide all promoted',
     providerIds: []
-  },
-  [HIDE_SUGGESTED_STREAM_ID]: {
-    label: '❌ Hide all suggested',
-    providerIds: []
   }
 });
 
 function streamForVerdict(settings, verdict) {
   const streams = settings?.streams || {};
-  if (verdict === 'promoted') return streams.promoted || HIDE_PROMOTED_STREAM_ID;
-  if (verdict === 'suggested') return streams.suggested || HIDE_SUGGESTED_STREAM_ID;
   if (settings?.styleMode !== 'different') {
     return streams.ai || 'painting-classics';
   }
-  if (verdict === 'mixed') {
-    return streams.mixed || 'painting-classics';
-  }
-  if (verdict === 'ai-assisted') {
-    return streams.assisted || 'painting-classics';
-  }
-  return streams.ai || 'painting-classics';
+  return verdict === 'mixed'
+    ? streams.mixed || 'painting-classics'
+    : streams.ai || 'painting-classics';
 }
 
 export async function getReplacement(
   settings,
   verdict = 'ai',
   fetchFn = fetch,
-  random = Math.random,
-  streamOverride = null
+  random = Math.random
 ) {
-  const stream = streamOverride || streamForVerdict(settings, verdict);
+  const stream = streamForVerdict(settings, verdict);
   const streamConfig = STREAM_REGISTRY[stream] || STREAM_REGISTRY['painting-classics'];
-  if (stream === HIDE_STREAM_ID || stream === HIDE_PROMOTED_STREAM_ID || stream === HIDE_SUGGESTED_STREAM_ID) {
-    const cleanupType = stream === HIDE_PROMOTED_STREAM_ID
-      ? 'promoted'
-      : stream === HIDE_SUGGESTED_STREAM_ID
-        ? 'suggested'
-        : 'ai';
-    return normalizeCard(buildHideReplacement(cleanupType));
+  if (stream === HIDE_STREAM_ID) {
+    return normalizeCard(buildHideReplacement());
+  }
+  if (stream === HIDE_PROMOTED_STREAM_ID) {
+    return normalizeCard(buildHidePromotedReplacement());
   }
   const providerId = streamConfig.providerIds[
     chooseIndex(streamConfig.providerIds.length, random)

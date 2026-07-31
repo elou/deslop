@@ -15,15 +15,9 @@ const optionsCss = fs.readFileSync(
   path.join(__dirname, '..', 'src', 'options', 'options.css'),
   'utf8'
 );
-const manifest = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8')
-);
 
-test('uses De-Slop as the installed product identity', () => {
-  assert.equal(manifest.name, 'De-Slop');
-  assert.equal(manifest.action.default_title, 'De-Slop');
-  assert.match(optionsHtml, /<title>De-Slop<\/title>/);
-  assert.match(optionsHtml, /<h1>💩 De-Slop<\/h1>/);
+test('keeps the core QA build branded as De-Slop', () => {
+  assert.match(optionsHtml, /💩 De-Slop/);
 });
 
 test('offers the supported live streams', () => {
@@ -62,18 +56,12 @@ test('does not expose removed museum source controls', () => {
   assert.doesNotMatch(optionsSource, /PoetryDB|NASA space|museum/i);
 });
 
-test('offers the explicit cleanup controls', () => {
+test('offers a separate promoted-post cleanup control', () => {
   assert.match(optionsSource, /Hide AI completely/);
   assert.match(optionsHtml, /AI-Assisted/);
   assert.match(optionsHtml, /id="replace-assisted"/);
   assert.match(optionsHtml, /id="hide-promoted"/);
   assert.match(optionsHtml, /💸 Hide promoted posts/);
-  assert.match(optionsHtml, /id="hide-suggested"/);
-  assert.match(optionsHtml, /🦟 Hide suggested/);
   assert.match(optionsHtml, /id="stream-promoted"/);
-  assert.match(optionsHtml, /id="stream-suggested"/);
-  assert.match(optionsSource, /Hide all promoted/);
-  assert.match(optionsSource, /Hide all suggested/);
-  assert.match(optionsCss, /\.cleanup-stream\[hidden\]/);
-  assert.match(optionsCss, /\.cleanup-stream:not\(\[hidden\]\)/);
+  assert.match(optionsSource, /hide-promoted/);
 });

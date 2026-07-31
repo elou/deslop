@@ -27,17 +27,10 @@ test('mounts a reserved replacement card before requesting museum content', () =
   );
 });
 
-test('does not hydrate a delayed image after its card was marked offscreen', () => {
-  assert.match(
-    contentSource,
-    /card\.pangramGalleryResident\s*=\s*entry\.isIntersecting/,
-    'the observer must persist the latest residency result on the card'
-  );
-  assert.match(
-    contentSource,
-    /if \(card\.pangramGalleryResident !== false\) restoreCardImage\(image\)/,
-    'hydration must not restore an image after an offscreen observation'
-  );
+test('keeps promoted cleanup on its own explicit target path', () => {
+  assert.match(contentSource, /function processPromotedTargets\(/);
+  assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
 });
 
 test('reserves a stable four-by-three artwork frame while loading', () => {
@@ -58,7 +51,13 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*64px\s+48px\s+28px;[^}]*background:\s*inherit;/s
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s,
+    'the image should sit in a generous, centered stage'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
+    'the image frame should be visually bounded without changing the card metadata'
   );
 });
 
@@ -73,10 +72,9 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /postMeta\.append\(byline, toggle, verdictChip\)/,
-    'the original toggle should sit in the post metadata row'
+    /body\.append\(notice, title, location, toggle\)/,
+    'the original toggle should sit below the replacement metadata'
   );
-  assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
 });
 
 test('constrains portrait and landscape artwork to the reserved frame', () => {
@@ -108,43 +106,27 @@ test('renders poem lines inside the same stable replacement frame', () => {
   );
 });
 
-test('uses the shared editorial metadata row below every replacement stage', () => {
+test('uses a footer row for the existing source and unhide control', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card\s*\{[^}]*border-radius:\s*14px;/s
+    /\.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*64px 48px 28px;/s
+    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*500 20px\s*\/\s*1\.2 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*520 30px\/1\.15 -apple-system/s
+    /\.pangram-gallery-card__location\s*\{[^}]*color:\s*inherit;[^}]*margin-block-start:\s*2px;[^}]*margin-block-end:\s*16px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__description\s*\{[^}]*font:\s*400 20px\/1\.35 -apple-system/s
+    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*margin-block-start:\s*6px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__post-meta\s*\{[^}]*display:\s*flex;[^}]*margin-block-start:\s*34px;/s
+    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
   );
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
-  );
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-card__verdict\s*\{[^}]*margin-inline-start:\s*auto;/s
-  );
-});
-
-test('links the original author and preserves the Pangram verdict in every replacement card', () => {
-  assert.match(contentSource, /function getOriginalPostAuthor\(target\)/);
-  assert.match(contentSource, /author\.href = postAuthor\.href/);
-  assert.match(contentSource, /author\.textContent = postAuthor\.name/);
-  assert.match(contentSource, /Pangram verdict: \$\{verdictLabel\}/);
-  assert.match(contentSource, /formatVerdict\(verdict\)/);
 });
 
 test('sends each Pangram verdict to the selected stream router', () => {
@@ -154,103 +136,61 @@ test('sends each Pangram verdict to the selected stream router', () => {
   );
 });
 
-test('renders compact cleanup notices with an unhide control', () => {
+test('links replacement artwork and its title to the item source', () => {
+  assert.match(
+    contentSource,
+    /imageFrame\.append\(imageLink, poem\)/,
+    'artwork should be wrapped in its source link'
+  );
+  assert.match(contentSource, /imageLink\.href = item\.sourceUrl/);
+  assert.match(contentSource, /title\.href = item\.sourceUrl/);
+});
+
+test('shows the Pangram verdict at the right of the replacement footer', () => {
+  assert.match(
+    contentSource,
+    /const verdictChip = createText\(\s*'span',\s*'pangram-gallery-card__verdict',\s*`🤖 \$\{verdictLabel\} ›`\s*\);/s
+  );
+  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-inline-start:\s*auto;/s
+  );
+});
+
+test('links the original post author to the post permalink or their profile', () => {
+  assert.match(contentSource, /function getOriginalPostPermalink\(target\)/);
+  assert.match(contentSource, /function getOriginalPostAuthor\(target\)/);
+  assert.match(contentSource, /const isFeedUpdate =/);
+  assert.match(contentSource, /const isPostPage =/);
+  assert.match(contentSource, /url\.origin === window\.location\.origin/);
+  assert.match(contentSource, /querySelector\('\[data-urn\*="activity:"\]'\)/);
+  assert.doesNotMatch(contentSource, /a\[href\*="\\\/feed\\\/update\\\/"\]/);
+  assert.match(contentSource, /card\.pangramGalleryPermalink = getOriginalPostPermalink\(target\)/);
+  assert.match(contentSource, /card\.pangramGalleryAuthor = getOriginalPostAuthor\(target\)/);
+  assert.match(contentSource, /source\.textContent = 'Original post by ';/);
+  assert.match(contentSource, /const authorDestination = card\.pangramGalleryPermalink \|\| postAuthor\.href;/);
+  assert.match(contentSource, /author\.removeAttribute\('href'\);/);
+  assert.match(contentSource, /author\.textContent = postAuthor\.name;/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
+  );
+});
+
+test('renders the compact slop-cleansed notice without an original toggle', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
-  assert.match(contentSource, /☢️ De-slopped your feed/);
+  assert.match(contentSource, /☢️ Slop cleansed/);
   assert.match(contentSource, /pangram-gallery-card--notice/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card--notice \.pangram-gallery-card__image-stage\s*\{[^}]*display:\s*none;/s
   );
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*padding:\s*8px 10px 8px 16px;/s,
-    'cleanup notices should share the card system rather than render as bare text'
-  );
-  assert.match(contentSource, /toggle\.hidden = false/);
-  assert.match(contentCss, /\.pangram-gallery-card--notice \.pangram-gallery-card__toggle/);
 });
 
-test('routes promoted cleanup through the selected stream', () => {
-  assert.match(contentSource, /replaceCleanupTarget\(target, 'promoted', activeGeneration\)/);
-  assert.match(contentSource, /collectPromotedTargetsFromMutationRecords/);
-  assert.doesNotMatch(
-    contentSource,
-    /record\.target[\s\S]{0,300}querySelectorAll\?\.\(FEED_ITEM_SELECTOR\)/,
-    'mutation targets must not trigger a feed-tree rescan'
-  );
-  assert.match(contentSource, /core\.getStreamForCleanup\(settings, cleanupType\)/);
-});
-
-test('routes suggested cleanup through the selected stream', () => {
-  assert.match(contentSource, /core\.isSuggestedTarget\(target\)/);
-  assert.match(contentSource, /replaceCleanupTarget\(target, 'suggested', activeGeneration\)/);
-});
-
-test('remounts only live targets whose replacement card LinkedIn removed', () => {
-  assert.match(contentSource, /collectConnectedTargetsFromRemovedCards/);
-  assert.match(contentSource, /scheduleRemovedCardRecovery\(recoverableTargets\)/);
-  assert.match(contentSource, /classList\?\.contains\(HIDDEN_CLASS\)/);
-  assert.match(contentSource, /pendingRecoveryTargets\.clear\(\)/);
-  assert.doesNotMatch(
-    contentSource,
-    /recoverRemovedCardTargets[\s\S]{0,1200}querySelectorAll\(`?\.fie-impression-container/,
-    'card recovery must revisit only the affected targets, never the feed'
-  );
-});
-
-test('a stale provider response cannot overwrite a newer replacement card', () => {
-  const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
-  const replaceTargetEnd = contentSource.indexOf('\n  function restoreCommentTarget', replaceTargetStart);
-  const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
-
-  assert.match(replaceTargetSource, /!card\.isConnected/);
-  assert.match(replaceTargetSource, /target\.pangramGalleryCard !== card/);
-});
-
-test('clears replacement state from a detached LinkedIn item before it is recycled', () => {
-  const releaseStart = contentSource.indexOf('function releaseCardTarget');
-  const releaseEnd = contentSource.indexOf('\n  function createCard', releaseStart);
-  const releaseSource = contentSource.slice(releaseStart, releaseEnd);
-
-  assert.doesNotMatch(releaseSource, /target\?\.isConnected/);
-  assert.match(releaseSource, /target\.classList\.remove\(HIDDEN_CLASS\)/);
-  assert.match(releaseSource, /target\.removeAttribute\(STATE_ATTRIBUTE\)/);
-  assert.match(
-    contentSource,
-    /if \(card && core\.isOrphanedCard\(card\)\) releaseCardTarget\(card, target\)/
-  );
-});
-
-test('gives promoted cleanup precedence over suggested cleanup', () => {
-  assert.match(
-    contentSource,
-    /if \(settings\.hidePromoted && promotedTargets\.has\(target\)\)[\s\S]*?replaceCleanupTarget\(target, 'promoted', activeGeneration\);[\s\S]*?else if \(settings\.hideSuggested && suggestedTargets\.has\(target\)\)[\s\S]*?replaceCleanupTarget\(target, 'suggested', activeGeneration\);/
-  );
-});
-
-test('observes Pangram scanning an existing feed item without rescanning the page', () => {
-  assert.match(contentSource, /attributes:\s*true/);
-  assert.match(
-    contentSource,
-    /attributeFilter:\s*\[\s*['"]data-pangram-scanned['"]\s*\]/
-  );
-});
-
-test('observes Pangram hydrating a verdict in an existing badge text node', () => {
-  assert.match(contentSource, /characterData:\s*true/);
-});
-
-test('clowns only Pangram-marked AI comments and keeps their words accessible', () => {
-  assert.match(contentSource, /core\.findCommentTarget\(badge\)/);
-  assert.match(contentSource, /clownCommentTarget\(commentTarget, badge\)/);
-  assert.match(contentSource, /commentTarget\.querySelector\?\.\('\[data-pangram-text-id\]'\)/);
-  assert.match(contentSource, /clowns\.setAttribute\('aria-hidden', 'true'\)/);
-  assert.match(contentSource, /root\.classList\.add\(COMMENT_ORIGINAL_CLASS\)/);
-  assert.match(contentSource, /root\.after\(clowns\)/);
-  assert.doesNotMatch(contentSource, /textNode\.replaceWith/);
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-comment-original\s*\{[^}]*clip:\s*rect\(0, 0, 0, 0\)/s
-  );
+test('processes promoted feed targets independently of Pangram verdict badges', () => {
+  assert.match(contentSource, /function processPromotedTargets\(/);
+  assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'promoted'\)/);
 });

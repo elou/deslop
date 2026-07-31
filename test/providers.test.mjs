@@ -286,11 +286,11 @@ test('builds an explicitly labeled Far Side research replacement', () => {
   assert.equal(item.caption, 'a person with an old tree and another with a ladder');
 });
 
-test('builds compact notices for every local cleanup stream', () => {
+test('builds the compact Hide AI replacement notice', () => {
   const item = buildHideReplacement();
 
   assert.equal(item.kind, 'notice');
-  assert.equal(item.title, '☢️ De-slopped your feed');
+  assert.equal(item.title, '☢️ Slop cleansed');
 });
 
 test('parses official New Yorker RSS thumbnails and caps image width', () => {
@@ -441,7 +441,7 @@ test('routes Garross Gallery through its explicit research stream', async () => 
   assert.equal(item.provider, '🎾 Garross Gallery');
 });
 
-test('routes local cleanup streams to compact notices without a remote request', async () => {
+test('routes the Hide AI stream to a compact notice', async () => {
   const item = await getReplacement(
     { streams: { ai: 'hide-ai' } },
     'ai',
@@ -452,27 +452,7 @@ test('routes local cleanup streams to compact notices without a remote request',
   );
 
   assert.equal(item.kind, 'notice');
-  assert.equal(item.title, '☢️ De-slopped your feed');
-
-  const promoted = await getReplacement(
-    { streams: { promoted: 'hide-promoted' } },
-    'promoted',
-    async () => {
-      throw new Error('Hide promoted should not request a remote provider');
-    },
-    () => 0
-  );
-  assert.equal(promoted.title, '💸 De-monetized your feed');
-
-  const suggested = await getReplacement(
-    { streams: { suggested: 'hide-suggested' } },
-    'suggested',
-    async () => {
-      throw new Error('Hide suggested should not request a remote provider');
-    },
-    () => 0
-  );
-  assert.equal(suggested.title, '🤓 De-suggested your feed');
+  assert.equal(item.title, '☢️ Slop cleansed');
 });
 
 test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {
@@ -509,48 +489,6 @@ test('routes Deep Space through the NASA image library and chooses a bounded ren
   );
   assert.equal(item.provider, 'Deep Space');
   assert.match(item.assetUrl, /~large\.jpg$/);
-});
-
-test('routes AI-Assisted through its separate stream when styles differ', async () => {
-  const fetchFn = async (url) => {
-    if (url.includes('/search?')) {
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({ collection: { items: [{ data: [{
-          nasa_id: 'ASSISTED-W49B',
-          media_type: 'image',
-          title: 'AI-Assisted deep-space selection',
-          description: 'A supernova remnant in deep space',
-          date_created: '2024-01-02'
-        }] }] } })
-      };
-    }
-    assert.match(url, /images-api\.nasa\.gov\/asset\/ASSISTED-W49B$/);
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({ collection: { items: [
-        { href: 'https://images-assets.nasa.gov/image/ASSISTED-W49B~large.jpg' }
-      ] } })
-    };
-  };
-
-  const item = await getReplacement(
-    {
-      styleMode: 'different',
-      streams: {
-        ai: 'hide-ai',
-        assisted: 'deep-space'
-      }
-    },
-    'ai-assisted',
-    fetchFn,
-    () => 0
-  );
-
-  assert.equal(item.provider, 'Deep Space');
-  assert.match(item.assetUrl, /ASSISTED-W49B~large\.jpg$/);
 });
 
 test('routes Modern Art through the experimental WikiArt mirror', async () => {
