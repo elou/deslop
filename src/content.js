@@ -313,7 +313,7 @@
     target.removeAttribute(STATE_ATTRIBUTE);
   }
 
-  async function replaceTarget(target, verdict, activeGeneration) {
+  async function replaceTarget(target, verdict, activeGeneration, stream) {
     if (target.getAttribute(STATE_ATTRIBUTE)) return;
     target.setAttribute(STATE_ATTRIBUTE, 'pending');
     const card = createCard(verdict, target);
@@ -323,7 +323,8 @@
     try {
       const response = await sendMessage({
         type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
-        verdict
+        verdict,
+        stream
       });
       if (activeGeneration !== generation || !target.isConnected) {
         disposeCard(card);
@@ -359,9 +360,24 @@
     }
   }
 
+  function processPromotedTargets(targets) {
+    if (!settings.hidePromoted) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(
+        target,
+        'promoted',
+        activeGeneration,
+        core.getStreamForCleanup(settings, 'promoted')
+      );
+    }
+  }
+
   function scanInitialDocument() {
     scanTimer = null;
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
+    processPromotedTargets(core.collectPromotedTargets(document));
   }
 
   function removeOrphanedCardsFromRemovedSubtrees(records) {
@@ -421,6 +437,7 @@
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
     processBadges(core.collectBadgesFromMutationRecords(records));
+    processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
   }
 
   const observer = new MutationObserver(handleMutations);

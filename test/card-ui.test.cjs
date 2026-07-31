@@ -27,22 +27,10 @@ test('mounts a reserved replacement card before requesting museum content', () =
   );
 });
 
-test('core QA baseline does not scan or process promoted cleanup targets', () => {
-  const initialStart = contentSource.indexOf('function scanInitialDocument');
-  const initialEnd = contentSource.indexOf('\n  function hidePromotedTarget', initialStart);
-  const mutationStart = contentSource.indexOf('function handleMutations');
-  const mutationEnd = contentSource.indexOf('\n  const observer', mutationStart);
-
-  assert.doesNotMatch(
-    contentSource.slice(initialStart, initialEnd),
-    /processPromotedTargets/,
-    'initial core scans must only evaluate Pangram verdict badges'
-  );
-  assert.doesNotMatch(
-    contentSource.slice(mutationStart, mutationEnd),
-    /processPromotedTargets/,
-    'live core scans must only evaluate Pangram verdict badges'
-  );
+test('keeps promoted cleanup on its own explicit target path', () => {
+  assert.match(contentSource, /function processPromotedTargets\(/);
+  assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
 });
 
 test('reserves a stable four-by-three artwork frame while loading', () => {
@@ -200,8 +188,9 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
   );
 });
 
-test('does not define a promoted-post hide state in the core QA baseline', () => {
-  assert.doesNotMatch(contentSource, /hidden-promoted/);
-  assert.doesNotMatch(contentSource, /collectPromotedTargetsFromMutationRecords/);
-  assert.doesNotMatch(contentSource, /💸 Unpromoted a post/);
+test('processes promoted feed targets independently of Pangram verdict badges', () => {
+  assert.match(contentSource, /function processPromotedTargets\(/);
+  assert.match(contentSource, /core\.collectPromotedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'promoted'\)/);
 });

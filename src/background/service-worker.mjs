@@ -4,11 +4,13 @@ const DEFAULT_SETTINGS = {
   enabled: true,
   replaceMixed: false,
   replaceAssisted: false,
+  hidePromoted: false,
   styleMode: 'same',
   streams: {
     ai: 'painting-classics',
     mixed: 'painting-classics',
-    assisted: 'painting-classics'
+    assisted: 'painting-classics',
+    promoted: 'hide-promoted'
   }
 };
 
@@ -23,7 +25,8 @@ const STREAM_IDS = new Set([
   'far-side',
   'garros-gallery',
   'surprise-me',
-  'hide-ai'
+  'hide-ai',
+  'hide-promoted'
 ]);
 
 function readSettings() {
@@ -33,6 +36,7 @@ function readSettings() {
         enabled: value.enabled !== false,
         replaceMixed: value.replaceMixed === true,
         replaceAssisted: value.replaceAssisted === true,
+        hidePromoted: value.hidePromoted === true,
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
           ai: STREAM_IDS.has(value.streams?.ai)
@@ -43,7 +47,10 @@ function readSettings() {
             : 'painting-classics',
           assisted: STREAM_IDS.has(value.streams?.assisted)
             ? value.streams.assisted
-            : 'painting-classics'
+            : 'painting-classics',
+          promoted: STREAM_IDS.has(value.streams?.promoted)
+            ? value.streams.promoted
+            : 'hide-promoted'
         }
       });
     });
@@ -65,6 +72,10 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.replaceAssisted === 'boolean'
           ? current.replaceAssisted
           : DEFAULT_SETTINGS.replaceAssisted,
+      hidePromoted:
+        typeof current.hidePromoted === 'boolean'
+          ? current.hidePromoted
+          : DEFAULT_SETTINGS.hidePromoted,
       styleMode: current.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.has(current.streams?.ai)
@@ -75,7 +86,10 @@ chrome.runtime.onInstalled.addListener(() => {
           : 'painting-classics',
         assisted: STREAM_IDS.has(current.streams?.assisted)
           ? current.streams.assisted
-          : 'painting-classics'
+          : 'painting-classics',
+        promoted: STREAM_IDS.has(current.streams?.promoted)
+          ? current.streams.promoted
+          : 'hide-promoted'
       }
     });
   });
@@ -90,7 +104,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const verdict = ['ai', 'mixed', 'ai-assisted'].includes(message.verdict)
         ? message.verdict
         : 'ai';
-      const item = await getReplacement(settings, verdict);
+      const stream = STREAM_IDS.has(message.stream) ? message.stream : '';
+      const item = await getReplacement(
+        stream
+          ? {
+              ...settings,
+              styleMode: 'same',
+              streams: { ...settings.streams, ai: stream }
+            }
+          : settings,
+        verdict
+      );
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({

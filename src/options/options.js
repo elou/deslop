@@ -13,15 +13,21 @@
     ['surprise-me', '✨ Surprise me'],
     ['hide-ai', '❌ Hide AI completely']
   ];
+  const PROMOTED_STREAM_OPTIONS = [
+    ...STREAM_OPTIONS.filter(([value]) => value !== 'hide-ai'),
+    ['hide-promoted', '❌ Hide all promoted']
+  ];
   const controls = {
     enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
     replaceAssisted: document.querySelector('#replace-assisted'),
+    hidePromoted: document.querySelector('#hide-promoted'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
     streamMixed: document.querySelector('#stream-mixed'),
     streamAssisted: document.querySelector('#stream-assisted'),
+    streamPromoted: document.querySelector('#stream-promoted'),
     status: document.querySelector('#save-status')
   };
   let styleMode = 'same';
@@ -39,6 +45,12 @@
       option.textContent = label;
       select.append(option);
     }
+  }
+  for (const [value, label] of PROMOTED_STREAM_OPTIONS) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    controls.streamPromoted.append(option);
   }
 
   function readSettings() {
@@ -58,10 +70,12 @@
     controls.enabled.checked = settings.enabled;
     controls.replaceMixed.checked = settings.replaceMixed;
     controls.replaceAssisted.checked = settings.replaceAssisted;
+    controls.hidePromoted.checked = settings.hidePromoted;
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
     controls.streamAssisted.value = settings.streams.assisted;
+    controls.streamPromoted.value = settings.streams.promoted;
     controls.styleModeToggle.textContent =
       styleMode === 'same' ? 'Style each differently' : 'Style the same';
     document.body.dataset.styleMode = styleMode;
@@ -80,6 +94,7 @@
       enabled: controls.enabled.checked,
       replaceMixed: controls.replaceMixed.checked,
       replaceAssisted: controls.replaceAssisted.checked,
+      hidePromoted: controls.hidePromoted.checked,
       styleMode,
       streams: {
         ai:
@@ -87,7 +102,8 @@
             ? controls.streamShared.value
             : controls.streamAi.value,
         mixed: controls.streamMixed.value,
-        assisted: controls.streamAssisted.value
+        assisted: controls.streamAssisted.value,
+        promoted: controls.streamPromoted.value
       }
     });
     await setSettings(settings);
@@ -99,10 +115,12 @@
     controls.enabled,
     controls.replaceMixed,
     controls.replaceAssisted,
+    controls.hidePromoted,
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed,
-    controls.streamAssisted
+    controls.streamAssisted,
+    controls.streamPromoted
   ]) {
     control.addEventListener('change', () => void save());
   }

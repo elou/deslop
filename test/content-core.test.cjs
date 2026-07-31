@@ -33,12 +33,13 @@ test('defaults to AI-only replacement', () => {
   assert.equal(settings.enabled, true);
   assert.equal(settings.replaceMixed, false);
   assert.equal(settings.replaceAssisted, false);
-  assert.equal(settings.hidePromoted, undefined);
+  assert.equal(settings.hidePromoted, false);
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
     mixed: 'painting-classics',
-    assisted: 'painting-classics'
+    assisted: 'painting-classics',
+    promoted: 'hide-promoted'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
@@ -99,15 +100,81 @@ test('can opt into AI-Assisted verdicts', () => {
   assert.equal(core.shouldReplace('ai-assisted', settings), true);
 });
 
-test('core QA baseline ignores a previously saved promoted setting', () => {
+test('can opt into hiding promoted impressions with a separate stream', () => {
   const core = loadCore();
-  const settings = core.normalizeSettings({ hidePromoted: true });
+  const settings = core.normalizeSettings({
+    hidePromoted: true,
+    streams: { promoted: 'hide-promoted' }
+  });
 
+  assert.equal(settings.hidePromoted, true);
+  assert.equal(core.getStreamForCleanup(settings, 'promoted'), 'hide-promoted');
   assert.equal(
-    settings.hidePromoted,
-    undefined,
-    'cleanup is deliberately absent from the core replacement QA baseline'
+    core.isPromotedTarget({
+      matches: (selector) => selector.startsWith('.feed-shared-update-v2--promoted'),
+      closest: () => ({})
+    }),
+    true
   );
+});
+
+test('does not treat a Featured/profile wrapper as a promoted impression', () => {
+  const core = loadCore();
+  const featuredItem = {
+    matches: (selector) => selector.startsWith('.fie-impression-container'),
+    querySelectorAll: () => []
+  };
+
+  assert.equal(core.isPromotedTarget(featuredItem), false);
+});
+
+test('recognizes explicit promoted markers and LinkedIn disclosure text', () => {
+  const core = loadCore();
+  assert.equal(
+    core.isPromotedTarget({
+      matches: (selector) => selector.startsWith('.feed-shared-update-v2--promoted'),
+      querySelectorAll: () => []
+    }),
+    true
+  );
+
+  const disclosure = { textContent: 'Promoted · Partnership with Intuit' };
+  assert.equal(
+    core.isPromotedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('feed-shared-actor__sub-description') ? [disclosure] : []
+    }),
+    true
+  );
+});
+
+test('does not assign a nested promoted disclosure to an outer feed item', () => {
+  const core = loadCore();
+  const inner = { matches: () => false, querySelectorAll: () => [] };
+  const disclosure = {
+    textContent: 'Promoted',
+    closest: () => inner
+  };
+  const outer = {
+    matches: () => false,
+    querySelectorAll: () => [disclosure]
+  };
+
+  assert.equal(core.isPromotedTarget(outer), false);
+});
+
+test('does not rescan a mutation parent when a replacement card mounts', () => {
+  const source = fs.readFileSync(
+    path.join(__dirname, '..', 'src', 'content-core.js'),
+    'utf8'
+  );
+  const start = source.indexOf('function collectPromotedTargetsFromMutationRecords');
+  const end = source.indexOf('\n  function collectBadgesFromMutationRecords', start);
+  const functionSource = source.slice(start, end);
+
+  assert.doesNotMatch(functionSource, /roots\.add\(record\?\.target\)/);
+  assert.match(functionSource, /const owner = getFeedOwner\(record\?\.target\)/);
 });
 
 test('disabled mode never replaces a verdict', () => {

@@ -18,6 +18,7 @@ const RIJKSMUSEUM_SEARCH_API = 'https://data.rijksmuseum.nl/search/collection';
 const RIJKSMUSEUM_DATA_API = 'https://data.rijksmuseum.nl';
 const GARROS_GALLERY_URL = 'https://www.garros.gallery/';
 const HIDE_STREAM_ID = 'hide-ai';
+const HIDE_PROMOTED_STREAM_ID = 'hide-promoted';
 const SURPRISE_STREAM_ID = 'surprise-me';
 const NASA_SEARCH_API = 'https://images-api.nasa.gov/search';
 const NASA_ASSET_API = 'https://images-api.nasa.gov/asset';
@@ -568,6 +569,16 @@ export function buildHideReplacement() {
   };
 }
 
+export function buildHidePromotedReplacement() {
+  return {
+    kind: 'notice',
+    id: 'de-monetized',
+    title: '💸 De-monetized your feed',
+    provider: 'De-Slop',
+    rights: 'Local filter'
+  };
+}
+
 function decodeXml(value) {
   return String(value || '')
     .trim()
@@ -1080,6 +1091,10 @@ export const STREAM_REGISTRY = Object.freeze({
   [HIDE_STREAM_ID]: {
     label: '❌ Hide AI completely',
     providerIds: []
+  },
+  [HIDE_PROMOTED_STREAM_ID]: {
+    label: '❌ Hide all promoted',
+    providerIds: []
   }
 });
 
@@ -1103,6 +1118,9 @@ export async function getReplacement(
   const streamConfig = STREAM_REGISTRY[stream] || STREAM_REGISTRY['painting-classics'];
   if (stream === HIDE_STREAM_ID) {
     return normalizeCard(buildHideReplacement());
+  }
+  if (stream === HIDE_PROMOTED_STREAM_ID) {
+    return normalizeCard(buildHidePromotedReplacement());
   }
   const providerId = streamConfig.providerIds[
     chooseIndex(streamConfig.providerIds.length, random)
