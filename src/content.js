@@ -5,8 +5,10 @@
   const CARD_CLASS = 'pangram-gallery-card';
   const HIDDEN_CLASS = 'pangram-gallery-original-hidden';
   const STATE_ATTRIBUTE = 'data-pangram-gallery-state';
+  const STARTUP_CATCH_UP_DELAYS = Object.freeze([800, 2400]);
   let settings = core.normalizeSettings();
   let scanTimer = null;
+  let startupCatchUpScheduled = false;
   let generation = 0;
   const residencyObserver =
     typeof IntersectionObserver === 'function'
@@ -351,6 +353,14 @@
     scanTimer = window.setTimeout(scanInitialDocument, 80);
   }
 
+  function scheduleStartupCatchUpScans() {
+    if (startupCatchUpScheduled) return;
+    startupCatchUpScheduled = true;
+    for (const delay of STARTUP_CATCH_UP_DELAYS) {
+      window.setTimeout(scanInitialDocument, delay);
+    }
+  }
+
   function restoreAll() {
     document.querySelectorAll(`.${CARD_CLASS}`).forEach(disposeCard);
     document.querySelectorAll(`[${STATE_ATTRIBUTE}]`).forEach((target) => {
@@ -364,6 +374,7 @@
     settings = await loadSettings();
     restoreAll();
     scheduleInitialScan();
+    scheduleStartupCatchUpScans();
   }
 
   function handleMutations(records) {
@@ -374,6 +385,7 @@
   const observer = new MutationObserver(handleMutations);
   observer.observe(document.documentElement, {
     childList: true,
+    characterData: true,
     subtree: true
   });
 

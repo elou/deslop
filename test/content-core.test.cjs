@@ -176,6 +176,28 @@ test('collects a badge when Pangram adds its verdict text after the badge shell'
   );
 });
 
+test('collects a badge when Pangram hydrates its verdict through a text-node mutation', () => {
+  const core = loadCore();
+  const badge = {
+    nodeType: 1,
+    id: 'text-node-verdict',
+    matches: (selector) => selector === '.pangram-feed-badge'
+  };
+  const labelText = {
+    nodeType: 3,
+    parentElement: badge
+  };
+
+  const badges = core.collectBadgesFromMutationRecords([
+    { target: labelText, addedNodes: [] }
+  ]);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(badges)),
+    [{ nodeType: 1, id: 'text-node-verdict' }]
+  );
+});
+
 test('collects a suggested-post badge when its nested verdict text hydrates late', () => {
   const core = loadCore();
   const badge = {
