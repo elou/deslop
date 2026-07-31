@@ -209,7 +209,12 @@
     author.target = '_blank';
     author.rel = 'noreferrer';
     source.append(author);
-    body.append(source);
+    const verdictChip = createText(
+      'span',
+      'pangram-gallery-card__verdict',
+      `🤖 ${verdictLabel} ›`
+    );
+    body.append(source, verdictChip);
 
     card.append(imageStage, body);
 
@@ -241,8 +246,9 @@
     const location = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
     const author = card.querySelector('.pangram-gallery-card__author');
+    const verdictChip = card.querySelector('.pangram-gallery-card__verdict');
     const notice = card.querySelector('.pangram-gallery-card__notice');
-    if (!image || !imageLink || !poem || !title || !location || !source || !author || !notice) return false;
+    if (!image || !imageLink || !poem || !title || !location || !source || !author || !verdictChip || !notice) return false;
 
     if (item.kind === 'notice') {
       notice.textContent = item.title || '☢️ Slop cleansed';
@@ -250,6 +256,7 @@
       title.hidden = true;
       location.hidden = true;
       source.hidden = true;
+      verdictChip.hidden = true;
       image.hidden = true;
       poem.hidden = true;
       card.querySelector('.pangram-gallery-card__toggle').hidden = true;

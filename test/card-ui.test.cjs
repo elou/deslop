@@ -158,6 +158,18 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('shows the Pangram verdict at the right of the replacement footer', () => {
+  assert.match(
+    contentSource,
+    /const verdictChip = createText\(\s*'span',\s*'pangram-gallery-card__verdict',\s*`🤖 \$\{verdictLabel\} ›`\s*\);/s
+  );
+  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-inline-start:\s*auto;/s
+  );
+});
+
 test('links the original post author to the post permalink or their profile', () => {
   assert.match(contentSource, /function getOriginalPostPermalink\(target\)/);
   assert.match(contentSource, /function getOriginalPostAuthor\(target\)/);
