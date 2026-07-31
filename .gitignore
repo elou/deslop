@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+
+# Local agent tracking and session evidence
+AGENT-TASKS.md
+sessions/
+research/memory-fix-agent-results-*.md

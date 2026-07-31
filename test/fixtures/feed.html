@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pangram Gallery feed fixture</title>
+    <link rel="stylesheet" href="../../src/content.css" />
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #292724;
+        background: #eceae5;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { width: min(100% - 32px, 680px); margin: 32px auto 120px; }
+      header { margin-bottom: 24px; }
+      h1 { margin: 0; font: 500 28px/1.2 Georgia, serif; }
+      header p { margin: 6px 0 0; color: #6e6962; }
+      #feed { display: grid; gap: 16px; }
+      article {
+        padding: 20px;
+        border: 1px solid #d7d3cc;
+        border-radius: 8px;
+        background: #fff;
+      }
+      article h2 { margin: 0 0 8px; font-size: 15px; }
+      article p { margin: 0; font-size: 16px; line-height: 1.55; }
+      .pangram-feed-badge {
+        display: inline-flex;
+        margin-left: 8px;
+        padding: 2px 5px;
+        border-radius: 3px;
+        background: #f8d9d7;
+        color: #9d2d2a;
+        font-size: 11px;
+      }
+      .controls { position: sticky; bottom: 16px; margin-top: 24px; }
+      .controls button {
+        min-height: 44px;
+        padding: 10px 16px;
+        border: 1px solid #c8c3bb;
+        border-radius: 6px;
+        background: #fff;
+        color: #292724;
+        cursor: pointer;
+      }
+    </style>
+    <script>
+      const fixtureSettings = {
+        enabled: true,
+        replaceMixed: false,
+        providers: { met: true, artic: true }
+      };
+      globalThis.chrome = {
+        runtime: {
+          id: 'fixture',
+          lastError: null,
+          sendMessage(_message, callback) {
+            callback({
+              ok: true,
+              item: {
+                id: 'met-436535',
+                assetUrl: 'https://images.metmuseum.org/CRDImages/ep/web-large/DT1567.jpg',
+                title: 'Wheat Field with Cypresses',
+                creator: 'Vincent van Gogh',
+                date: '1889',
+                location: 'Saint-Rémy-de-Provence, France',
+                sourceUrl: 'https://www.metmuseum.org/art/collection/search/436535',
+                rights: 'CC0',
+                provider: 'The Met'
+              }
+            });
+          }
+        },
+        storage: {
+          sync: {
+            get(_defaults, callback) { callback(fixtureSettings); }
+          },
+          onChanged: { addListener() {} }
+        }
+      };
+    </script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Infinite feed fixture</h1>
+        <p>AI posts become full-size gallery interludes. Human and Mixed posts remain.</p>
+      </header>
+      <section id="feed" aria-label="Feed">
+        <article>
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-ai-1">
+            <h2>First post <span class="pangram-feed-badge">AI</span></h2>
+            <p>This placeholder post should be replaced when the observer starts.</p>
+          </div>
+        </article>
+        <article>
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-human-1">
+            <h2>Second post <span class="pangram-feed-badge">Human</span></h2>
+            <p>This human-labeled post should remain visible.</p>
+          </div>
+        </article>
+        <article>
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-mixed-1">
+            <h2>Third post <span class="pangram-feed-badge">Mixed</span></h2>
+            <p>This Mixed post should remain visible under the default setting.</p>
+          </div>
+        </article>
+      </section>
+      <div class="controls">
+        <button id="append" type="button">Append another AI post</button>
+      </div>
+    </main>
+    <script src="../../src/content-core.js"></script>
+    <script src="../../src/content.js"></script>
+    <script>
+      document.querySelector('#append').addEventListener('click', () => {
+        const article = document.createElement('article');
+        article.innerHTML = `
+          <div data-pangram-scanned="true" data-pangram-post-id="fixture-ai-dynamic">
+            <h2>New post <span class="pangram-feed-badge">AI</span></h2>
+            <p>This item was appended after initial page load.</p>
+          </div>`;
+        document.querySelector('#feed').append(article);
+      });
+    </script>
+  </body>
+</html>

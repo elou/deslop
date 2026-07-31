@@ -1,0 +1,34 @@
+# Changelog
+
+Pangram Gallery follows semantic versioning from its first cumulative GitHub release.
+
+## 0.1.4 — 2026-07-30
+
+- Constrained portrait and landscape artwork to the reserved 4:3 frame.
+- Preserved uncropped artwork, natural proportions, and the lit-image shadow.
+
+## 0.1.3 — 2026-07-30
+
+- Added a quiet loading state with a stable 4:3 artwork frame and reserved metadata area.
+- Hydrated replacement cards in place to reduce feed movement.
+- Made `Show original` swap the gallery card for the original post in place.
+
+## 0.1.2 — 2026-07-30
+
+- Redesigned replacements as full-size white gallery interludes.
+- Centered artwork at 90% width and added the portfolio-style image shadow.
+- Replaced creator/date copy with the artwork's location.
+- Hid the complete original feed item, including comments and actions.
+
+## 0.1.1 — 2026-07-30
+
+- Bounded mutation processing to newly added feed subtrees.
+- Removed orphaned cards and released image references.
+- Unloaded remote images away from the viewport to reduce memory use.
+
+## 0.1.0 — 2026-07-30
+
+- Added site-agnostic Pangram badge detection for infinite-scroll feeds.
+- Replaced AI-labeled posts by default, with an option to include Mixed.
+- Added public-domain providers for The Met and Art Institute of Chicago.
+- Added source controls, Chrome sync settings, and unpacked installation instructions.
