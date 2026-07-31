@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS = {
   replaceMixed: false,
   replaceAssisted: false,
   hidePromoted: false,
+  hideSuggested: false,
   styleMode: 'same',
   streams: {
     ai: 'painting-classics',
@@ -35,6 +36,7 @@ function readSettings() {
         replaceMixed: value.replaceMixed === true,
         replaceAssisted: value.replaceAssisted === true,
         hidePromoted: value.hidePromoted === true,
+        hideSuggested: value.hideSuggested === true,
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
           ai: STREAM_IDS.has(value.streams?.ai)
@@ -71,6 +73,10 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.hidePromoted === 'boolean'
           ? current.hidePromoted
           : DEFAULT_SETTINGS.hidePromoted,
+      hideSuggested:
+        typeof current.hideSuggested === 'boolean'
+          ? current.hideSuggested
+          : DEFAULT_SETTINGS.hideSuggested,
       styleMode: current.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.has(current.streams?.ai)

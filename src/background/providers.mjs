@@ -1088,9 +1088,13 @@ function streamForVerdict(settings, verdict) {
   if (settings?.styleMode !== 'different') {
     return streams.ai || 'painting-classics';
   }
-  return verdict === 'mixed'
-    ? streams.mixed || 'painting-classics'
-    : streams.ai || 'painting-classics';
+  if (verdict === 'mixed') {
+    return streams.mixed || 'painting-classics';
+  }
+  if (verdict === 'ai-assisted') {
+    return streams.assisted || 'painting-classics';
+  }
+  return streams.ai || 'painting-classics';
 }
 
 export async function getReplacement(

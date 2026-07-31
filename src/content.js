@@ -5,6 +5,9 @@
   const CARD_CLASS = 'pangram-gallery-card';
   const HIDDEN_CLASS = 'pangram-gallery-original-hidden';
   const STATE_ATTRIBUTE = 'data-pangram-gallery-state';
+  const COMMENT_STATE_ATTRIBUTE = 'data-pangram-gallery-comment-state';
+  const COMMENT_ORIGINAL_CLASS = 'pangram-gallery-comment-original';
+  const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
   let settings = core.normalizeSettings();
   let scanTimer = null;
   let generation = 0;
@@ -14,10 +17,11 @@
           (entries) => {
             for (const entry of entries) {
               const card = entry.target;
+              card.pangramGalleryResident = entry.isIntersecting && card.isConnected;
               const image = card.querySelector('.pangram-gallery-card__image');
               if (!image) continue;
 
-              if (entry.isIntersecting) {
+              if (card.pangramGalleryResident) {
                 restoreCardImage(image);
               } else {
                 unloadCardImage(image);
@@ -71,6 +75,7 @@
   function disposeCard(card) {
     if (!card) return;
     residencyObserver?.unobserve(card);
+    card.pangramGalleryResident = false;
 
     const target = card.pangramGalleryTarget;
     if (target?.pangramGalleryCard === card) {
@@ -157,6 +162,7 @@
     );
 
     card.pangramGalleryTarget = target;
+    card.pangramGalleryResident = residencyObserver ? null : true;
     target.pangramGalleryCard = card;
     residencyObserver?.observe(card);
 
@@ -204,7 +210,9 @@
     }
     card.classList.remove('pangram-gallery-card--loading');
     card.removeAttribute('aria-busy');
-    if (item.kind !== 'poem') restoreCardImage(image);
+    if (item.kind !== 'poem') {
+      if (card.pangramGalleryResident !== false) restoreCardImage(image);
+    }
     return true;
   }
 
@@ -249,17 +257,92 @@
     }
   }
 
+  function restoreCommentTarget(target) {
+    if (!target?.hasAttribute?.(COMMENT_STATE_ATTRIBUTE)) return;
+    const treatment = target.pangramGalleryCommentTreatment;
+    treatment?.original?.classList?.remove(COMMENT_ORIGINAL_CLASS);
+    treatment?.clowns?.remove?.();
+    target.querySelectorAll?.(`.${COMMENT_ORIGINAL_CLASS}`).forEach((element) => {
+      element.classList.remove(COMMENT_ORIGINAL_CLASS);
+    });
+    target.querySelectorAll?.(`.${COMMENT_CLOWNS_CLASS}`).forEach((element) => {
+      element.remove();
+    });
+    target.pangramGalleryCommentTreatment = null;
+    target.removeAttribute(COMMENT_STATE_ATTRIBUTE);
+  }
+
+  function isCommentTextExcluded(textNode, root) {
+    const parent = textNode.parentElement;
+    if (!parent || !textNode.textContent?.trim()) return true;
+    if (parent.closest?.(`.${COMMENT_CLOWNS_CLASS}, .pangram-feed-badge, .${CARD_CLASS}`)) {
+      return true;
+    }
+    if (parent.closest?.('script, style, noscript, template, svg, button, input, textarea, select, option, [contenteditable="true"]')) {
+      return true;
+    }
+    return !root.contains(textNode);
+  }
+
+  function getCommentTreatmentRoot(commentTarget, badge) {
+    const pangramText = commentTarget.querySelector?.('[data-pangram-text-id]');
+    if (pangramText) return pangramText;
+    const scannedHost = badge?.closest?.('[data-pangram-scanned="true"]');
+    if (scannedHost && scannedHost !== commentTarget) return scannedHost;
+    return null;
+  }
+
+  function clownCommentTarget(commentTarget, badge) {
+    restoreTarget(commentTarget);
+    restoreCommentTarget(commentTarget);
+
+    const root = getCommentTreatmentRoot(commentTarget, badge);
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const visibleText = [];
+    let node = walker.nextNode();
+    while (node) {
+      if (!isCommentTextExcluded(node, root)) visibleText.push(node.textContent || '');
+      node = walker.nextNode();
+    }
+    if (!visibleText.length) return;
+
+    const clowns = document.createElement('span');
+    clowns.className = COMMENT_CLOWNS_CLASS;
+    clowns.setAttribute('aria-hidden', 'true');
+    clowns.textContent = core.clownifyText(visibleText.join(''));
+    root.classList.add(COMMENT_ORIGINAL_CLASS);
+    root.after(clowns);
+
+    commentTarget.pangramGalleryCommentTreatment = { original: root, clowns };
+    commentTarget.setAttribute(COMMENT_STATE_ATTRIBUTE, 'clowned');
+  }
+
   function processBadges(badges) {
     const activeGeneration = generation;
     for (const badge of badges) {
       if (!badge.isConnected) continue;
       const verdict = core.classifyBadgeText(badge.textContent || '');
       if (!verdict) continue;
+      const commentTarget = core.findCommentTarget(badge);
+      if (commentTarget) {
+        if (core.shouldReplace(verdict, settings)) {
+          clownCommentTarget(commentTarget, badge);
+        } else {
+          restoreCommentTarget(commentTarget);
+        }
+        continue;
+      }
       const target = core.findReplacementTarget(badge);
       if (!target) continue;
 
       if (settings.hidePromoted && core.isPromotedTarget(target)) {
         hidePromotedTarget(target);
+        continue;
+      }
+
+      if (settings.hideSuggested && core.isSuggestedTarget(target)) {
+        hideSuggestedTarget(target);
         continue;
       }
 
@@ -273,9 +356,12 @@
 
   function scanInitialDocument() {
     scanTimer = null;
-    processPromotedTargets(document.querySelectorAll(
-      '.fie-impression-container, li[data-testid="carousel-child-container"]'
-    ));
+    if (settings.hidePromoted || settings.hideSuggested) {
+      processCleanupTargets(
+        settings.hidePromoted ? core.collectPromotedTargets(document) : [],
+        settings.hideSuggested ? core.collectSuggestedTargets(document) : []
+      );
+    }
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
   }
 
@@ -293,10 +379,32 @@
     target.setAttribute(STATE_ATTRIBUTE, 'hidden-promoted');
   }
 
-  function processPromotedTargets(targets) {
-    if (!settings.hidePromoted) return;
-    for (const target of targets || []) {
-      if (target.isConnected) hidePromotedTarget(target);
+  function hideSuggestedTarget(target) {
+    if (target.getAttribute(STATE_ATTRIBUTE) === 'hidden-suggested') return;
+    restoreTarget(target);
+    const card = createCard('suggested', target);
+    card.setAttribute('aria-label', 'Suggested post hidden');
+    target.before(card);
+    if (!hydrateCard(card, { kind: 'notice', title: '🦟 Un-suggested a post' })) {
+      disposeCard(card);
+      return;
+    }
+    target.classList.add(HIDDEN_CLASS);
+    target.setAttribute(STATE_ATTRIBUTE, 'hidden-suggested');
+  }
+
+  function processCleanupTargets(promotedTargetValues, suggestedTargetValues) {
+    const promotedTargets = new Set(promotedTargetValues || []);
+    const suggestedTargets = new Set(suggestedTargetValues || []);
+    const targets = new Set([...promotedTargets, ...suggestedTargets]);
+
+    for (const target of targets) {
+      if (!target?.isConnected) continue;
+      if (settings.hidePromoted && promotedTargets.has(target)) {
+        hidePromotedTarget(target);
+      } else if (settings.hideSuggested && suggestedTargets.has(target)) {
+        hideSuggestedTarget(target);
+      }
     }
   }
 
@@ -345,6 +453,9 @@
       target.classList.remove(HIDDEN_CLASS);
       target.removeAttribute(STATE_ATTRIBUTE);
     });
+    document.querySelectorAll(`[${COMMENT_STATE_ATTRIBUTE}]`).forEach(
+      restoreCommentTarget
+    );
   }
 
   async function refreshSettings() {
@@ -356,9 +467,16 @@
 
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
-    processPromotedTargets(
-      core.collectPromotedTargetsFromMutationRecords(records)
-    );
+    if (settings.hidePromoted || settings.hideSuggested) {
+      processCleanupTargets(
+        settings.hidePromoted
+          ? core.collectPromotedTargetsFromMutationRecords(records)
+          : [],
+        settings.hideSuggested
+          ? core.collectSuggestedTargetsFromMutationRecords(records)
+          : []
+      );
+    }
     processBadges(core.collectBadgesFromMutationRecords(records));
   }
 

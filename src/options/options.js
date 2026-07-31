@@ -18,6 +18,7 @@
     replaceMixed: document.querySelector('#replace-mixed'),
     replaceAssisted: document.querySelector('#replace-assisted'),
     hidePromoted: document.querySelector('#hide-promoted'),
+    hideSuggested: document.querySelector('#hide-suggested'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
@@ -60,6 +61,7 @@
     controls.replaceMixed.checked = settings.replaceMixed;
     controls.replaceAssisted.checked = settings.replaceAssisted;
     controls.hidePromoted.checked = settings.hidePromoted;
+    controls.hideSuggested.checked = settings.hideSuggested;
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
@@ -83,6 +85,7 @@
       replaceMixed: controls.replaceMixed.checked,
       replaceAssisted: controls.replaceAssisted.checked,
       hidePromoted: controls.hidePromoted.checked,
+      hideSuggested: controls.hideSuggested.checked,
       styleMode,
       streams: {
         ai:
@@ -103,6 +106,7 @@
     controls.replaceMixed,
     controls.replaceAssisted,
     controls.hidePromoted,
+    controls.hideSuggested,
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed,

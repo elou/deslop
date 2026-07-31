@@ -58,4 +58,6 @@ test('offers the explicit cleanup controls', () => {
   assert.match(optionsHtml, /id="replace-assisted"/);
   assert.match(optionsHtml, /id="hide-promoted"/);
   assert.match(optionsHtml, /💸 Hide promoted posts/);
+  assert.match(optionsHtml, /id="hide-suggested"/);
+  assert.match(optionsHtml, /🦟 Hide suggested/);
 });

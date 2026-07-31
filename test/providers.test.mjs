@@ -491,6 +491,48 @@ test('routes Deep Space through the NASA image library and chooses a bounded ren
   assert.match(item.assetUrl, /~large\.jpg$/);
 });
 
+test('routes AI-Assisted through its separate stream when styles differ', async () => {
+  const fetchFn = async (url) => {
+    if (url.includes('/search?')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ collection: { items: [{ data: [{
+          nasa_id: 'ASSISTED-W49B',
+          media_type: 'image',
+          title: 'AI-Assisted deep-space selection',
+          description: 'A supernova remnant in deep space',
+          date_created: '2024-01-02'
+        }] }] } })
+      };
+    }
+    assert.match(url, /images-api\.nasa\.gov\/asset\/ASSISTED-W49B$/);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ collection: { items: [
+        { href: 'https://images-assets.nasa.gov/image/ASSISTED-W49B~large.jpg' }
+      ] } })
+    };
+  };
+
+  const item = await getReplacement(
+    {
+      styleMode: 'different',
+      streams: {
+        ai: 'hide-ai',
+        assisted: 'deep-space'
+      }
+    },
+    'ai-assisted',
+    fetchFn,
+    () => 0
+  );
+
+  assert.equal(item.provider, 'Deep Space');
+  assert.match(item.assetUrl, /ASSISTED-W49B~large\.jpg$/);
+});
+
 test('routes Modern Art through the experimental WikiArt mirror', async () => {
   const fetchFn = async (url) => {
     assert.match(url, /datasets-server\.huggingface\.co\/filter/);

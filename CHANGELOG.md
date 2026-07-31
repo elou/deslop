@@ -10,10 +10,15 @@ Pangram Gallery follows semantic versioning from its first cumulative GitHub rel
 - Added Far Side (experimental) from the 354-row Hugging Face image dataset, with explicit copyrighted/noncommercial labeling because the dataset card has no license metadata.
 - Added `❌ Hide AI completely`, which replaces selected verdicts with a compact `☢️ Slop cleansed` notice.
 - Added `💸 Hide promoted posts` for promoted impressions detected during initial scans and infinite scroll, with a compact `💸 Unpromoted a post` notice.
+- Added `🦟 Hide suggested` for LinkedIn Suggested posts, with a compact `🦟 Un-suggested a post` notice.
 - Added a normalized provider registry so category labels can pool sources without losing provider attribution.
 - Added `🖼️ Art 2`, pooling National Gallery of Art and Rijksmuseum public-domain records; added explicit `🎾 Garross Gallery` research cards.
 - Added `✨ Surprise me`, a rights-safe global pool across Art, Art 2, Poetry, and Deep Space.
 - Added optional `AI-Assisted` verdict handling, including a third per-verdict stream mapping in Style each differently mode.
+- Fixed AI-Assisted routing so its separate stream selection is honored.
+- Added comment-only 🤡 treatment for Pangram-marked comments, preserving the parent post and accessible original comment text.
+- Hardened promoted and Suggested cleanup to use only explicit, owned LinkedIn signals; profile Featured items remain visible and mutation handling no longer rescans the full feed.
+- Delayed offscreen cards now defer image loading until they are near the viewport.
 
 ## 0.2.0 — 2026-07-30
 

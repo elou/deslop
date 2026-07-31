@@ -4,6 +4,7 @@
     replaceMixed: false,
     replaceAssisted: false,
     hidePromoted: false,
+    hideSuggested: false,
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
@@ -59,6 +60,10 @@
         typeof input.hidePromoted === 'boolean'
           ? input.hidePromoted
           : DEFAULT_SETTINGS.hidePromoted,
+      hideSuggested:
+        typeof input.hideSuggested === 'boolean'
+          ? input.hideSuggested
+          : DEFAULT_SETTINGS.hideSuggested,
       styleMode: input.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.includes(inputStreams.ai)
@@ -90,14 +95,138 @@
     return verdict === 'ai-assisted' && settings.replaceAssisted;
   }
 
-  // These are the LinkedIn impression containers Pangram already recognizes
-  // as promoted. Keeping the selector here lets initial and infinite-scroll
-  // scans share the same target contract.
-  const PROMOTED_SELECTOR =
-    '.fie-impression-container, li[data-testid="carousel-child-container"]';
+  function clownifyText(value) {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\S+/gu, '🤡');
+  }
+
+  // Profile Featured items also use LinkedIn's generic impression wrapper, so
+  // that wrapper is a candidate for inspection rather than proof of promotion.
+  // Only an explicit promoted marker or the actor disclosure may hide a post.
+  const PROMOTED_MARKER_SELECTOR =
+    '.feed-shared-update-v2--promoted, [data-promoted="true"]';
+  const PROMOTED_LABEL_SELECTOR =
+    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
+  const SUGGESTED_LABEL_SELECTOR =
+    '.update-components-header__text-view, [data-testid="suggested-label"]';
+  const FEED_SIGNAL_OWNER_SELECTOR =
+    'article, [role="article"], [role="listitem"], .fie-impression-container, li[data-testid="carousel-child-container"]';
+  const PROMOTED_SIGNAL_SELECTOR =
+    `${PROMOTED_MARKER_SELECTOR}, ${PROMOTED_LABEL_SELECTOR}`;
+
+  function hasPromotedLabelText(signal) {
+    return Boolean(
+      signal?.textContent?.trim().toLowerCase().startsWith('promoted')
+    );
+  }
+
+  function hasSuggestedLabelText(signal) {
+    return signal?.textContent?.trim().toLowerCase() === 'suggested';
+  }
+
+  function isPromotedSignal(signal) {
+    if (signal?.matches?.(PROMOTED_MARKER_SELECTOR)) return true;
+    return Boolean(
+      signal?.matches?.(PROMOTED_LABEL_SELECTOR) &&
+      hasPromotedLabelText(signal)
+    );
+  }
+
+  function isSuggestedSignal(signal) {
+    return Boolean(
+      signal?.matches?.(SUGGESTED_LABEL_SELECTOR) &&
+      hasSuggestedLabelText(signal)
+    );
+  }
+
+  function findSignalOwner(signal, isSignal) {
+    if (!isSignal(signal)) return null;
+    return signal.closest?.(FEED_SIGNAL_OWNER_SELECTOR) || null;
+  }
+
+  function isSignalOwnedByTarget(target, signal, isSignal) {
+    if (!isSignal(signal)) return false;
+    const owner = signal.closest?.(FEED_SIGNAL_OWNER_SELECTOR);
+    // DOM signals always support closest(). The fallback keeps this predicate
+    // usable with small DOM-like objects in consumers and tests.
+    return owner ? owner === target : typeof signal.closest !== 'function';
+  }
 
   function isPromotedTarget(target) {
-    return Boolean(target?.matches?.(PROMOTED_SELECTOR));
+    if (
+      target?.matches?.(PROMOTED_MARKER_SELECTOR) &&
+      (!target.closest || target.closest(FEED_SIGNAL_OWNER_SELECTOR) === target)
+    ) {
+      return true;
+    }
+    return Array.from(target?.querySelectorAll?.(PROMOTED_LABEL_SELECTOR) || []).some(
+      (label) => isSignalOwnedByTarget(target, label, hasPromotedLabelText)
+    );
+  }
+
+  function isSuggestedTarget(target) {
+    return Array.from(target?.querySelectorAll?.(SUGGESTED_LABEL_SELECTOR) || []).some(
+      (label) => isSignalOwnedByTarget(target, label, hasSuggestedLabelText)
+    );
+  }
+
+  function collectSignalTargets(root, signalSelector, isSignal) {
+    const targets = new Set();
+    const collectSignal = (signal) => {
+      const owner = findSignalOwner(signal, isSignal);
+      if (owner) targets.add(owner);
+    };
+
+    if (root?.nodeType === 1 && root.matches?.(signalSelector)) {
+      collectSignal(root);
+    }
+    root?.querySelectorAll?.(signalSelector).forEach(collectSignal);
+    return [...targets];
+  }
+
+  function collectSignalTargetsFromMutationRecords(
+    records,
+    signalSelector,
+    isSignal
+  ) {
+    const targets = new Set();
+    const collectSignal = (signal) => {
+      const owner = findSignalOwner(signal, isSignal);
+      if (owner) targets.add(owner);
+    };
+    const inspectMutationTarget = (node) => {
+      const element = node?.nodeType === 1 ? node : node?.parentElement;
+      if (!element) return;
+      if (element.matches?.(signalSelector)) {
+        collectSignal(element);
+        return;
+      }
+      const signal = element.closest?.(signalSelector);
+      if (signal) collectSignal(signal);
+    };
+    const inspectAddedSubtree = (node) => {
+      if (!node || (node.nodeType !== 1 && node.nodeType !== 11)) return;
+      if (node.nodeType === 1 && node.matches?.(signalSelector)) {
+        collectSignal(node);
+      }
+      node.querySelectorAll?.(signalSelector).forEach(collectSignal);
+    };
+
+    for (const record of records || []) {
+      // Character data can hydrate an existing signal. Inspect its ancestor
+      // chain, but never descend the existing mutation target's subtree.
+      inspectMutationTarget(record?.target);
+      for (const node of record?.addedNodes || []) inspectAddedSubtree(node);
+    }
+    return [...targets];
+  }
+
+  function collectPromotedTargets(root) {
+    return collectSignalTargets(root, PROMOTED_SIGNAL_SELECTOR, isPromotedSignal);
+  }
+
+  function collectSuggestedTargets(root) {
+    return collectSignalTargets(root, SUGGESTED_LABEL_SELECTOR, isSuggestedSignal);
   }
 
   function collectBadgesFromMutationRecords(records) {
@@ -136,22 +265,19 @@
   }
 
   function collectPromotedTargetsFromMutationRecords(records) {
-    const targets = new Set();
-    const collect = (node) => {
-      if (!node || node.nodeType !== 1) return;
-      if (node.matches?.(PROMOTED_SELECTOR)) targets.add(node);
-      const ancestor = node.closest?.(PROMOTED_SELECTOR);
-      if (ancestor) targets.add(ancestor);
-      node.querySelectorAll?.(PROMOTED_SELECTOR).forEach((target) => {
-        targets.add(target);
-      });
-    };
+    return collectSignalTargetsFromMutationRecords(
+      records,
+      PROMOTED_SIGNAL_SELECTOR,
+      isPromotedSignal
+    );
+  }
 
-    for (const record of records || []) {
-      collect(record?.target);
-      for (const node of record?.addedNodes || []) collect(node);
-    }
-    return [...targets];
+  function collectSuggestedTargetsFromMutationRecords(records) {
+    return collectSignalTargetsFromMutationRecords(
+      records,
+      SUGGESTED_LABEL_SELECTOR,
+      isSuggestedSignal
+    );
   }
 
   function isOrphanedCard(card) {
@@ -159,6 +285,9 @@
   }
 
   function findReplacementTarget(badge) {
+    const commentHost = badge?.closest?.('[data-pangram-comment]');
+    if (commentHost) return commentHost;
+
     const postHost = badge?.closest?.('[data-pangram-post-id]');
     const host =
       postHost || badge?.closest?.('[data-pangram-scanned="true"]');
@@ -177,6 +306,10 @@
     return host.closest?.('article, [role="article"]') || host;
   }
 
+  function findCommentTarget(badge) {
+    return badge?.closest?.('[data-pangram-comment]') || null;
+  }
+
   root.PangramGalleryCore = Object.freeze({
     DEFAULT_SETTINGS,
     STREAM_IDS,
@@ -184,10 +317,16 @@
     normalizeSettings,
     getStreamForVerdict,
     shouldReplace,
+    clownifyText,
     isPromotedTarget,
+    isSuggestedTarget,
+    collectPromotedTargets,
+    collectSuggestedTargets,
     collectBadgesFromMutationRecords,
     collectPromotedTargetsFromMutationRecords,
+    collectSuggestedTargetsFromMutationRecords,
     isOrphanedCard,
-    findReplacementTarget
+    findReplacementTarget,
+    findCommentTarget
   });
 })(globalThis);

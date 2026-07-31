@@ -26,6 +26,13 @@ test('reads only Pangram verdict labels', () => {
   assert.equal(core.classifyBadgeText(''), null);
 });
 
+test('replaces each visible comment word with one clown while preserving spacing', () => {
+  const core = loadCore();
+
+  assert.equal(core.clownifyText('This is AI.'), '🤡 🤡 🤡');
+  assert.equal(core.clownifyText('Two\nlines'), '🤡\n🤡');
+});
+
 test('defaults to AI-only replacement', () => {
   const core = loadCore();
   const settings = core.normalizeSettings();
@@ -34,6 +41,7 @@ test('defaults to AI-only replacement', () => {
   assert.equal(settings.replaceMixed, false);
   assert.equal(settings.replaceAssisted, false);
   assert.equal(settings.hidePromoted, false);
+  assert.equal(settings.hideSuggested, false);
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
@@ -107,11 +115,84 @@ test('can opt into hiding promoted impressions', () => {
   assert.equal(
     core.isPromotedTarget({
       matches: (selector) =>
-        selector ===
-        '.fie-impression-container, li[data-testid="carousel-child-container"]'
+        selector.startsWith('.feed-shared-update-v2--promoted')
     }),
     true
   );
+});
+
+test('does not treat a LinkedIn profile Featured item as promoted by its wrapper alone', () => {
+  const core = loadCore();
+  const featuredItem = {
+    matches: (selector) => selector.startsWith('.fie-impression-container'),
+    querySelectorAll: () => []
+  };
+
+  assert.equal(core.isPromotedTarget(featuredItem), false);
+});
+
+test('recognizes an explicit promoted marker without an actor disclosure', () => {
+  const core = loadCore();
+  const promotedItem = {
+    matches: (selector) => selector.startsWith('.feed-shared-update-v2--promoted'),
+    querySelectorAll: () => []
+  };
+
+  assert.equal(core.isPromotedTarget(promotedItem), true);
+});
+
+test('can opt into hiding suggested posts by their explicit LinkedIn header', () => {
+  const core = loadCore();
+  const settings = core.normalizeSettings({ hideSuggested: true });
+  const suggestedHeader = { textContent: 'Suggested' };
+  const feedItem = {
+    querySelectorAll: (selector) =>
+      selector === '.update-components-header__text-view, [data-testid="suggested-label"]'
+        ? [suggestedHeader]
+        : []
+  };
+
+  assert.equal(settings.hideSuggested, true);
+  assert.equal(core.isSuggestedTarget(feedItem), true);
+});
+
+test('does not treat a recommendation module as a Suggested post', () => {
+  const core = loadCore();
+  const feedItem = {
+    querySelectorAll: () => [{ textContent: 'Recommended for you' }]
+  };
+
+  assert.equal(core.isSuggestedTarget(feedItem), false);
+});
+
+test('recognizes a LinkedIn promoted label when the legacy impression wrapper is absent', () => {
+  const core = loadCore();
+  const promotedLabel = { textContent: 'Promoted' };
+  const feedItem = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector ===
+      '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]'
+        ? [promotedLabel]
+        : []
+  };
+
+  assert.equal(core.isPromotedTarget(feedItem), true);
+});
+
+test('recognizes a LinkedIn partnership disclosure that starts with Promoted', () => {
+  const core = loadCore();
+  const promotedLabel = { textContent: 'Promoted · Partnership with Intuit' };
+  const feedItem = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector ===
+      '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]'
+        ? [promotedLabel]
+        : []
+  };
+
+  assert.equal(core.isPromotedTarget(feedItem), true);
 });
 
 test('disabled mode never replaces a verdict', () => {
@@ -152,23 +233,125 @@ test('collects Pangram badges only from added mutation subtrees', () => {
 test('collects promoted impressions from appended feed subtrees', () => {
   const core = loadCore();
   const promoted = { id: 'promoted' };
+  const promotedLabel = {
+    nodeType: 1,
+    textContent: 'Promoted',
+    matches: (selector) => selector.includes('.feed-shared-actor__sub-description'),
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"], .fie-impression-container, li[data-testid="carousel-child-container"]'
+        ? promoted
+        : null
+  };
+  let mutationTargetDescents = 0;
+  const mutationTarget = {
+    nodeType: 1,
+    matches: () => false,
+    closest: () => null,
+    querySelectorAll: () => {
+      mutationTargetDescents += 1;
+      return [];
+    }
+  };
   const subtree = {
     nodeType: 1,
     matches: () => false,
     closest: () => null,
     querySelectorAll: (selector) =>
-      selector ===
-      '.fie-impression-container, li[data-testid="carousel-child-container"]'
-        ? [promoted]
+      selector.includes('.feed-shared-actor__sub-description')
+        ? [promotedLabel]
         : []
   };
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(core.collectPromotedTargetsFromMutationRecords([
-      { target: subtree, addedNodes: [] }
+      { target: mutationTarget, addedNodes: [subtree] }
     ]))),
     [{ id: 'promoted' }]
   );
+  assert.equal(
+    mutationTargetDescents,
+    0,
+    'an existing mutation target must not be descended'
+  );
+});
+
+test('collects a promoted post when its disclosure text hydrates late', () => {
+  const core = loadCore();
+  const feedItem = { id: 'late-promoted-post' };
+  const promotedLabel = {
+    nodeType: 1,
+    textContent: 'Promoted · Partnership with Intuit',
+    matches: (selector) => selector.includes('.feed-shared-actor__sub-description'),
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"], .fie-impression-container, li[data-testid="carousel-child-container"]'
+        ? feedItem
+        : null,
+    querySelectorAll: () => {
+      throw new Error('late-hydrated signal should not be descended');
+    }
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectPromotedTargetsFromMutationRecords([
+      { target: promotedLabel, addedNodes: [{ nodeType: 3 }] }
+    ]))),
+    [{ id: 'late-promoted-post' }]
+  );
+});
+
+test('collects only the Suggested signal owner from appended subtrees', () => {
+  const core = loadCore();
+  const suggestedPost = { id: 'suggested-post' };
+  const suggestedLabel = {
+    nodeType: 1,
+    textContent: 'Suggested',
+    matches: (selector) => selector.includes('.update-components-header__text-view'),
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"], .fie-impression-container, li[data-testid="carousel-child-container"]'
+        ? suggestedPost
+        : null
+  };
+  const mutationTarget = {
+    nodeType: 1,
+    matches: () => false,
+    closest: () => null,
+    querySelectorAll: () => {
+      throw new Error('an existing feed root must not be descended');
+    }
+  };
+  const addedSubtree = {
+    nodeType: 1,
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector.includes('.update-components-header__text-view')
+        ? [suggestedLabel]
+        : []
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectSuggestedTargetsFromMutationRecords([
+      { target: mutationTarget, addedNodes: [addedSubtree] }
+    ]))),
+    [{ id: 'suggested-post' }]
+  );
+});
+
+test('does not assign a nested promoted signal to an outer feed item', () => {
+  const core = loadCore();
+  const outerFeedItem = { id: 'outer-feed-item' };
+  const innerFeedItem = { id: 'inner-feed-item' };
+  const promotedLabel = {
+    textContent: 'Promoted',
+    matches: (selector) => selector.includes('.feed-shared-actor__sub-description'),
+    closest: () => innerFeedItem
+  };
+  outerFeedItem.matches = () => false;
+  outerFeedItem.querySelectorAll = () => [promotedLabel];
+  innerFeedItem.matches = () => false;
+  innerFeedItem.querySelectorAll = () => [promotedLabel];
+
+  assert.equal(core.isPromotedTarget(outerFeedItem), false);
+  assert.equal(core.isPromotedTarget(innerFeedItem), true);
 });
 
 test('identifies cards whose original feed item was removed', () => {
@@ -250,10 +433,7 @@ test('replaces the full promoted impression for a Pangram badge', () => {
   const promotedImpression = { id: 'linkedin-promoted-impression' };
   const postHost = {
     closest: (selector) => {
-      if (
-        selector ===
-        '.fie-impression-container, li[data-testid="carousel-child-container"]'
-      ) {
+      if (selector.startsWith('.fie-impression-container')) {
         return promotedImpression;
       }
       return null;
@@ -281,4 +461,32 @@ test('does not expand a comment-only Pangram badge to the surrounding feed item'
   };
 
   assert.equal(core.findReplacementTarget(badge), scannedHost);
+});
+
+test('keeps a Pangram comment inside its comment boundary when it also has a post id', () => {
+  const core = loadCore();
+  const feedItem = { id: 'human-linkedin-post' };
+  const commentHost = {
+    id: 'ai-linkedin-comment',
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"]'
+        ? feedItem
+        : null
+  };
+  const postHost = {
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"]'
+        ? feedItem
+        : null
+  };
+  const badge = {
+    closest: (selector) => {
+      if (selector === '[data-pangram-comment]') return commentHost;
+      if (selector === '[data-pangram-post-id]') return postHost;
+      return null;
+    }
+  };
+
+  assert.equal(core.findReplacementTarget(badge), commentHost);
+  assert.equal(core.findCommentTarget(badge), commentHost);
 });

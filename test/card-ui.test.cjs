@@ -27,6 +27,19 @@ test('mounts a reserved replacement card before requesting museum content', () =
   );
 });
 
+test('does not hydrate a delayed image after its card was marked offscreen', () => {
+  assert.match(
+    contentSource,
+    /card\.pangramGalleryResident\s*=\s*entry\.isIntersecting/,
+    'the observer must persist the latest residency result on the card'
+  );
+  assert.match(
+    contentSource,
+    /if \(card\.pangramGalleryResident !== false\) restoreCardImage\(image\)/,
+    'hydration must not restore an image after an offscreen observation'
+  );
+});
+
 test('reserves a stable four-by-three artwork frame while loading', () => {
   assert.match(
     contentCss,
@@ -133,9 +146,41 @@ test('renders the compact slop-cleansed notice without an original toggle', () =
 test('defines a compact promoted-post hide state', () => {
   assert.match(contentSource, /hidden-promoted/);
   assert.match(contentSource, /collectPromotedTargetsFromMutationRecords/);
+  assert.doesNotMatch(
+    contentSource,
+    /record\.target[\s\S]{0,300}querySelectorAll\?\.\(FEED_ITEM_SELECTOR\)/,
+    'mutation targets must not trigger a feed-tree rescan'
+  );
   assert.match(contentSource, /💸 Unpromoted a post/);
   assert.match(
     contentSource,
     /hydrateCard\(card, \{ kind: 'notice', title: '💸 Unpromoted a post' \}\)/
+  );
+});
+
+test('defines a compact suggested-post hide state', () => {
+  assert.match(contentSource, /hidden-suggested/);
+  assert.match(contentSource, /core\.isSuggestedTarget\(target\)/);
+  assert.match(contentSource, /🦟 Un-suggested a post/);
+});
+
+test('gives promoted cleanup precedence over suggested cleanup', () => {
+  assert.match(
+    contentSource,
+    /if \(settings\.hidePromoted && promotedTargets\.has\(target\)\)[\s\S]*?hidePromotedTarget\(target\);[\s\S]*?else if \(settings\.hideSuggested && suggestedTargets\.has\(target\)\)[\s\S]*?hideSuggestedTarget\(target\);/
+  );
+});
+
+test('clowns only Pangram-marked AI comments and keeps their words accessible', () => {
+  assert.match(contentSource, /core\.findCommentTarget\(badge\)/);
+  assert.match(contentSource, /clownCommentTarget\(commentTarget, badge\)/);
+  assert.match(contentSource, /commentTarget\.querySelector\?\.\('\[data-pangram-text-id\]'\)/);
+  assert.match(contentSource, /clowns\.setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(contentSource, /root\.classList\.add\(COMMENT_ORIGINAL_CLASS\)/);
+  assert.match(contentSource, /root\.after\(clowns\)/);
+  assert.doesNotMatch(contentSource, /textNode\.replaceWith/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-comment-original\s*\{[^}]*clip:\s*rect\(0, 0, 0, 0\)/s
   );
 });
