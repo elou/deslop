@@ -12,6 +12,39 @@ const contentCss = fs.readFileSync(
   'utf8'
 );
 
+test('content startup is observable and never silently exits on runtime id', () => {
+  assert.doesNotMatch(
+    contentSource,
+    /!globalThis\.chrome\?\.runtime\?\.id/,
+    'a statically injected content script must surface startup failures instead of silently returning'
+  );
+  assert.match(
+    contentSource,
+    /data-pangram-gallery-boot', 'ready'/,
+    'the live page needs an observable ready marker for installation diagnostics'
+  );
+});
+
+test('catches Pangram badges that finish booting after the initial scan', () => {
+  assert.match(
+    contentSource,
+    /const STARTUP_CATCH_UP_DELAYS = Object\.freeze\(\[800, 2400\]\)/,
+    'startup recovery must be explicitly bounded'
+  );
+  assert.match(contentSource, /function scheduleStartupCatchUpScans/);
+  assert.match(
+    contentSource,
+    /STARTUP_CATCH_UP_DELAYS[\s\S]*window\.setTimeout\([\s\S]*scanInitialDocument\(\)/,
+    'late Pangram badge classes need a bounded follow-up scan'
+  );
+  assert.doesNotMatch(
+    contentSource,
+    /attributeFilter:\s*\[[^\]]*['"]class['"]/,
+    'do not observe every LinkedIn class mutation'
+  );
+  assert.doesNotMatch(contentSource, /setInterval\(/);
+});
+
 test('mounts a reserved replacement card beside the LinkedIn item before requesting content', () => {
   const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
   const replaceTargetEnd = contentSource.indexOf('\n  function processBadges', replaceTargetStart);

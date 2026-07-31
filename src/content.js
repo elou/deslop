@@ -1,6 +1,19 @@
 (function startPangramGallery() {
+  const documentRoot = globalThis.document?.documentElement;
+  documentRoot?.setAttribute('data-pangram-gallery-boot', 'starting');
   const core = globalThis.PangramGalleryCore;
-  if (!core || !globalThis.chrome?.runtime?.id) return;
+  if (!core) {
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-core');
+    return;
+  }
+  if (!globalThis.chrome?.storage?.sync || !globalThis.chrome?.storage?.onChanged) {
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-storage-api');
+    return;
+  }
+  if (!globalThis.chrome?.runtime?.sendMessage) {
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'missing-runtime-api');
+    return;
+  }
 
   const CARD_CLASS = 'pangram-gallery-card';
   const HIDDEN_CLASS = 'pangram-gallery-original-hidden';
@@ -8,6 +21,7 @@
   const COMMENT_STATE_ATTRIBUTE = 'data-pangram-gallery-comment-state';
   const COMMENT_ORIGINAL_CLASS = 'pangram-gallery-comment-original';
   const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
+  const STARTUP_CATCH_UP_DELAYS = Object.freeze([800, 2400]);
   let settings = core.normalizeSettings();
   let scanTimer = null;
   let generation = 0;
@@ -432,6 +446,7 @@
       );
     }
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'initial-scan-complete');
   }
 
   function replaceCleanupTarget(target, cleanupType, activeGeneration) {
@@ -530,6 +545,18 @@
     scanTimer = window.setTimeout(scanInitialDocument, 80);
   }
 
+  function scheduleStartupCatchUpScans() {
+    for (const delay of STARTUP_CATCH_UP_DELAYS) {
+      window.setTimeout(() => {
+        scanInitialDocument();
+        documentRoot?.setAttribute(
+          'data-pangram-gallery-boot',
+          'catch-up-scan-complete'
+        );
+      }, delay);
+    }
+  }
+
   function restoreAll() {
     document.querySelectorAll(`.${CARD_CLASS}`).forEach(disposeCard);
     document.querySelectorAll(`[${STATE_ATTRIBUTE}]`).forEach((target) => {
@@ -544,6 +571,7 @@
   async function refreshSettings() {
     generation += 1;
     settings = await loadSettings();
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'settings-loaded');
     restoreAll();
     scheduleInitialScan();
   }
@@ -571,10 +599,15 @@
     attributeFilter: ['data-pangram-scanned'],
     characterData: true
   });
+  documentRoot?.setAttribute('data-pangram-gallery-boot', 'ready');
+  scheduleStartupCatchUpScans();
 
   chrome.storage.onChanged.addListener((_changes, areaName) => {
     if (areaName === 'sync') void refreshSettings();
   });
 
-  void refreshSettings();
+  void refreshSettings().catch((error) => {
+    documentRoot?.setAttribute('data-pangram-gallery-boot', 'boot-error');
+    console.error('De-Slop failed to start', error);
+  });
 })();
