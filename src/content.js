@@ -99,6 +99,15 @@
     residencyObserver?.unobserve(card);
     card.pangramGalleryResident = false;
 
+    if (
+      card.pangramGalleryRemountTimer !== null &&
+      card.pangramGalleryRemountTimer !== undefined
+    ) {
+      window.clearTimeout(card.pangramGalleryRemountTimer);
+    }
+    card.pangramGalleryRemountTimer = null;
+    card.pangramGalleryRemountPending = false;
+
     const target = card.pangramGalleryTarget;
     if (target?.pangramGalleryCard === card) {
       target.pangramGalleryCard = null;
@@ -121,6 +130,9 @@
   function createCard(verdict, target) {
     const card = document.createElement('aside');
     card.className = `${CARD_CLASS} pangram-gallery-card--loading`;
+    card.pangramGalleryRemountCount = 0;
+    card.pangramGalleryRemountTimer = null;
+    card.pangramGalleryRemountPending = false;
     card.setAttribute('role', 'region');
     const verdictLabel = verdict === 'mixed'
       ? 'Mixed'
@@ -194,7 +206,10 @@
       'error',
       () => {
         // Removing src for offscreen cards is intentional, not a provider failure.
-        if (image.dataset.pangramGalleryUnloaded === 'true' || !card.isConnected) return;
+        if (
+          image.dataset.pangramGalleryUnloaded === 'true' ||
+          (!card.isConnected && !card.pangramGalleryRemountPending)
+        ) return;
         releaseCardTarget(card, target);
       }
     );
@@ -269,10 +284,10 @@
   function restoreTarget(target) {
     const state = target.getAttribute(STATE_ATTRIBUTE);
     if (!state) return;
-    const first = target.firstElementChild;
+    const previous = target.previousElementSibling;
     const card =
       target.pangramGalleryCard ||
-      (first?.classList.contains(CARD_CLASS) ? first : null);
+      (previous?.classList.contains(CARD_CLASS) ? previous : null);
     if (card) disposeCard(card);
     target.classList.remove(HIDDEN_CLASS);
     target.removeAttribute(STATE_ATTRIBUTE);
@@ -282,7 +297,7 @@
     if (target.getAttribute(STATE_ATTRIBUTE)) return;
     target.setAttribute(STATE_ATTRIBUTE, 'pending');
     const card = createCard(verdict, target);
-    target.prepend(card);
+    target.before(card);
     target.classList.add(HIDDEN_CLASS);
 
     try {
@@ -294,7 +309,7 @@
       if (
         activeGeneration !== generation ||
         !target.isConnected ||
-        !card.isConnected ||
+        (!card.isConnected && !card.pangramGalleryRemountPending) ||
         target.pangramGalleryCard !== card
       ) {
         releaseCardTarget(card, target);
@@ -445,6 +460,39 @@
     }
   }
 
+  function scheduleCardRemount(card, target) {
+    if (card?.pangramGalleryRemountPending) return true;
+    if (
+      !card ||
+      !target?.isConnected ||
+      target.pangramGalleryCard !== card ||
+      !target.hasAttribute(STATE_ATTRIBUTE) ||
+      !target.classList.contains(HIDDEN_CLASS) ||
+      card.pangramGalleryRemountCount >= 2
+    ) {
+      return false;
+    }
+
+    card.pangramGalleryRemountCount += 1;
+    card.pangramGalleryRemountPending = true;
+    card.pangramGalleryRemountTimer = window.setTimeout(() => {
+      card.pangramGalleryRemountTimer = null;
+      if (
+        !target.isConnected ||
+        target.pangramGalleryCard !== card ||
+        !target.hasAttribute(STATE_ATTRIBUTE) ||
+        !target.classList.contains(HIDDEN_CLASS)
+      ) {
+        releaseCardTarget(card, target);
+        return;
+      }
+
+      target.before(card);
+      card.pangramGalleryRemountPending = false;
+    }, 80);
+    return true;
+  }
+
   function removeOrphanedCardsFromRemovedSubtrees(records) {
     for (const record of records) {
       for (const node of record.removedNodes || []) {
@@ -458,6 +506,7 @@
         for (const card of cards) {
           if (card.isConnected) continue;
           const target = card.pangramGalleryTarget;
+          if (scheduleCardRemount(card, target)) continue;
           releaseCardTarget(card, target);
         }
 

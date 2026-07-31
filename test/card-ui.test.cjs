@@ -12,11 +12,11 @@ const contentCss = fs.readFileSync(
   'utf8'
 );
 
-test('mounts a reserved replacement card inside the stable feed item before requesting content', () => {
+test('mounts a reserved replacement card beside the LinkedIn item before requesting content', () => {
   const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
   const replaceTargetEnd = contentSource.indexOf('\n  function processBadges', replaceTargetStart);
   const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
-  const mountIndex = replaceTargetSource.indexOf('target.prepend(card)');
+  const mountIndex = replaceTargetSource.indexOf('target.before(card)');
   const requestIndex = replaceTargetSource.indexOf('await sendMessage');
 
   assert.notEqual(mountIndex, -1, 'replacement card should be mounted');
@@ -27,15 +27,15 @@ test('mounts a reserved replacement card inside the stable feed item before requ
   );
 });
 
-test('hides only LinkedIn content children while keeping the in-target card visible', () => {
+test('hides the original LinkedIn item without hiding its sibling replacement', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-original-hidden\s*>\s*:not\(\.pangram-gallery-card\)\s*\{[^}]*display:\s*none\s*!important;/s
+    /\.pangram-gallery-original-hidden\s*\{[^}]*display:\s*none\s*!important;/s
   );
   assert.doesNotMatch(
     contentCss,
-    /\.pangram-gallery-original-hidden\s*\{[^}]*display:\s*none\s*!important;/s,
-    'the feed item itself must remain mounted for LinkedIn React reconciliation'
+    /\.pangram-gallery-original-hidden\s*>/,
+    'the stable sibling mount should hide the whole original item'
   );
   assert.match(contentSource, /card\.setAttribute\('role', 'region'\)/);
 });
@@ -92,8 +92,8 @@ test('show original collapses the art card while keeping its toggle available', 
   assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
   assert.match(
     contentSource,
-    /const first = target\.firstElementChild;[\s\S]*first\?\.classList\.contains\(CARD_CLASS\)/,
-    'restore should recover a nested card even if its expando reference is lost'
+    /const previous = target\.previousElementSibling;[\s\S]*previous\?\.classList\.contains\(CARD_CLASS\)/,
+    'restore should recover the sibling card even if its expando reference is lost'
   );
 });
 
@@ -214,14 +214,33 @@ test('a stale provider response cannot overwrite a newer replacement card', () =
   assert.match(replaceTargetSource, /target\.pangramGalleryCard !== card/);
 });
 
-test('LinkedIn card removal cannot start a remount and provider-refetch loop', () => {
-  const mutationHandlerStart = contentSource.indexOf('function handleMutations');
-  const mutationHandlerSource = contentSource.slice(mutationHandlerStart);
+test('LinkedIn can remount the same card twice without another provider request', () => {
+  const remountStart = contentSource.indexOf('function scheduleCardRemount');
+  const remountEnd = contentSource.indexOf('\n  function removeOrphanedCardsFromRemovedSubtrees', remountStart);
+  const remountSource = contentSource.slice(remountStart, remountEnd);
 
+  assert.notEqual(remountStart, -1, 'removed cards need bounded same-instance recovery');
+  assert.match(remountSource, /pangramGalleryRemountCount >= 2/);
+  assert.match(
+    remountSource,
+    /if \(card\?\.pangramGalleryRemountPending\) return true;/,
+    'duplicate removal records must share the existing bounded remount instead of disposing it'
+  );
+  assert.match(remountSource, /target\.before\(card\)/);
   assert.doesNotMatch(
-    mutationHandlerSource,
-    /scheduleRemovedCardRecovery/,
-    'a removed extension card must not trigger a new replacement request from the mutation observer'
+    remountSource,
+    /replaceTarget|processBadges|sendMessage/,
+    'remounting must never start another provider request'
+  );
+  assert.match(
+    contentSource,
+    /!card\.isConnected && !card\.pangramGalleryRemountPending/,
+    'a provider response may hydrate the same card while its bounded remount is pending'
+  );
+  assert.match(
+    contentSource,
+    /!card\.isConnected && !card\.pangramGalleryRemountPending\)\s*\) return;/,
+    'an image failure during a pending remount must release the broken replacement'
   );
 });
 
