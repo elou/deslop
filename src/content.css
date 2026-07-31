@@ -40,7 +40,7 @@
   margin: auto;
   object-fit: contain;
   background: var(--pangram-gallery-surface);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.1),
     -0.335921px 0.335921px 0.475064px -0.125px #00000007,
@@ -184,8 +184,9 @@
 }
 
 .pangram-gallery-card--notice {
-  margin-block: 8px;
-  border-color: transparent;
+  margin-block: 0;
+  border-color: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
   background: transparent;
 }
 
@@ -194,14 +195,38 @@
 }
 
 .pangram-gallery-card--notice .pangram-gallery-card__body {
+  flex-wrap: nowrap;
   min-block-size: 0;
-  padding-block: 12px;
+  padding: 8px 8px 8px 16px;
+}
+
+.pangram-gallery-card--notice .pangram-gallery-card__title,
+.pangram-gallery-card--notice .pangram-gallery-card__location {
+  display: none;
 }
 
 .pangram-gallery-card__notice {
+  flex: 1 1 auto;
+  min-inline-size: 0;
   color: #777;
-  font: 500 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 400 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.pangram-gallery-card--notice .pangram-gallery-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-block-start: 0;
+  margin-inline-start: auto;
+  color: #888;
+  font-size: 13px;
+  font-weight: 500;
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
 .pangram-gallery-card__notice[hidden] {
@@ -295,6 +320,10 @@
   font-weight: 600;
   line-height: 1.2;
   text-transform: uppercase;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 .pangram-gallery-card--original-visible {
@@ -340,7 +369,9 @@
 }
 
 .pangram-gallery-card__toggle:hover {
-  background: oklch(0.93 0.012 70);
+  background: rgba(0, 0, 0, 0.04);
+  color: #666 !important;
+  border-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 .pangram-gallery-card__author:focus-visible,
@@ -386,6 +417,26 @@
     --pangram-gallery-surface: #191919;
     --pangram-gallery-border: rgba(255, 255, 255, 0.1);
     --pangram-gallery-ink: rgba(255, 255, 255, 0.92);
+  }
+
+  .pangram-gallery-card--notice {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .pangram-gallery-card__notice {
+    color: rgba(255, 255, 255, 0.65);
+    text-shadow: 0 1px rgba(0, 0, 0, 0.4);
+  }
+
+  .pangram-gallery-card--notice .pangram-gallery-card__toggle {
+    color: rgba(255, 255, 255, 0.65);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .pangram-gallery-card__toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
   }
 }
 
