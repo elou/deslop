@@ -1,6 +1,6 @@
-# Pangram Gallery
+# De-Slop
 
-Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, poetry, space photography, or New Yorker feed cards. It works by reading the verdict markers Pangram already adds to pages. It does not run its own AI detector.
+De-Slop replaces feed posts that Pangram labels as AI with quiet art, poetry, space photography, or New Yorker feed cards. It works by reading the verdict markers Pangram already adds to pages. It does not run its own AI detector.
 
 ## What it does
 
@@ -10,7 +10,7 @@ Pangram Gallery replaces feed posts that Pangram labels as AI with quiet art, po
 - Uses one content stream for every verdict by default.
 - Can route `AI` and `Mixed` verdicts to different streams.
 - Offers 🖼️ Art, 🖼️ Art 2, 📜 Poetry, 🎨 Modern Art (experimental), 🌌 Deep Space, 🗞️ Publisher feeds, 🃏 New Yorker cartoons, 🃏 Far Side (experimental), 🎾 Garross Gallery, and ✨ Surprise me.
-- Can replace selected verdicts with a compact `☢️ Slop cleansed` notice instead of loading a source.
+- Can replace selected verdicts with a compact `☢️ De-slopped your feed` notice instead of loading a source.
 - Can hide promoted impressions with `💸 Hide promoted posts`.
 - Can hide LinkedIn Suggested posts with `🦟 Hide suggested`.
 - Turns Pangram-flagged comments into 🤡 per word without hiding their human-authored parent post.
@@ -29,9 +29,9 @@ The extension is designed to work anywhere Pangram adds its feed badges. LinkedI
 5. Select the unzipped `pangram-gallery` folder.
 6. Keep the Pangram extension installed and signed in.
 
-Open Pangram Gallery from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI, Mixed, and AI-Assisted. Choose **❌ Hide AI completely** in any dropdown to remove matching posts and leave the cleansing notice. The separate **💸 Hide promoted posts** and **🦟 Hide suggested** filters replace matching LinkedIn feed items with compact notices.
+Open De-Slop from Chrome's Extensions menu to choose verdicts and content streams. Select **Style each differently** to choose one stream for AI, Mixed, and AI-Assisted. Choose **❌ Hide AI completely** in any dropdown to remove matching posts and leave a De-slopped notice. The separate **💸 Hide promoted posts** and **🦟 Hide suggested** filters can either render a chosen stream or leave compact cleanup notices.
 
-Chrome will report that the extension can read and change data on websites. That broad permission is required because Pangram can label feeds on any site. Pangram Gallery looks only for Pangram's verdict markers and does not collect or transmit post text.
+Chrome will report that the extension can read and change data on websites. That broad permission is required because Pangram can label feeds on any site. De-Slop looks only for Pangram's verdict markers and does not collect or transmit post text.
 
 ## Comments
 
@@ -39,7 +39,7 @@ When Pangram marks a comment as AI, Gallery keeps the post and comment thread in
 
 ## Privacy and storage
 
-Pangram Gallery reads verdict labels that Pangram injects into the current page. It sends no page or post text to its own server because it has no server. Content comes directly from the selected provider, and Chrome sync stores only the extension settings.
+De-Slop reads verdict labels that Pangram injects into the current page. It sends no page or post text to its own server because it has no server. Content comes directly from the selected provider, and Chrome sync stores only the extension settings.
 
 ## Content streams
 

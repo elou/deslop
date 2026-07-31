@@ -15,6 +15,16 @@ const optionsCss = fs.readFileSync(
   path.join(__dirname, '..', 'src', 'options', 'options.css'),
   'utf8'
 );
+const manifest = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'manifest.json'), 'utf8')
+);
+
+test('uses De-Slop as the installed product identity', () => {
+  assert.equal(manifest.name, 'De-Slop');
+  assert.equal(manifest.action.default_title, 'De-Slop');
+  assert.match(optionsHtml, /<title>De-Slop<\/title>/);
+  assert.match(optionsHtml, /<h1>💩 De-Slop<\/h1>/);
+});
 
 test('offers the supported live streams', () => {
   for (const label of [

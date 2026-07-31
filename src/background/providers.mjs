@@ -149,7 +149,7 @@ export function normalizeCard(card) {
     sourceUrl: textOr(card.sourceUrl, ''),
     rights: textOr(card.rights, 'Source terms apply'),
     credit: textOr(card.credit, ''),
-    provider: textOr(card.provider, 'Pangram Gallery')
+    provider: textOr(card.provider, 'De-Slop')
   };
 
   if (card.kind === 'image') {
@@ -571,7 +571,7 @@ export function buildHideReplacement(cleanupType = 'ai') {
     kind: 'notice',
     id: notice.id,
     title: notice.title,
-    provider: 'Pangram Gallery',
+    provider: 'De-Slop',
     rights: 'Local filter'
   };
 }

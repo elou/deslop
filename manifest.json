@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Pangram Gallery",
+  "name": "De-Slop",
   "version": "0.2.0",
   "description": "Replace Pangram-labeled AI feed posts with art, poetry, space, or cartoons.",
   "icons": {
@@ -32,7 +32,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Pangram Gallery",
+    "default_title": "De-Slop",
     "default_popup": "src/options/options.html",
     "default_icon": {
       "16": "assets/icon-16.png",
