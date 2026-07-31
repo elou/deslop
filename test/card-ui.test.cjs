@@ -169,7 +169,8 @@ test('links the original post author to the post permalink or their profile', ()
   assert.match(contentSource, /card\.pangramGalleryPermalink = getOriginalPostPermalink\(target\)/);
   assert.match(contentSource, /card\.pangramGalleryAuthor = getOriginalPostAuthor\(target\)/);
   assert.match(contentSource, /source\.textContent = 'Original post by ';/);
-  assert.match(contentSource, /author\.href = card\.pangramGalleryPermalink \|\| postAuthor\.href;/);
+  assert.match(contentSource, /const authorDestination = card\.pangramGalleryPermalink \|\| postAuthor\.href;/);
+  assert.match(contentSource, /author\.removeAttribute\('href'\);/);
   assert.match(contentSource, /author\.textContent = postAuthor\.name;/);
   assert.match(
     contentCss,

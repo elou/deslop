@@ -73,7 +73,9 @@
   }
 
   function getOriginalPostAuthor(target) {
-    const actors = target.querySelectorAll('.update-components-actor, .feed-shared-actor');
+    const actors = target.querySelectorAll(
+      '.update-components-actor, .feed-shared-actor, .update-components-actor__title, .feed-shared-actor__title'
+    );
     for (const actor of actors) {
       if (
         actor.closest(
@@ -82,25 +84,28 @@
       ) {
         continue;
       }
-      const link = actor.querySelector(
+      const title = actor.matches(
+        '.update-components-actor__title, .feed-shared-actor__title'
+      )
+        ? actor
+        : actor.querySelector('.update-components-actor__title, .feed-shared-actor__title');
+      const name = (title?.querySelector('[aria-hidden="true"]')?.textContent || title?.textContent)
+        ?.trim()
+        .replace(/\s+/g, ' ');
+      if (!name || /^view:/i.test(name) || name.length > 120) continue;
+
+      const link = (title || actor).querySelector(
         'a.update-components-actor__title-link[href], .update-components-actor__title a[href], a.feed-shared-actor__title-link[href], .feed-shared-actor__title a[href], a[href*="/in/"], a[href*="/company/"], a[href*="/school/"]'
       );
-      if (!link?.href) continue;
+      if (!link?.href) return { name, href: '' };
 
       const url = new URL(link.href, window.location.origin);
       if (
         url.origin !== window.location.origin ||
         !/^\/(in|company|school)\//.test(url.pathname)
       ) {
-        continue;
+        return { name, href: '' };
       }
-      const title = actor.querySelector(
-        '.update-components-actor__title, .feed-shared-actor__title'
-      );
-      const name = (title?.querySelector('[aria-hidden="true"]')?.textContent || title?.textContent || link.textContent)
-        ?.trim()
-        .replace(/\s+/g, ' ');
-      if (!name || /^view:/i.test(name) || name.length > 120) continue;
       return { name, href: url.href };
     }
     return null;
@@ -273,7 +278,12 @@
       source.hidden = !postAuthor;
       if (postAuthor) {
         source.textContent = 'Original post by ';
-        author.href = card.pangramGalleryPermalink || postAuthor.href;
+        const authorDestination = card.pangramGalleryPermalink || postAuthor.href;
+        if (authorDestination) {
+          author.href = authorDestination;
+        } else {
+          author.removeAttribute('href');
+        }
         author.textContent = postAuthor.name;
         source.append(author);
       }

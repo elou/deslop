@@ -259,6 +259,11 @@
   text-underline-offset: 3px;
 }
 
+.pangram-gallery-card__author:not([href]) {
+  cursor: default;
+  text-decoration: none;
+}
+
 .pangram-gallery-card__toggle {
   order: 2;
   flex: none;
