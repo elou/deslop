@@ -69,6 +69,7 @@ function makeCommentHarness({ initialBadge = true } = {}) {
   };
   const document = {
     documentElement,
+    addEventListener() {},
     querySelectorAll: (selector) => {
       if (selector === '.pangram-feed-badge') return initialBadge ? [badge] : [];
       if (selector === '[data-pangram-gallery-comment-state]') {
