@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Replacement card source-of-truth fixture</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #f3f2ef;
+      }
+
+      body {
+        width: 553px;
+      }
+
+      /* __CARD_CSS__ */
+
+      .pangram-gallery-card {
+        margin-block: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="pangram-gallery-card" data-fixture-kind="artwork" aria-label="AI post replaced">
+      <div class="pangram-gallery-card__image-stage">
+        <div class="pangram-gallery-card__image-frame">
+          <a class="pangram-gallery-card__image-link" href="#artwork">
+            <img
+              class="pangram-gallery-card__image"
+              alt="Charles I at the Hunt by Anthony van Dyck"
+              src="__APPROVED_ARTWORK_DATA_URI__"
+            />
+          </a>
+          <blockquote class="pangram-gallery-card__poem" hidden></blockquote>
+        </div>
+      </div>
+      <div class="pangram-gallery-card__body">
+        <p class="pangram-gallery-card__notice" hidden></p>
+        <a class="pangram-gallery-card__title" href="#artwork">Charles I at the Hunt</a>
+        <p class="pangram-gallery-card__location">Self-photographed by Shonagon. Taken on 13 December 2024.</p>
+        <button class="pangram-gallery-card__toggle" type="button">Unhide</button>
+        <span class="pangram-gallery-card__source">Original post by <a class="pangram-gallery-card__author" href="#post">John Smith</a></span>
+        <span class="pangram-gallery-card__verdict" aria-label="Pangram verdict: AI">🤖 AI ›</span>
+      </div>
+    </aside>
+  </body>
+</html>

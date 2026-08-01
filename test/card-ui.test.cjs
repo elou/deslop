@@ -41,18 +41,18 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   assert.match(contentCss, /\.pangram-gallery-card--loading/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__body\s*\{[^}]*min-block-size:\s*\d+px;/s,
+    /\.pangram-gallery-card__body\s*\{[^}]*min-block-size:\s*130\.92px;/s,
     'metadata space should remain stable while the title and source load'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*100%\s*!important;[^}]*max-block-size:\s*100%\s*!important;[^}]*object-fit:\s*contain;/s,
+    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*calc\(100% - 2px\)\s*!important;[^}]*max-block-size:\s*100%\s*!important;[^}]*object-fit:\s*contain;/s,
     'the final image should remain inside the reserved frame without cropping'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s,
-    'the image should sit in a generous, centered stage'
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+16px\s+15px;[^}]*place-items:\s*center;[^}]*background:\s*inherit;/s,
+    'the image stage should center artwork inside symmetric horizontal insets'
   );
   assert.match(
     contentCss,
@@ -116,12 +116,16 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   );
 });
 
-test('builds one tuned wrapping metadata and control composition for every full card', () => {
+test('builds the compact source-of-truth composition for every full card', () => {
   assert.match(contentSource, /body\.append\(notice, title, location, toggle\);/);
   assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*center;[^}]*column-gap:\s*12px;/s
+    /\.pangram-gallery-card__body\s*\{[^}]*box-sizing:\s*border-box;[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*center;[^}]*column-gap:\s*10px;[^}]*padding:\s*18px 28px 20px;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*box-sizing:\s*border-box;[^}]*padding:\s*32px 16px 15px;/s
   );
   assert.match(
     contentCss,
@@ -129,23 +133,24 @@ test('builds one tuned wrapping metadata and control composition for every full 
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__location\s*\{[^}]*flex-basis:\s*100%;[^}]*margin-block-start:\s*2px;[^}]*margin-block-end:\s*16px;/s
+    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*flex:\s*none;[^}]*margin-block-start:\s*6px;[^}]*font:\s*400 16px\/1\.3/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*flex:\s*1 1 0;[^}]*margin-block-start:\s*6px;/s
-  );
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*margin-block-start:\s*6px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
+    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*margin-block-start:\s*8px;[^}]*padding:\s*4px\s+8px;[^}]*font-size:\s*11px;[^}]*text-transform:\s*uppercase;/s
   );
 });
 
-test('uses the approved artwork radius and shared subtle toggle hover', () => {
+test('uses the approved artwork radius without inline image padding and shared subtle toggle hover', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*border-radius:\s*14px;/s,
-    'artwork should use the approved 14px radius'
+    /\.pangram-gallery-card__image\s*\{[^}]*border:\s*1px solid var\(--pangram-gallery-border\);[^}]*border-radius:\s*8px;[^}]*box-shadow:/s,
+    'artwork should retain the source-of-truth radius and shadow shell'
+  );
+  assert.doesNotMatch(
+    contentCss,
+    /\.pangram-gallery-card__image\s*\{[^}]*padding-inline:/s,
+    'artwork should not add inline padding inside the image shell'
   );
   assert.match(
     contentCss,
