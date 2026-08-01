@@ -42,6 +42,15 @@ function assertSharedComposition(card, kind) {
   );
 
   assert.equal(card.spacing.bodyToTitle, 18, `${kind} title should retain the approved body inset`);
+  assert.deepEqual(
+    [card.attribution.overflow, card.attribution.textOverflow, card.attribution.whiteSpace],
+    ['hidden', 'ellipsis', 'nowrap'],
+    `${kind} description should remain visible on one ellipsized line`
+  );
+  assert.ok(
+    card.attribution.height <= Number.parseFloat(card.attribution.lineHeight) + 0.01,
+    `${kind} description should never exceed one line`
+  );
   assert.equal(
     card.spacing.titleToAttribution,
     2,
@@ -75,13 +84,37 @@ test('renders the approved artwork card typography and control composition', () 
   const { artwork } = metrics;
   assertSharedComposition(artwork, 'artwork');
   assert.equal(artwork.image.borderRadius, '8px', 'artwork should retain the approved shell radius');
+  assert.equal(
+    artwork.image.overflow,
+    'hidden',
+    'the artwork bitmap should be clipped to the approved shell radius'
+  );
 });
 
 test('renders poetry through the same typography and control composition', () => {
   const { poetry } = metrics;
   assertSharedComposition(poetry, 'poetry');
-  assert.equal(poetry.poem.fontSize, '16px');
-  assert.equal(poetry.poem.lineHeight, '24px');
+  assert.deepEqual(
+    {
+      fontFamily: poetry.poem.fontFamily,
+      fontSize: poetry.poem.fontSize,
+      fontStyle: poetry.poem.fontStyle,
+      lineHeight: poetry.poem.lineHeight,
+      overflow: poetry.poem.overflow,
+      position: [poetry.poem.x, poetry.poem.y],
+      width: poetry.poem.width
+    },
+    {
+      fontFamily: 'system-ui',
+      fontSize: '15px',
+      fontStyle: 'normal',
+      lineHeight: '22.5px',
+      overflow: 'scroll',
+      position: [poetry.imageLink.x, poetry.imageLink.y],
+      width: poetry.imageLink.width
+    },
+    'poetry should use the requested full-width scrollable system treatment'
+  );
 });
 
 test('renders the durable image-card source of truth', () => {
@@ -111,8 +144,8 @@ test('renders the durable image-card source of truth', () => {
       attribution: [29, 442.31, '15.5px', '20.925px'],
       source: [29, 485.83, '16px', '20.8px'],
       toggle: [238.52, 485.23, 61.69, 24],
-      verdict: [465.02, 485.03, 58.98, 22.39],
-      image: [140.02, 32, 272.95, 352.31, '8px']
+      verdict: [473.64, 485.53, 50.36, 22.39],
+      image: [141.02, 33, 270.95, 350.31, '8px']
     },
     'the approved screenshot geometry should remain stable'
   );

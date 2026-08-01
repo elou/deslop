@@ -68,9 +68,13 @@ const measurementScript = `
     return {
       fontFamily: value.fontFamily,
       fontSize: value.fontSize,
+      fontStyle: value.fontStyle,
       fontWeight: value.fontWeight,
       lineHeight: value.lineHeight,
-      borderRadius: value.borderRadius
+      borderRadius: value.borderRadius,
+      overflow: value.overflow,
+      textOverflow: value.textOverflow,
+      whiteSpace: value.whiteSpace
     };
   };
   const measure = (card) => {

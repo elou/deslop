@@ -28,7 +28,7 @@
   box-sizing: border-box;
 }
 
-.pangram-gallery-card__image {
+img.pangram-gallery-card__image {
   all: initial;
   position: absolute;
   inset: 0;
@@ -38,8 +38,9 @@
   block-size: auto !important;
   max-block-size: 100% !important;
   margin: auto;
-  border: 1px solid var(--pangram-gallery-border);
+  border: none;
   object-fit: contain;
+  overflow: hidden;
   background: var(--pangram-gallery-surface);
   border-radius: 8px;
   box-shadow:
@@ -62,17 +63,25 @@
   cursor: pointer;
 }
 
-.pangram-gallery-card__poem {
+blockquote.pangram-gallery-card__poem {
   all: initial;
   display: block;
+  width: 100%;
   max-inline-size: 100%;
   max-block-size: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow: scroll;
   color: var(--pangram-gallery-ink);
   font: 400 italic clamp(16px, 1.2vw, 20px) / 1.5 georgia, times, serif;
+  font-family: system-ui;
+  font-size: 15px;
+  font-style: normal !important;
   text-wrap: balance;
   white-space: pre-line;
+}
+
+.pangram-gallery-card--poem blockquote.pangram-gallery-card__poem {
+  place-self: start;
 }
 
 .pangram-gallery-card__poem[hidden] {
@@ -251,12 +260,24 @@
   text-decoration: none;
 }
 
+.pangram-gallery-card__title[href] {
+  cursor: pointer;
+}
+
+.pangram-gallery-card__title[href]:hover {
+  text-decoration: underline;
+}
+
 .pangram-gallery-card__location {
   flex-basis: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
   color: inherit;
   margin-block-start: 2px;
   margin-block-end: 14px;
   font: 400 15.5px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pangram-gallery-card__source,
@@ -300,17 +321,39 @@
   text-decoration: none;
 }
 
-.pangram-gallery-card__verdict {
+span.pangram-gallery-card__verdict {
   order: 3;
   flex: none;
-  margin-block-start: 6px;
+  margin-block-start: 7px;
   margin-inline-start: auto;
   padding: 4px 10px;
   border-radius: 4px;
-  background: #ffe4e1;
-  color: #d33a34;
   font: 600 12px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   white-space: nowrap;
+}
+
+.pangram-gallery-card__verdict--ai {
+  background: #ffe4e1;
+  color: #d33a34;
+}
+
+.pangram-gallery-card__verdict--mixed {
+  background: #f4dfd0;
+  color: #8a4b27;
+}
+
+.pangram-gallery-card__verdict--ai-assisted {
+  background: #f3ebc9;
+  color: #755f18;
+}
+
+.pangram-gallery-card__verdict--suggested,
+.pangram-gallery-card__verdict--promoted {
+  background: none;
+  color: #888;
+  padding: 0 !important;
+  font-weight: 400 !important;
+  font: 400 12px / 1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
 
 .pangram-gallery-card__verdict[hidden] {

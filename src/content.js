@@ -276,11 +276,17 @@
     author.target = '_blank';
     author.rel = 'noreferrer';
     source.append(author);
+    const verdictEmoji = verdict === 'suggested'
+      ? '🫥'
+      : verdict === 'promoted'
+        ? '💸'
+        : '🤖';
     const verdictChip = createText(
       'span',
       'pangram-gallery-card__verdict',
-      `${verdict === 'promoted' ? '💸' : verdict === 'suggested' ? '🦟' : '🤖'} ${verdictLabel} ›`
+      `${verdictEmoji} ${verdictLabel}`
     );
+    verdictChip.classList.add(`pangram-gallery-card__verdict--${verdict}`);
     verdictChip.setAttribute('aria-label', `Pangram verdict: ${verdictLabel}`);
     body.append(source, verdictChip);
 
