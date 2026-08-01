@@ -30,6 +30,7 @@ function option(name) {
 const chrome = findChrome();
 if (!chrome) throw new Error('Chrome or Chromium is required for options visual QA.');
 
+const viewportHeight = Number(option('--height') || 650);
 const screenshotPath = resolve(
   option('--screenshot') || join(projectRoot, 'design/proofs/vocabulary-options.png')
 );
@@ -90,6 +91,10 @@ const stub = `<script>
 
 const html = readFileSync(htmlPath, 'utf8')
   .replace(
+    '<details class="configure-section">',
+    '<details class="configure-section" open>'
+  )
+  .replace(
     '<link rel="stylesheet" href="options.css" />',
     `<link rel="stylesheet" href="${pathToFileURL(optionsCssPath).href}" />`
   )
@@ -113,7 +118,7 @@ try {
     '--allow-file-access-from-files',
     '--force-color-profile=srgb',
     '--virtual-time-budget=1500',
-    '--window-size=420,650',
+    `--window-size=420,${viewportHeight}`,
     '--force-device-scale-factor=2',
     `--screenshot=${screenshotPath}`,
     pathToFileURL(renderedHtmlPath).href

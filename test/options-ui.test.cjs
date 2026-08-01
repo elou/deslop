@@ -117,12 +117,19 @@ test('offers the supported live streams', () => {
 });
 
 test('puts an opt-in vocabulary configuration at the bottom of the popup', () => {
+  const configureStart = optionsHtml.indexOf('<details class="configure-section">');
+  const configureEnd = optionsHtml.indexOf('</details>', configureStart);
+  const vocabularyStart = optionsHtml.indexOf('id="vocabulary-heading"');
   assert.match(optionsHtml, /id="vocabulary-heading"/);
   assert.match(optionsHtml, /id="vocabulary-enabled"/);
   assert.match(optionsHtml, /id="vocabulary-status"/);
   assert.ok(
-    optionsHtml.indexOf('id="vocabulary-heading"') > optionsHtml.indexOf('id="cleanup-heading"'),
+    vocabularyStart > optionsHtml.indexOf('id="cleanup-heading"'),
     'vocabulary configuration should follow the feed cleanup section'
+  );
+  assert.ok(
+    vocabularyStart > configureStart && vocabularyStart < configureEnd,
+    'vocabulary configuration should live inside the bottom Configure section'
   );
 });
 
