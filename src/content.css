@@ -13,6 +13,25 @@
   z-index: -1 !important;
 }
 
+.pangram-gallery-comment-clowns {
+  display: inline;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  white-space: pre-wrap;
+}
+
+.pangram-gallery-comment-original {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .pangram-gallery-card {
   all: initial;
   box-sizing: border-box;

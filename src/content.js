@@ -10,6 +10,9 @@
   const STATE_ATTRIBUTE = 'data-pangram-gallery-state';
   const SOURCE_TRIGGER_SELECTOR = '.pangram-gallery-card__source-actor-trigger';
   const SOURCE_POPOVER_ID = 'pangram-gallery-source-popover';
+  const COMMENT_STATE_ATTRIBUTE = 'data-pangram-gallery-comment-state';
+  const COMMENT_ORIGINAL_CLASS = 'pangram-gallery-comment-original';
+  const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
   let settings = core.normalizeSettings();
   let scanTimer = null;
   let generation = 0;
@@ -920,12 +923,87 @@
     }
   }
 
+  function restoreCommentTarget(target) {
+    if (!target?.hasAttribute?.(COMMENT_STATE_ATTRIBUTE)) return;
+    const treatment = target.pangramGalleryCommentTreatment;
+    treatment?.original?.classList?.remove(COMMENT_ORIGINAL_CLASS);
+    treatment?.clowns?.remove?.();
+    target.querySelectorAll?.(`.${COMMENT_ORIGINAL_CLASS}`).forEach((element) => {
+      element.classList.remove(COMMENT_ORIGINAL_CLASS);
+    });
+    target.querySelectorAll?.(`.${COMMENT_CLOWNS_CLASS}`).forEach((element) => {
+      element.remove();
+    });
+    target.pangramGalleryCommentTreatment = null;
+    target.removeAttribute(COMMENT_STATE_ATTRIBUTE);
+  }
+
+  function isCommentTextExcluded(textNode, root) {
+    const parent = textNode.parentElement;
+    if (!parent || !textNode.textContent?.trim()) return true;
+    if (parent.closest?.(`.${COMMENT_CLOWNS_CLASS}, .pangram-feed-badge, .${CARD_CLASS}`)) {
+      return true;
+    }
+    if (
+      parent.closest?.(
+        'script, style, noscript, template, svg, button, input, textarea, select, option, [contenteditable="true"]'
+      )
+    ) {
+      return true;
+    }
+    return !root.contains(textNode);
+  }
+
+  function getCommentTreatmentRoot(commentTarget) {
+    return commentTarget.querySelector?.('[data-pangram-text-id]') || null;
+  }
+
+  function getCommentClownText(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const visibleText = [];
+    let node = walker.nextNode();
+    while (node) {
+      if (!isCommentTextExcluded(node, root)) visibleText.push(node.textContent || '');
+      node = walker.nextNode();
+    }
+    return core.clownifyText(visibleText.join(''));
+  }
+
+  function clownCommentTarget(commentTarget, badge) {
+    restoreTarget(commentTarget);
+    restoreCommentTarget(commentTarget);
+
+    const root = getCommentTreatmentRoot(commentTarget, badge);
+    if (!root) return;
+    const clownText = getCommentClownText(root);
+    if (!clownText.trim()) return;
+
+    const clowns = document.createElement('span');
+    clowns.className = COMMENT_CLOWNS_CLASS;
+    clowns.setAttribute('aria-hidden', 'true');
+    clowns.textContent = clownText;
+    root.classList.add(COMMENT_ORIGINAL_CLASS);
+    root.after(clowns);
+
+    commentTarget.pangramGalleryCommentTreatment = { original: root, clowns };
+    commentTarget.setAttribute(COMMENT_STATE_ATTRIBUTE, 'clowned');
+  }
+
   function processBadges(badges) {
     const activeGeneration = generation;
     for (const badge of badges) {
       if (!badge.isConnected) continue;
       const verdict = core.classifyBadgeText(badge.textContent || '');
       if (!verdict) continue;
+      const commentTarget = core.findCommentTarget(badge);
+      if (commentTarget) {
+        if (core.shouldReplace(verdict, settings)) {
+          clownCommentTarget(commentTarget, badge);
+        } else {
+          restoreCommentTarget(commentTarget);
+        }
+        continue;
+      }
       const target = core.findReplacementTarget(badge);
       if (!target) continue;
 
@@ -933,6 +1011,51 @@
         void replaceTarget(target, verdict, activeGeneration);
       } else {
         restoreTarget(target);
+      }
+    }
+  }
+
+  function reconcileChangedCommentTreatments(records) {
+    const changedComments = new Set();
+    for (const record of records || []) {
+      const target =
+        record?.target?.nodeType === 1
+          ? record.target
+          : record?.target?.parentElement || record?.target;
+      if (target?.hasAttribute?.(COMMENT_STATE_ATTRIBUTE)) {
+        changedComments.add(target);
+        continue;
+      }
+      const commentTarget = target?.closest?.('[data-pangram-comment]');
+      if (commentTarget?.hasAttribute?.(COMMENT_STATE_ATTRIBUTE)) {
+        changedComments.add(commentTarget);
+      }
+    }
+
+    for (const commentTarget of changedComments) {
+      const replaceableBadge = [
+        ...(commentTarget.querySelectorAll?.('.pangram-feed-badge') || [])
+      ].find((badge) => {
+        const verdict = core.classifyBadgeText(badge.textContent || '');
+        return verdict && core.shouldReplace(verdict, settings);
+      });
+      if (!replaceableBadge) {
+        restoreCommentTarget(commentTarget);
+        continue;
+      }
+
+      const root = getCommentTreatmentRoot(commentTarget);
+      const treatment = commentTarget.pangramGalleryCommentTreatment;
+      if (!root || !treatment?.clowns || treatment.original !== root) {
+        clownCommentTarget(commentTarget, replaceableBadge);
+        continue;
+      }
+
+      const clownText = getCommentClownText(root);
+      if (!clownText.trim()) {
+        restoreCommentTarget(commentTarget);
+      } else if (treatment.clowns.textContent !== clownText) {
+        treatment.clowns.textContent = clownText;
       }
     }
   }
@@ -1035,6 +1158,9 @@
     document.querySelectorAll(`.${SIDEBAR_HIDDEN_CLASS}`).forEach((target) => {
       target.classList.remove(SIDEBAR_HIDDEN_CLASS);
     });
+    document.querySelectorAll(`[${COMMENT_STATE_ATTRIBUTE}]`).forEach(
+      restoreCommentTarget
+    );
   }
 
   async function refreshSettings() {
@@ -1048,6 +1174,7 @@
     removeOrphanedCardsFromRemovedSubtrees(records);
     if (!currentPlatformIsEnabled()) return;
     processBadges(core.collectBadgesFromMutationRecords(records));
+    reconcileChangedCommentTreatments(records);
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
     processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
     processLinkedInSidebarTargets();

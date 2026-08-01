@@ -26,6 +26,15 @@
       }
       article h2 { margin: 0 0 8px; font-size: 15px; }
       article p { margin: 0; font-size: 16px; line-height: 1.55; }
+      [data-pangram-comment] {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-left: 2px solid #d7d3cc;
+      }
+      [data-pangram-comment] h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
       .pangram-feed-badge {
         display: inline-flex;
         margin-left: 8px;
@@ -145,6 +154,10 @@
           <div data-pangram-scanned="true" data-pangram-post-id="fixture-human-1">
             <h2>Second post <span class="pangram-feed-badge">Human</span></h2>
             <p>This human-labeled post should remain visible.</p>
+            <div data-pangram-comment data-pangram-scanned="true">
+              <h3>AI comment <span class="pangram-feed-badge">AI</span></h3>
+              <p data-pangram-text-id="fixture-comment-1">I think AI has not changed what good design is.</p>
+            </div>
           </div>
         </article>
         <article>

@@ -33,6 +33,26 @@ test('keeps promoted cleanup on its own explicit target path', () => {
   assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
 });
 
+test('clowns only an explicitly marked AI comment and never sends it to post replacement', () => {
+  const processStart = contentSource.indexOf('function processBadges');
+  const processEnd = contentSource.indexOf('\n  function processPromotedTargets', processStart);
+  const processSource = contentSource.slice(processStart, processEnd);
+
+  assert.match(processSource, /const commentTarget = core\.findCommentTarget\(badge\)/);
+  assert.match(processSource, /clownCommentTarget\(commentTarget, badge\)/);
+  assert.match(processSource, /restoreCommentTarget\(commentTarget\)/);
+  assert.match(processSource, /continue;/);
+  assert.doesNotMatch(processSource, /replaceTarget\(commentTarget/);
+  assert.match(contentSource, /commentTarget\.querySelector\?\.\('\[data-pangram-text-id\]'\)/);
+  assert.match(contentSource, /clowns\.setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(contentSource, /root\.classList\.add\(COMMENT_ORIGINAL_CLASS\)/);
+  assert.match(contentSource, /document\.querySelectorAll\(`\[\$\{COMMENT_STATE_ATTRIBUTE\}\]`\)/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-comment-original\s*\{[^}]*clip:\s*rect\(0, 0, 0, 0\)/s
+  );
+});
+
 test('reserves a stable four-by-three artwork frame while loading', () => {
   assert.match(
     contentCss,

@@ -192,6 +192,11 @@
     return verdict === 'ai-assisted' && settings.replaceAssisted;
   }
 
+  function clownifyText(value) {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\S+/gu, '🤡');
+  }
+
   function getStreamForCleanup(settingsValue, cleanupType) {
     const settings = normalizeSettings(settingsValue);
     return cleanupType === 'promoted'
@@ -373,6 +378,8 @@
   }
 
   function findReplacementTarget(badge) {
+    if (badge?.closest?.('[data-pangram-comment]')) return null;
+
     const postHost = badge?.closest?.('[data-pangram-post-id]');
     const host =
       postHost || badge?.closest?.('[data-pangram-scanned="true"]');
@@ -391,6 +398,10 @@
     return host.closest?.('article, [role="article"]') || host;
   }
 
+  function findCommentTarget(badge) {
+    return badge?.closest?.('[data-pangram-comment]') || null;
+  }
+
   root.PangramGalleryCore = Object.freeze({
     DEFAULT_SETTINGS,
     STREAM_IDS,
@@ -403,9 +414,11 @@
     getStreamForVerdict,
     getStreamForCleanup,
     shouldReplace,
+    clownifyText,
     collectBadgesFromMutationRecords,
     isOrphanedCard,
     findReplacementTarget,
+    findCommentTarget,
     isPromotedTarget,
     collectPromotedTargets,
     collectPromotedTargetsFromMutationRecords,

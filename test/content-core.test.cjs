@@ -137,6 +137,15 @@ test('uses a concise provider fallback instead of raw credit or identifier-heavy
   );
 });
 
+test('replaces every visible comment word with one clown while preserving whitespace', () => {
+  const core = loadCore();
+
+  assert.equal(core.clownifyText('This is AI.'), '🤡 🤡 🤡');
+  assert.equal(core.clownifyText('Two\nlines\tremain'), '🤡\n🤡\t🤡');
+  assert.equal(core.clownifyText(''), '');
+  assert.equal(core.clownifyText(null), '');
+});
+
 test('defaults to AI-only replacement', () => {
   const core = loadCore();
   const settings = core.normalizeSettings();
@@ -472,4 +481,26 @@ test('does not expand a comment-only Pangram badge to the surrounding feed item'
   };
 
   assert.equal(core.findReplacementTarget(badge), scannedHost);
+});
+
+test('keeps an explicit Pangram comment boundary out of post replacement', () => {
+  const core = loadCore();
+  const feedItem = { id: 'human-linkedin-post' };
+  const postHost = {
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"]'
+        ? feedItem
+        : null
+  };
+  const commentHost = { id: 'ai-linkedin-comment' };
+  const badge = {
+    closest: (selector) => {
+      if (selector === '[data-pangram-comment]') return commentHost;
+      if (selector === '[data-pangram-post-id]') return postHost;
+      return null;
+    }
+  };
+
+  assert.equal(core.findCommentTarget(badge), commentHost);
+  assert.equal(core.findReplacementTarget(badge), null);
 });
