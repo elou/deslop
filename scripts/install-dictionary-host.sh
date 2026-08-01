@@ -10,7 +10,7 @@ extension_id="$1"
 script_dir="${0:A:h}"
 project_dir="${script_dir:h}"
 support_dir="$HOME/Library/Application Support/De-Slop"
-host_manifest_dir="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
+host_manifest_dir="${DESLOP_NATIVE_MANIFEST_DIR:-$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts}"
 host_binary="$support_dir/dictionary-host"
 host_manifest="$host_manifest_dir/com.elou.deslop.dictionary.json"
 

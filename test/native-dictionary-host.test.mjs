@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -7,6 +7,14 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+test('the installer can target an isolated Chrome profile', () => {
+  const installer = readFileSync(
+    path.join(root, 'scripts/install-dictionary-host.sh'),
+    'utf8'
+  );
+  assert.match(installer, /DESLOP_NATIVE_MANIFEST_DIR/);
+});
 
 test('the native host returns a framed system Dictionary definition', {
   skip: process.platform !== 'darwin'
