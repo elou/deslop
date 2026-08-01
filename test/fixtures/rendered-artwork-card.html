@@ -99,11 +99,16 @@
           const image = card.querySelector('.pangram-gallery-card__image');
           const stage = card.querySelector('.pangram-gallery-card__image-stage');
           const footer = card.querySelector('.pangram-gallery-card__footer');
+          const cardRect = card.getBoundingClientRect();
+          const imageRect = image?.getBoundingClientRect();
           return [card.dataset.card, {
             frameWidth: Math.round(frame.getBoundingClientRect().width),
             frameHeight: Math.round(frame.getBoundingClientRect().height),
             imageWidth: image ? Math.round(image.getBoundingClientRect().width) : null,
             imageHeight: image ? Math.round(image.getBoundingClientRect().height) : null,
+            imageCenterDelta: imageRect
+              ? Math.round(((imageRect.left + imageRect.width / 2) - (cardRect.left + cardRect.width / 2)) * 100) / 100
+              : null,
             stageWidth: Math.round(stage.getBoundingClientRect().width),
             objectFit: image ? getComputedStyle(image).objectFit : null,
             objectPosition: image ? getComputedStyle(image).objectPosition : null,

@@ -37,6 +37,8 @@ test('keeps a landscape artwork gallery-bounded in a LinkedIn-width rendered fee
   assert.equal(landscape.objectFit, 'contain');
   assert.equal(portrait.objectFit, 'contain');
   assert.equal(portrait.objectPosition, '50% 50%');
+  assert.equal(landscape.imageCenterDelta, 0, 'landscape artwork should be horizontally centered');
+  assert.equal(portrait.imageCenterDelta, 0, 'portrait artwork should be horizontally centered');
   assert.equal(
     loading.frameWidth,
     landscape.frameWidth,

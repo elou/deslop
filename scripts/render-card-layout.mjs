@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const templatePath = join(projectRoot, 'test', 'fixtures', 'card-layout.html');
+const defaultTemplatePath = join(projectRoot, 'test', 'fixtures', 'card-layout.html');
 const artworkPath = join(projectRoot, 'test', 'fixtures', 'approved-artwork.jpg');
 const defaultCssPath = join(projectRoot, 'src', 'content.css');
 
@@ -36,7 +36,11 @@ if (!chrome) {
 }
 
 const cssPath = resolve(option('--css') || defaultCssPath);
+const templatePath = resolve(option('--template') || defaultTemplatePath);
 const screenshotPath = option('--screenshot') ? resolve(option('--screenshot')) : '';
+const viewportWidth = Number(option('--width') || 554);
+const viewportHeight = Number(option('--height') || 1600);
+const deviceScaleFactor = Number(option('--scale') || 2);
 const tempDirectory = mkdtempSync(join(tmpdir(), 'pangram-card-layout-'));
 const htmlPath = join(tempDirectory, 'card-layout.html');
 
@@ -77,6 +81,7 @@ const measurementScript = `
     const toggle = card.querySelector('.pangram-gallery-card__toggle');
     const verdict = card.querySelector('.pangram-gallery-card__verdict');
     const image = card.querySelector('.pangram-gallery-card__image');
+    const imageLink = card.querySelector('.pangram-gallery-card__image-link');
     const poem = card.querySelector('.pangram-gallery-card__poem');
     const bodyRect = rect(body);
     const titleRect = rect(title);
@@ -92,6 +97,7 @@ const measurementScript = `
       toggle: { ...rect(toggle), ...style(toggle) },
       verdict: { ...rect(verdict), ...style(verdict) },
       image: { ...rect(image), ...style(image) },
+      imageLink: { ...rect(imageLink), ...style(imageLink) },
       poem: { ...rect(poem), ...style(poem) },
       spacing: {
         bodyToTitle: round(titleRect.top - bodyRect.top),
@@ -128,7 +134,7 @@ const commonArguments = [
   '--no-default-browser-check',
   '--force-color-profile=srgb',
   '--virtual-time-budget=1000',
-  '--window-size=554,1600',
+  `--window-size=${viewportWidth},${viewportHeight}`,
   pathToFileURL(htmlPath).href
 ];
 
@@ -136,7 +142,7 @@ try {
   if (screenshotPath) {
     const screenshot = spawnSync(
       chrome,
-      [...commonArguments.slice(0, -1), '--force-device-scale-factor=2', `--screenshot=${screenshotPath}`, commonArguments.at(-1)],
+      [...commonArguments.slice(0, -1), `--force-device-scale-factor=${deviceScaleFactor}`, `--screenshot=${screenshotPath}`, commonArguments.at(-1)],
       { encoding: 'utf8' }
     );
     if (screenshot.status !== 0) {
