@@ -6,6 +6,10 @@ const DEFAULT_SETTINGS = {
   replaceAssisted: false,
   hidePromoted: false,
   hideSuggested: false,
+  platforms: {
+    linkedin: true,
+    x: false
+  },
   styleMode: 'same',
   streams: {
     ai: 'painting-classics',
@@ -41,6 +45,10 @@ function readSettings() {
         replaceAssisted: value.replaceAssisted === true,
         hidePromoted: value.hidePromoted === true,
         hideSuggested: value.hideSuggested === true,
+        platforms: {
+          linkedin: value.platforms?.linkedin !== false,
+          x: value.platforms?.x === true
+        },
         styleMode: value.styleMode === 'different' ? 'different' : 'same',
         streams: {
           ai: STREAM_IDS.has(value.streams?.ai)
@@ -84,6 +92,16 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.hideSuggested === 'boolean'
           ? current.hideSuggested
           : DEFAULT_SETTINGS.hideSuggested,
+      platforms: {
+        linkedin:
+          typeof current.platforms?.linkedin === 'boolean'
+            ? current.platforms.linkedin
+            : DEFAULT_SETTINGS.platforms.linkedin,
+        x:
+          typeof current.platforms?.x === 'boolean'
+            ? current.platforms.x
+            : DEFAULT_SETTINGS.platforms.x
+      },
       styleMode: current.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.has(current.streams?.ai)

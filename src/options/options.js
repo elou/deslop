@@ -26,6 +26,8 @@
     replaceAssisted: document.querySelector('#replace-assisted'),
     hidePromoted: document.querySelector('#hide-promoted'),
     hideSuggested: document.querySelector('#hide-suggested'),
+    platformLinkedIn: document.querySelector('#platform-linkedin'),
+    platformX: document.querySelector('#platform-x'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
     streamShared: document.querySelector('#stream-shared'),
     streamAi: document.querySelector('#stream-ai'),
@@ -92,6 +94,8 @@
     controls.replaceAssisted.checked = settings.replaceAssisted;
     controls.hidePromoted.checked = settings.hidePromoted;
     controls.hideSuggested.checked = settings.hideSuggested;
+    controls.platformLinkedIn.checked = settings.platforms.linkedin;
+    controls.platformX.checked = settings.platforms.x;
     cleanupBlocks[0].dataset.active = settings.hidePromoted ? 'true' : 'false';
     cleanupBlocks[1].dataset.active = settings.hideSuggested ? 'true' : 'false';
     verdictBlocks[0].dataset.active = 'true';
@@ -123,6 +127,10 @@
       replaceAssisted: controls.replaceAssisted.checked,
       hidePromoted: controls.hidePromoted.checked,
       hideSuggested: controls.hideSuggested.checked,
+      platforms: {
+        linkedin: controls.platformLinkedIn.checked,
+        x: controls.platformX.checked
+      },
       styleMode,
       streams: {
         ai:
@@ -145,6 +153,8 @@
     controls.replaceAssisted,
     controls.hidePromoted,
     controls.hideSuggested,
+    controls.platformLinkedIn,
+    controls.platformX,
     controls.streamShared,
     controls.streamAi,
     controls.streamMixed,

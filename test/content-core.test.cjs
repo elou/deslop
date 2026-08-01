@@ -26,6 +26,40 @@ test('reads only Pangram verdict labels', () => {
   assert.equal(core.classifyBadgeText(''), null);
 });
 
+test('parses the person whose activity caused a post to appear in the feed', () => {
+  const core = loadCore();
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Charles L Mauro CHFP likes this'))),
+    { name: 'Charles L Mauro CHFP', action: 'likes this' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('David Hoang commented'))),
+    { name: 'David Hoang', action: 'commented' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Priya Shah reposted this'))),
+    { name: 'Priya Shah', action: 'reposted this' }
+  );
+  assert.equal(core.parseFeedSourceContext('Senior Design Director at Example'), null);
+  assert.equal(core.parseFeedSourceContext('Acme Corp promoted this'), null);
+});
+
+test('matches only the native unfollow action for the exact feed-source actor', () => {
+  const core = loadCore();
+
+  assert.equal(
+    core.isMatchingUnfollowLabel('Unfollow Charles L Mauro CHFP', 'Charles L Mauro CHFP'),
+    true
+  );
+  assert.equal(
+    core.isMatchingUnfollowLabel('Unfollow Matthew Holloway', 'Charles L Mauro CHFP'),
+    false
+  );
+  assert.equal(core.isMatchingUnfollowLabel('Follow Charles L Mauro CHFP', 'Charles L Mauro CHFP'), false);
+  assert.equal(core.isMatchingUnfollowLabel('Unfollow', ''), false);
+});
+
 test('formats the shared artwork and poetry metadata line without repeated details', () => {
   const core = loadCore();
 

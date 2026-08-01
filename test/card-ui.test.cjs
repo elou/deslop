@@ -72,7 +72,7 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /body\.append\(notice, title, location, toggle\);[\s\S]*body\.append\(source, verdictChip\);/,
+    /body\.append\(notice, title, location, toggle\);[\s\S]*body\.append\(sourceActorRow, source, verdictChip\);/,
     'the original toggle should sit below the replacement metadata'
   );
 });
@@ -122,7 +122,7 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
 
 test('builds the compact source-of-truth composition for every full card', () => {
   assert.match(contentSource, /body\.append\(notice, title, location, toggle\);/);
-  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(sourceActorRow, source, verdictChip\);/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card__body\s*\{[^}]*box-sizing:\s*border-box;[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*center;[^}]*column-gap:\s*10px;[^}]*padding:\s*18px 28px 20px;/s
@@ -232,7 +232,7 @@ test('shows the Pangram verdict at the right of the replacement footer', () => {
     'verdict chips should not include a trailing chevron'
   );
   assert.match(contentSource, /verdictChip\.setAttribute\('aria-label', `Pangram verdict: \$\{verdictLabel\}`\);/);
-  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(sourceActorRow, source, verdictChip\);/);
   assert.match(
     contentCss,
     /span\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-block-start:\s*7px;[^}]*margin-inline-start:\s*auto;/s
@@ -269,6 +269,46 @@ test('links the original post author to the post permalink or their profile', ()
     contentCss,
     /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
   );
+});
+
+test('keeps the feed-source actor separate and exposes one accessible shared hover card', () => {
+  assert.match(contentSource, /function getFeedSourceActor\(target, postAuthor, verdict\)/);
+  assert.match(contentSource, /card\.pangramGallerySourceActor = getFeedSourceActor\(/);
+  assert.match(contentSource, /className = 'pangram-gallery-card__source-actor-trigger'/);
+  assert.match(contentSource, /trigger\.setAttribute\('aria-expanded', 'false'\)/);
+  assert.match(contentSource, /function ensureSourceActorPopover\(\)/);
+  assert.match(contentSource, /document\.addEventListener\('pointerover'/);
+  assert.match(contentSource, /document\.addEventListener\('focusin'/);
+  assert.match(contentSource, /event\.key === 'Escape'/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-source-popover\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*2147483646;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__author:focus-visible,\s*\.pangram-gallery-card__source-actor-trigger:focus-visible,\s*\.pangram-gallery-card__toggle:focus-visible\s*\{[^}]*outline:/s
+  );
+});
+
+test('proxies only an exact native LinkedIn Unfollow action after an explicit click', () => {
+  assert.match(contentSource, /core\.isMatchingUnfollowLabel\(label, actorName\)/);
+  assert.match(contentSource, /async function findNativeUnfollowAction\(card, actorName\)/);
+  assert.match(contentSource, /unfollow\.hidden = !nativeActionAvailable/);
+  assert.match(contentSource, /unfollow\.addEventListener\('click', async \(\) =>/);
+  assert.match(contentSource, /nativeAction\.click\(\)/);
+  assert.doesNotMatch(contentSource, /fetch\([^\n]*unfollow/i);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-native-action-proxy\.pangram-gallery-original-hidden\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;[^}]*pointer-events:\s*none !important;/s
+  );
+});
+
+test('does not offer source-actor actions for promoted, suggested, company, or unknown actors', () => {
+  assert.match(contentSource, /if \(verdict === 'promoted' \|\| verdict === 'suggested'\) return null;/);
+  assert.match(contentSource, /function isPersonProfile\(value\)/);
+  assert.match(contentSource, /\^\\\/in\\\//);
+  assert.match(contentSource, /target\.matches\?\.\([\s\S]*\[role="comment"\]/);
+  assert.match(contentSource, /sourceActorRow\.hidden = !sourceActor;/);
 });
 
 test('renders each hide variant as a compact notice with an unhide control', () => {

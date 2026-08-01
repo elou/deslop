@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hidden feed report · De-Slop</title>
+    <link rel="stylesheet" href="report.css" />
+  </head>
+  <body data-state="loading">
+    <main class="report-shell">
+      <header class="report-header">
+        <p class="eyebrow">De-Slop</p>
+        <h1>Hidden feed report</h1>
+        <p class="lede">
+          See whose activity brought AI-labeled posts into your LinkedIn feed.
+        </p>
+      </header>
+
+      <aside class="privacy-note" aria-label="Privacy">
+        <span class="privacy-note__icon" aria-hidden="true">◉</span>
+        <div>
+          <strong>Stored only in this browser.</strong>
+          <p>De-Slop never sends this history to a server or saves the text of a post.</p>
+        </div>
+      </aside>
+
+      <p id="report-status" class="report-status" role="status" aria-live="polite">
+        Loading hidden feed history…
+      </p>
+
+      <section id="report-content" class="report-content" hidden>
+        <section class="summary" aria-labelledby="summary-heading">
+          <div class="summary-heading">
+            <p class="eyebrow">Since tracking began</p>
+            <h2 id="summary-heading"><span id="total-hidden">0</span> posts hidden</h2>
+          </div>
+          <dl class="verdict-totals">
+            <div>
+              <dt>AI</dt>
+              <dd id="total-ai">0</dd>
+            </div>
+            <div>
+              <dt>Mixed</dt>
+              <dd id="total-mixed">0</dd>
+            </div>
+            <div>
+              <dt>AI-assisted</dt>
+              <dd id="total-assisted">0</dd>
+            </div>
+            <div>
+              <dt>Source unavailable</dt>
+              <dd id="total-unattributed">0</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="actors" aria-labelledby="actors-heading">
+          <div class="actors-heading">
+            <div>
+              <p class="eyebrow">Feed sources</p>
+              <h2 id="actors-heading">Who brought these posts into your feed</h2>
+            </div>
+            <p>
+              To unfollow someone, use <strong>Shown because</strong> on one of their replacement cards.
+              De-Slop will use LinkedIn’s own confirmed control.
+            </p>
+          </div>
+          <div id="empty-state" class="empty-state" hidden>
+            <p class="empty-state__title">No hidden posts yet</p>
+            <p>When De-Slop replaces an AI-labeled post, its feed source will appear here.</p>
+          </div>
+          <ol id="actor-list" class="actor-list" aria-label="Feed sources by hidden post count"></ol>
+        </section>
+
+        <footer class="report-footer">
+          <div>
+            <h2>Reset this report</h2>
+            <p>This clears only De-Slop’s local history. Your filter settings will not change.</p>
+          </div>
+          <button id="reset-history" class="reset-button" type="button">Clear history</button>
+        </footer>
+      </section>
+
+      <section id="error-state" class="error-state" role="alert" hidden>
+        <h2>History could not be loaded</h2>
+        <p>Reload this page. Your LinkedIn feed and filter settings are unaffected.</p>
+        <button id="retry-report" type="button">Try again</button>
+      </section>
+    </main>
+
+    <script src="../history-core.js"></script>
+    <script src="report.js"></script>
+  </body>
+</html>

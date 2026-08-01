@@ -2,6 +2,17 @@
   display: none !important;
 }
 
+.pangram-gallery-native-action-proxy.pangram-gallery-original-hidden {
+  display: block !important;
+  position: fixed !important;
+  inset: -10000px auto auto -10000px !important;
+  inline-size: 600px !important;
+  min-block-size: 800px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
 .pangram-gallery-card {
   all: initial;
   box-sizing: border-box;
@@ -160,6 +171,7 @@ blockquote.pangram-gallery-card__poem {
 .pangram-gallery-card--loading .pangram-gallery-card__toggle,
 .pangram-gallery-card--loading .pangram-gallery-card__title,
 .pangram-gallery-card--loading .pangram-gallery-card__location,
+.pangram-gallery-card--loading .pangram-gallery-card__source-actor,
 .pangram-gallery-card--loading .pangram-gallery-card__source,
 .pangram-gallery-card--loading .pangram-gallery-card__verdict {
   visibility: hidden;
@@ -248,6 +260,7 @@ blockquote.pangram-gallery-card__poem {
 }
 
 .pangram-gallery-card--notice .pangram-gallery-card__source,
+.pangram-gallery-card--notice .pangram-gallery-card__source-actor,
 .pangram-gallery-card--notice .pangram-gallery-card__verdict {
   display: none;
 }
@@ -282,6 +295,32 @@ blockquote.pangram-gallery-card__poem {
   font: 400 15.5px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pangram-gallery-card__source-actor {
+  flex-basis: 100%;
+  min-inline-size: 0;
+  margin-block: 0 2px;
+  overflow: hidden;
+  color: #888;
+  font: 400 12.5px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pangram-gallery-card__source-actor[hidden] {
+  display: none;
+}
+
+.pangram-gallery-card__source-actor-trigger {
+  all: unset;
+  border-radius: 2px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 .pangram-gallery-card__source,
@@ -432,7 +471,98 @@ span.pangram-gallery-card__verdict {
 }
 
 .pangram-gallery-card__author:focus-visible,
+.pangram-gallery-card__source-actor-trigger:focus-visible,
 .pangram-gallery-card__toggle:focus-visible {
+  outline: 2px solid oklch(0.55 0.11 28);
+  outline-offset: 2px;
+}
+
+.pangram-gallery-source-popover {
+  all: initial;
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 2147483646;
+  display: block;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 8px;
+  background: #fff;
+  color: oklch(0.26 0.018 55);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.pangram-gallery-source-popover[hidden] {
+  display: none !important;
+}
+
+.pangram-gallery-source-popover,
+.pangram-gallery-source-popover * {
+  box-sizing: border-box;
+}
+
+.pangram-gallery-source-popover__profile,
+.pangram-gallery-source-popover__context,
+.pangram-gallery-source-popover__status,
+.pangram-gallery-source-popover__unfollow {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  color: inherit;
+  font-family: inherit;
+}
+
+.pangram-gallery-source-popover__profile {
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.pangram-gallery-source-popover__context,
+.pangram-gallery-source-popover__status {
+  margin-block-start: 8px;
+  color: #777;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.pangram-gallery-source-popover__status:empty {
+  display: none;
+}
+
+.pangram-gallery-source-popover__unfollow {
+  inline-size: 100%;
+  margin-block-start: 12px;
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.pangram-gallery-source-popover__unfollow[hidden] {
+  display: none;
+}
+
+.pangram-gallery-source-popover__unfollow:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.pangram-gallery-source-popover__unfollow:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.pangram-gallery-source-popover__profile:focus-visible,
+.pangram-gallery-source-popover__unfollow:focus-visible {
   outline: 2px solid oklch(0.55 0.11 28);
   outline-offset: 2px;
 }
@@ -485,6 +615,26 @@ span.pangram-gallery-card__verdict {
     text-shadow: 0 1px rgba(0, 0, 0, 0.4);
   }
 
+  .pangram-gallery-source-popover {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: #242424;
+    color: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+  }
+
+  .pangram-gallery-source-popover__context,
+  .pangram-gallery-source-popover__status {
+    color: rgba(255, 255, 255, 0.64);
+  }
+
+  .pangram-gallery-source-popover__unfollow {
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .pangram-gallery-source-popover__unfollow:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
   .pangram-gallery-card--notice .pangram-gallery-card__toggle {
     color: rgba(255, 255, 255, 0.65);
     border-color: rgba(255, 255, 255, 0.2);
@@ -502,4 +652,7 @@ span.pangram-gallery-card__verdict {
   .pangram-gallery-card--loading .pangram-gallery-card__image-frame {
     animation: none;
   }
+}
+[class].pangram-gallery-sidebar-hidden {
+  display: none !important;
 }

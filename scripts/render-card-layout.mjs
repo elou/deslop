@@ -72,8 +72,11 @@ const measurementScript = `
       fontWeight: value.fontWeight,
       lineHeight: value.lineHeight,
       borderRadius: value.borderRadius,
+      position: value.position,
+      zIndex: value.zIndex,
       overflow: value.overflow,
       textOverflow: value.textOverflow,
+      textDecorationLine: value.textDecorationLine,
       whiteSpace: value.whiteSpace
     };
   };
@@ -82,11 +85,16 @@ const measurementScript = `
     const title = card.querySelector('.pangram-gallery-card__title');
     const attribution = card.querySelector('.pangram-gallery-card__location');
     const source = card.querySelector('.pangram-gallery-card__source');
+    const sourceActor = card.querySelector('.pangram-gallery-card__source-actor');
+    const sourceActorTrigger = card.querySelector('.pangram-gallery-card__source-actor-trigger');
     const toggle = card.querySelector('.pangram-gallery-card__toggle');
     const verdict = card.querySelector('.pangram-gallery-card__verdict');
     const image = card.querySelector('.pangram-gallery-card__image');
     const imageLink = card.querySelector('.pangram-gallery-card__image-link');
     const poem = card.querySelector('.pangram-gallery-card__poem');
+    const popover = document.querySelector('.pangram-gallery-source-popover:not([hidden])');
+    const popoverProfile = popover?.querySelector('.pangram-gallery-source-popover__profile');
+    const popoverUnfollow = popover?.querySelector('.pangram-gallery-source-popover__unfollow');
     const bodyRect = rect(body);
     const titleRect = rect(title);
     const attributionRect = rect(attribution);
@@ -98,11 +106,22 @@ const measurementScript = `
       title: { ...rect(title), ...style(title) },
       attribution: { ...rect(attribution), ...style(attribution) },
       source: { ...rect(source), ...style(source) },
+      sourceActor: sourceActor ? { ...rect(sourceActor), ...style(sourceActor) } : null,
+      sourceActorTrigger: sourceActorTrigger
+        ? { ...rect(sourceActorTrigger), ...style(sourceActorTrigger) }
+        : null,
       toggle: { ...rect(toggle), ...style(toggle) },
       verdict: { ...rect(verdict), ...style(verdict) },
       image: { ...rect(image), ...style(image) },
       imageLink: { ...rect(imageLink), ...style(imageLink) },
       poem: { ...rect(poem), ...style(poem) },
+      popover: popover ? { ...rect(popover), ...style(popover) } : null,
+      popoverProfile: popoverProfile
+        ? { ...rect(popoverProfile), ...style(popoverProfile) }
+        : null,
+      popoverUnfollow: popoverUnfollow
+        ? { ...rect(popoverUnfollow), ...style(popoverUnfollow) }
+        : null,
       spacing: {
         bodyToTitle: round(titleRect.top - bodyRect.top),
         titleToAttribution: round(attributionRect.top - titleRect.bottom),

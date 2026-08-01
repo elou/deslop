@@ -52,7 +52,10 @@ const referencedFiles = [
     ...(entry.css || [])
   ]),
   ...Object.values(manifest.icons || {}),
-  ...Object.values(manifest.action?.default_icon || {})
+  ...Object.values(manifest.action?.default_icon || {}),
+  'src/report/report.html',
+  'src/report/report.css',
+  'src/report/report.js'
 ].filter(Boolean);
 
 for (const file of referencedFiles) {

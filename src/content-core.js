@@ -5,6 +5,10 @@
     replaceAssisted: false,
     hidePromoted: false,
     hideSuggested: false,
+    platforms: Object.freeze({
+      linkedin: true,
+      x: false
+    }),
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
@@ -47,6 +51,30 @@
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
   }
 
+  function parseFeedSourceContext(value) {
+    const text = normalizeCardDetail(value);
+    if (!text) return null;
+
+    const actions = [
+      { suffix: /\s+likes this$/i, action: 'likes this' },
+      { suffix: /\s+commented$/i, action: 'commented' },
+      { suffix: /\s+reposted(?: this)?$/i, action: 'reposted this' }
+    ];
+    for (const candidate of actions) {
+      if (!candidate.suffix.test(text)) continue;
+      const name = normalizeCardDetail(text.replace(candidate.suffix, ''));
+      if (!name || name.length > 120) return null;
+      return { name, action: candidate.action };
+    }
+    return null;
+  }
+
+  function isMatchingUnfollowLabel(value, sourceActorName) {
+    const label = normalizeCardDetail(value).toLocaleLowerCase();
+    const actor = normalizeCardDetail(sourceActorName).toLocaleLowerCase();
+    return Boolean(actor && label === `unfollow ${actor}`);
+  }
+
   function formatCardDate(value) {
     return /^\d{4}-01-01(?:T00:00:00(?:\.000)?Z?)?$/.test(value)
       ? value.slice(0, 4)
@@ -87,6 +115,8 @@
     const input = value && typeof value === 'object' ? value : {};
     const inputStreams =
       input.streams && typeof input.streams === 'object' ? input.streams : {};
+    const inputPlatforms =
+      input.platforms && typeof input.platforms === 'object' ? input.platforms : {};
     return {
       // Replacement is always on; the former global switch is intentionally
       // ignored so an old saved `enabled: false` value cannot disable the UI.
@@ -107,6 +137,16 @@
         typeof input.hideSuggested === 'boolean'
           ? input.hideSuggested
           : DEFAULT_SETTINGS.hideSuggested,
+      platforms: {
+        linkedin:
+          typeof inputPlatforms.linkedin === 'boolean'
+            ? inputPlatforms.linkedin
+            : DEFAULT_SETTINGS.platforms.linkedin,
+        x:
+          typeof inputPlatforms.x === 'boolean'
+            ? inputPlatforms.x
+            : DEFAULT_SETTINGS.platforms.x
+      },
       styleMode: input.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.includes(inputStreams.ai)
@@ -126,6 +166,14 @@
           : DEFAULT_SETTINGS.streams.suggested
       }
     };
+  }
+
+  function isPlatformEnabled(settingsValue, hostnameValue) {
+    const settings = normalizeSettings(settingsValue);
+    const hostname = String(hostnameValue || '').trim().toLocaleLowerCase();
+    if (/(^|\.)linkedin\.com$/.test(hostname)) return settings.platforms.linkedin;
+    if (/(^|\.)x\.com$/.test(hostname)) return settings.platforms.x;
+    return false;
   }
 
   function getStreamForVerdict(settingsValue, verdict) {
@@ -217,6 +265,36 @@
     if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
     for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
     return [...candidates].filter(isSuggestedTarget);
+  }
+
+  function collectLinkedInSidebarTargets(rootNode) {
+    const root = rootNode?.nodeType === 9 ? rootNode : rootNode?.ownerDocument || rootNode;
+    if (!root?.querySelector) return [];
+    const targets = new Set();
+    const menuAnchors = [
+      'a[href*="/me/profile-views/"]',
+      'a[href*="/premium/my-premium/"]',
+      'a[href*="/company/"][href*="/admin/"]'
+    ];
+    for (const selector of menuAnchors) {
+      const menu = root.querySelector(selector)?.closest?.('[role="menu"]');
+      const visualShell = menu?.parentElement?.parentElement || menu;
+      if (visualShell) targets.add(visualShell);
+    }
+
+    const newsAnchor = root.querySelector('a[href*="/news/story/"]');
+    let candidate = newsAnchor?.parentElement || null;
+    while (candidate && candidate !== root.documentElement) {
+      const newsLinks = candidate.querySelectorAll?.('a[href*="/news/story/"]') || [];
+      const gameLink = candidate.querySelector?.('a[href*="/games/"]');
+      if (newsLinks.length >= 2 && gameLink) {
+        targets.add(candidate.parentElement || candidate);
+        break;
+      }
+      candidate = candidate.parentElement;
+    }
+
+    return [...targets];
   }
 
   function collectPromotedTargetsFromMutationRecords(records) {
@@ -317,8 +395,11 @@
     DEFAULT_SETTINGS,
     STREAM_IDS,
     classifyBadgeText,
+    parseFeedSourceContext,
+    isMatchingUnfollowLabel,
     formatCardDetails,
     normalizeSettings,
+    isPlatformEnabled,
     getStreamForVerdict,
     getStreamForCleanup,
     shouldReplace,
@@ -330,6 +411,7 @@
     collectPromotedTargetsFromMutationRecords,
     isSuggestedTarget,
     collectSuggestedTargets,
-    collectSuggestedTargetsFromMutationRecords
+    collectSuggestedTargetsFromMutationRecords,
+    collectLinkedInSidebarTargets
   });
 })(globalThis);
