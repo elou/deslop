@@ -491,6 +491,7 @@ span.pangram-gallery-card__verdict {
 
 .pangram-gallery-card__author:focus-visible,
 .pangram-gallery-card__source-actor-trigger:focus-visible,
+.pangram-gallery-card__poem:focus-visible,
 .pangram-gallery-card__toggle:focus-visible {
   outline: 2px solid oklch(0.55 0.11 28);
   outline-offset: 2px;

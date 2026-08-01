@@ -123,6 +123,11 @@ test('renders poetry through the same typography and control composition', () =>
     },
     'poetry should use the requested full-width scrollable system treatment'
   );
+  assert.equal(poetry.poem.tabIndex, 0, 'the poem scroll region should be keyboard focusable');
+  assert.ok(
+    poetry.poem.scrollHeight > poetry.poem.clientHeight,
+    'the complete poem should overflow inside the fixed-height reading pane'
+  );
 });
 
 test('renders the durable image-card source of truth', () => {

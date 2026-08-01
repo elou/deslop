@@ -389,6 +389,8 @@
 
     const poem = document.createElement('blockquote');
     poem.className = 'pangram-gallery-card__poem';
+    poem.tabIndex = 0;
+    poem.setAttribute('aria-label', 'Full poem');
     poem.hidden = true;
 
     const toggle = document.createElement('button');
@@ -853,7 +855,11 @@
     } else if (item.kind === 'poem') {
       const lines = Array.isArray(item.lines) ? item.lines : [];
       if (!lines.length) return false;
-      poem.textContent = lines.slice(0, 12).join('\n');
+      poem.textContent = lines.join('\n');
+      poem.setAttribute(
+        'aria-label',
+        item.title ? `${item.title}, full poem` : 'Full poem'
+      );
       poem.hidden = false;
       card.classList.add('pangram-gallery-card--poem');
     } else {

@@ -111,10 +111,21 @@ test('constrains portrait and landscape artwork to the reserved frame', () => {
 
 test('renders poem lines inside the same stable replacement frame and gallery shell', () => {
   assert.match(contentSource, /item\.kind === 'poem'/);
-  assert.match(contentSource, /lines\.slice\(0,\s*12\)\.join\('\\n'\)/);
+  assert.match(
+    contentSource,
+    /poem\.textContent\s*=\s*lines\.join\('\\n'\)/,
+    'poetry hydration should keep every line returned by the provider'
+  );
+  assert.doesNotMatch(
+    contentSource,
+    /poem\.textContent\s*=\s*lines\.slice\(/,
+    'poetry hydration should not truncate the poem before the scroll region renders it'
+  );
+  assert.match(contentSource, /poem\.tabIndex\s*=\s*0/);
+  assert.match(contentSource, /poem\.setAttribute\('aria-label',/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__poem\s*\{[^}]*white-space:\s*pre-line;/s
+    /\.pangram-gallery-card__poem\s*\{[^}]*overflow:\s*scroll;[^}]*white-space:\s*pre-line;/s
   );
   assert.match(
     contentCss,
@@ -127,6 +138,11 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   assert.match(
     contentCss,
     /\.pangram-gallery-card__poem\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*font:\s*400 italic clamp\(16px,\s*1\.2vw,\s*20px\)\s*\/\s*1\.5/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__poem:focus-visible[^}]*\{[^}]*outline:\s*2px solid/s,
+    'the keyboard-scrollable poem body should have a visible focus state'
   );
   assert.doesNotMatch(
     contentCss,
@@ -313,7 +329,7 @@ test('keeps the feed-source actor separate and exposes one accessible shared hov
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__author:focus-visible,\s*\.pangram-gallery-card__source-actor-trigger:focus-visible,\s*\.pangram-gallery-card__toggle:focus-visible\s*\{[^}]*outline:/s
+    /\.pangram-gallery-card__author:focus-visible,\s*\.pangram-gallery-card__source-actor-trigger:focus-visible,\s*\.pangram-gallery-card__poem:focus-visible,\s*\.pangram-gallery-card__toggle:focus-visible\s*\{[^}]*outline:/s
   );
 });
 

@@ -114,7 +114,13 @@ const measurementScript = `
       verdict: { ...rect(verdict), ...style(verdict) },
       image: { ...rect(image), ...style(image) },
       imageLink: { ...rect(imageLink), ...style(imageLink) },
-      poem: { ...rect(poem), ...style(poem) },
+      poem: {
+        ...rect(poem),
+        ...style(poem),
+        clientHeight: poem.clientHeight,
+        scrollHeight: poem.scrollHeight,
+        tabIndex: poem.tabIndex
+      },
       popover: popover ? { ...rect(popover), ...style(popover) } : null,
       popoverProfile: popoverProfile
         ? { ...rect(popoverProfile), ...style(popoverProfile) }
