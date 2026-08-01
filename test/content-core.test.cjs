@@ -26,6 +26,35 @@ test('reads only Pangram verdict labels', () => {
   assert.equal(core.classifyBadgeText(''), null);
 });
 
+test('formats the shared artwork and poetry metadata line without repeated details', () => {
+  const core = loadCore();
+
+  assert.equal(
+    core.formatCardDetails({
+      creator: 'Vincent van Gogh',
+      date: '1889',
+      location: 'Museum of Modern Art'
+    }),
+    'Vincent van Gogh · 1889 · Museum of Modern Art'
+  );
+  assert.equal(
+    core.formatCardDetails({
+      creator: 'Emily Dickinson',
+      location: 'Emily Dickinson',
+      provider: 'Freeverse'
+    }),
+    'Emily Dickinson'
+  );
+  assert.equal(
+    core.formatCardDetails({
+      creator: 'NASA',
+      date: '2024-12-13T00:00:00Z',
+      location: 'NASA · 2024-12-13'
+    }),
+    'NASA · 2024-12-13'
+  );
+});
+
 test('defaults to AI-only replacement', () => {
   const core = loadCore();
   const settings = core.normalizeSettings();

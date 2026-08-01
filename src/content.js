@@ -394,7 +394,7 @@
     if (item.kind !== 'notice') {
       title.textContent = item.title;
       title.href = item.sourceUrl;
-      location.textContent = item.location || item.provider;
+      location.textContent = core.formatCardDetails(item);
       renderOriginalPostAuthor(card);
       scheduleOriginalMetadataRefresh(card);
     }

@@ -43,6 +43,29 @@
     return VERDICTS.get(value.trim().toLowerCase()) || null;
   }
 
+  function normalizeCardDetail(value) {
+    return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  }
+
+  function formatCardDetails(item = {}) {
+    const location = normalizeCardDetail(item.location);
+    const locationKey = location.toLowerCase();
+    const creator = normalizeCardDetail(item.creator);
+    const date = normalizeCardDetail(item.date);
+    const dateKey = date.slice(0, 10).toLowerCase();
+    const details = [];
+
+    if (creator && !locationKey.includes(creator.toLowerCase())) details.push(creator);
+    if (date && (!dateKey || !locationKey.includes(dateKey))) details.push(date);
+    if (location) details.push(location);
+
+    return (
+      details.join(' · ') ||
+      normalizeCardDetail(item.credit) ||
+      normalizeCardDetail(item.provider)
+    );
+  }
+
   function normalizeSettings(value = {}) {
     const input = value && typeof value === 'object' ? value : {};
     const inputStreams =
@@ -277,6 +300,7 @@
     DEFAULT_SETTINGS,
     STREAM_IDS,
     classifyBadgeText,
+    formatCardDetails,
     normalizeSettings,
     getStreamForVerdict,
     getStreamForCleanup,

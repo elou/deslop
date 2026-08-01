@@ -181,12 +181,13 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
-test('keeps artwork metadata visible on image replacement cards', () => {
+test('keeps creator, date, and location metadata visible on image replacement cards', () => {
   assert.doesNotMatch(
     contentSource,
     /location\.hidden = item\.kind !== 'poem';/,
     'image cards should retain the creator, date, or location line from the refined card design'
   );
+  assert.match(contentSource, /location\.textContent = core\.formatCardDetails\(item\);/);
 });
 
 test('shows the Pangram verdict at the right of the replacement footer', () => {
