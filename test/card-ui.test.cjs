@@ -72,7 +72,7 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /body\.append\(notice, title, location, toggle\)/,
+    /footer\.append\(source, toggle, verdictChip\);\s*body\.append\(notice, metadata, footer\);/s,
     'the original toggle should sit below the replacement metadata'
   );
 });
@@ -89,7 +89,7 @@ test('constrains portrait and landscape artwork to the reserved frame', () => {
   );
 });
 
-test('renders poem lines inside the same stable replacement frame', () => {
+test('renders poem lines inside the same stable replacement frame and gallery shell', () => {
   assert.match(contentSource, /item\.kind === 'poem'/);
   assert.match(contentSource, /lines\.slice\(0,\s*12\)\.join\('\\n'\)/);
   assert.match(
@@ -104,12 +104,29 @@ test('renders poem lines inside the same stable replacement frame', () => {
     contentCss,
     /\.pangram-gallery-card__poem\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*font:\s*400 italic clamp\(16px,\s*1\.2vw,\s*20px\)\s*\/\s*1\.5/s
   );
+  assert.doesNotMatch(
+    contentCss,
+    /\.pangram-gallery-card--poem[^,{]*\.(?:pangram-gallery-card__metadata|pangram-gallery-card__footer)[^{]*\{[^}]*display:\s*none;/s,
+    'poetry cards must retain the shared metadata and footer'
+  );
+  assert.match(
+    contentSource,
+    /card\.classList\.add\('pangram-gallery-card--poem'\);[\s\S]*if \(item\.kind !== 'notice'\) \{[\s\S]*renderOriginalPostAuthor\(card\);/,
+    'poetry should hydrate through the same metadata and original-post footer path as artwork'
+  );
 });
 
-test('uses a footer row for the existing source and unhide control', () => {
+test('builds one metadata area and footer row for every full replacement card', () => {
+  assert.match(contentSource, /metadata\.append\(title, location\);/);
+  assert.match(contentSource, /footer\.append\(source, toggle, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(notice, metadata, footer\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;/s
+    /\.pangram-gallery-card__metadata\s*\{[^}]*display:\s*block;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__footer\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*gap:\s*12px;[^}]*margin-block-start:\s*6px;/s
   );
   assert.match(
     contentCss,
@@ -121,11 +138,11 @@ test('uses a footer row for the existing source and unhide control', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*margin-block-start:\s*6px;/s
+    /\.pangram-gallery-card__source\s*\{[^}]*flex:\s*1 1 0;[^}]*min-inline-size:\s*0;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
+    /\.pangram-gallery-card__toggle\s*\{[^}]*flex:\s*none;[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
   );
 });
 
@@ -176,10 +193,11 @@ test('shows the Pangram verdict at the right of the replacement footer', () => {
   assert.match(contentSource, /pangram-gallery-card__verdict/);
   assert.match(contentSource, /verdict === 'promoted'/);
   assert.match(contentSource, /verdict === 'suggested'/);
-  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(contentSource, /verdictChip\.setAttribute\('aria-label', `Pangram verdict: \$\{verdictLabel\}`\);/);
+  assert.match(contentSource, /footer\.append\(source, toggle, verdictChip\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-inline-start:\s*auto;/s
+    /\.pangram-gallery-card__verdict\s*\{[^}]*flex:\s*none;[^}]*margin-inline-start:\s*auto;/s
   );
 });
 
@@ -193,7 +211,7 @@ test('links the original post author to the post permalink or their profile', ()
   assert.doesNotMatch(contentSource, /a\[href\*="\\\/feed\\\/update\\\/"\]/);
   assert.match(contentSource, /card\.pangramGalleryPermalink = getOriginalPostPermalink\(target\)/);
   assert.match(contentSource, /card\.pangramGalleryAuthor = getOriginalPostAuthor\(target\)/);
-  assert.match(contentSource, /source\.textContent = 'Original post by ';/);
+  assert.match(contentSource, /source\.textContent = postAuthor \? 'Original post by ' : 'Original post';/);
   assert.match(contentSource, /const authorDestination = card\.pangramGalleryPermalink \|\| postAuthor\.href;/);
   assert.match(contentSource, /author\.removeAttribute\('href'\);/);
   assert.match(contentSource, /author\.textContent = postAuthor\.name;/);
@@ -218,11 +236,11 @@ test('renders each hide variant as a compact notice with an unhide control', () 
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*min-block-size:\s*0;[^}]*padding:\s*8px 8px 8px 16px;/s
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*nowrap;[^}]*min-block-size:\s*0;[^}]*padding:\s*8px 8px 8px 16px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__title,\s*\.pangram-gallery-card--notice \.pangram-gallery-card__location\s*\{[^}]*display:\s*none;/s
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__metadata\s*\{[^}]*display:\s*none;/s
   );
   assert.match(
     contentCss,
