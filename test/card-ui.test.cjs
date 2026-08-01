@@ -164,11 +164,11 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
-test('omits provider descriptions from image replacement cards', () => {
-  assert.match(
+test('keeps artwork metadata visible on image replacement cards', () => {
+  assert.doesNotMatch(
     contentSource,
     /location\.hidden = item\.kind !== 'poem';/,
-    'image cards should show their artwork title and footer without a provider description line'
+    'image cards should retain the creator, date, or location line from the refined card design'
   );
 });
 

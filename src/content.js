@@ -387,7 +387,6 @@
       title.textContent = item.title;
       title.href = item.sourceUrl;
       location.textContent = item.location || item.provider;
-      location.hidden = item.kind !== 'poem';
       renderOriginalPostAuthor(card);
       scheduleOriginalMetadataRefresh(card);
     }
