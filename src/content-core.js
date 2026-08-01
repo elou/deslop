@@ -48,10 +48,9 @@
     const inputStreams =
       input.streams && typeof input.streams === 'object' ? input.streams : {};
     return {
-      enabled:
-        typeof input.enabled === 'boolean'
-          ? input.enabled
-          : DEFAULT_SETTINGS.enabled,
+      // Replacement is always on; the former global switch is intentionally
+      // ignored so an old saved `enabled: false` value cannot disable the UI.
+      enabled: true,
       replaceMixed:
         typeof input.replaceMixed === 'boolean'
           ? input.replaceMixed

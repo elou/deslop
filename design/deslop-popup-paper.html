@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>De-Slop popup — Paper snapshot</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --background: rgb(255 255 255 / 0.9);
+        --surface: rgb(255 255 255 / 0.9);
+        --text: #141414;
+        --muted: rgb(20 20 20 / 0.65);
+        --border: rgba(0, 0, 0, .14);
+        --border-strong: rgba(0, 0, 0, .3);
+        --accent: #141414;
+        --control-ink: #141414;
+        --focus: #141414;
+        --panel-shadow: 0 0 0 1px rgb(0 0 0 / 0.1), 0 8px 20px rgb(0 0 0 / 0.05);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: rgb(0 0 0 / 0.9);
+          --surface: rgb(0 0 0 / 0.9);
+          --text: #fff;
+          --muted: rgb(255 255 255 / 0.68);
+          --border: rgba(255, 255, 255, .18);
+          --border-strong: rgba(255, 255, 255, .36);
+          --accent: #fff;
+          --control-ink: #fff;
+          --focus: #fff;
+          --panel-shadow: 0 0 0 1px rgb(255 255 255 / 0.15), 0 8px 20px rgb(0 0 0 / 0.35);
+        }
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { background: transparent; }
+
+      body {
+        min-width: 360px;
+        margin: 0;
+        overflow: hidden;
+        border-radius: 12px;
+        color: var(--text);
+        font-size: 16px;
+      }
+
+      button, input, select { font: inherit; }
+      h1, h2, p { margin: 0; }
+
+      .panel {
+        width: 360px;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1), 0 8px 20px rgb(0 0 0 / 0.05);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+      }
+
+      .header {
+        display: flex;
+        padding: 16px 20px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      h1 { font: 600 16px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      h2 { font-size: 14px; line-height: 1.3; font-weight: 650; }
+
+      .section p { color: var(--muted); }
+      #verdict-heading, #cleanup-heading { font-size: 13px; line-height: 1.3; }
+
+      .section {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .section p { margin-top: 3px; font-size: 12px; line-height: 1.4; }
+      .section-heading { display: flex; margin-bottom: 12px; align-items: center; justify-content: space-between; gap: 12px; }
+
+      .choice {
+        display: grid;
+        min-height: 24px;
+        padding: 8px 0;
+        border: none;
+        grid-template-columns: 20px minmax(0, 1fr);
+        align-items: center;
+        gap: 6px;
+      }
+
+      .choice-block { border: none; }
+
+      .choice input {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        accent-color: var(--control-ink);
+      }
+
+      .choice strong { font-size: 13px; line-height: 1.35; font-weight: 600; }
+
+      .stream-picker {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.3;
+      }
+
+      .stream-picker-shared {
+        display: grid;
+        margin-top: 10px;
+        gap: 5px;
+      }
+
+      .stream-picker select {
+        appearance: none;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        min-height: 32px;
+        padding: 8px 32px 8px 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: inherit;
+        background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
+        background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+        background-repeat: no-repeat;
+        background-size: 5px 5px, 5px 5px;
+        font-size: 12px;
+      }
+
+      section[aria-labelledby="cleanup-heading"] .stream-picker { display: grid; padding: 0 0 8px; gap: 5px; }
+      section[aria-labelledby="cleanup-heading"] .section-heading { justify-content: flex-start; }
+
+      .cleanup-choice { display: grid; grid-template-rows: auto 0fr; overflow: hidden; transition: grid-template-rows 200ms ease 100ms; }
+      .cleanup-choice[data-active="true"] { grid-template-rows: auto 1fr; overflow: visible; transition-delay: 0ms; }
+      .cleanup-choice + .cleanup-choice { margin-top: 4px; }
+      .cleanup-choice > .stream-picker { max-height: 0; min-height: 0; margin: 0; overflow: hidden; padding-block: 0; pointer-events: none; opacity: 0; filter: blur(4px); transform: scale(.95); transform-origin: top; transition: opacity 200ms ease, filter 200ms ease, transform 200ms ease, max-height 200ms ease, padding 200ms ease; }
+      .cleanup-choice[data-active="true"] > .stream-picker { max-height: 80px; margin-top: 2px; padding: 0 0 8px; pointer-events: auto; opacity: 1; filter: blur(0); transform: scale(1); }
+      .verdict-choice[data-active="true"] > .stream-picker-verdict, .cleanup-choice[data-active="true"] > .stream-picker { transition-delay: 100ms, 100ms, 100ms, 0ms, 0ms; }
+      body:not([data-options-ready="true"]) .verdict-choice, body:not([data-options-ready="true"]) .verdict-choice > .stream-picker-verdict, body:not([data-options-ready="true"]) .cleanup-choice, body:not([data-options-ready="true"]) .cleanup-choice > .stream-picker { transition: none !important; }
+      @media (prefers-reduced-motion: reduce) { .cleanup-choice, .cleanup-choice > .stream-picker { transition: none; } }
+
+      .stream-picker select:focus { border-color: var(--border); outline: none; box-shadow: none; }
+
+      .style-mode-toggle {
+        all: unset;
+        display: block;
+        margin-inline-start: auto;
+        border-radius: 3px;
+        color: var(--control-ink);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        text-align: right;
+        text-decoration: underline;
+        text-decoration-color: color-mix(in srgb, var(--control-ink) 70%, transparent);
+        text-underline-offset: 2px;
+        white-space: nowrap;
+      }
+
+      .close-options { width: 32px; height: 32px; margin: -6px -8px -4px 0; padding: 0; border: 0; color: var(--text); background: transparent; cursor: pointer; font-size: 20px; font-weight: 300; line-height: 1; }
+      .close-options:hover { color: var(--muted); }
+
+    </style>
+  </head>
+  <body>
+    <!-- Static, self-contained design snapshot. No extension APIs or runtime JavaScript. -->
+    <main class="panel">
+      <header class="header">
+        <h1>De-Slop</h1>
+        <button class="close-options" type="button" aria-label="Close options">×</button>
+      </header>
+
+      <section class="section" aria-labelledby="verdict-heading">
+        <div class="section-heading">
+          <h2 id="verdict-heading">Pangram Filters</h2>
+          <button class="style-mode-toggle" type="button">Style each differently</button>
+        </div>
+        <div class="choice-block">
+          <label class="choice">
+            <input type="checkbox" checked disabled />
+            <strong>AI</strong>
+          </label>
+        </div>
+        <div class="choice-block">
+          <label class="choice">
+            <input type="checkbox" checked />
+            <strong>Mixed</strong>
+          </label>
+        </div>
+        <div class="choice-block">
+          <label class="choice">
+            <input type="checkbox" checked />
+            <strong>AI-Assisted</strong>
+          </label>
+        </div>
+        <label class="stream-picker stream-picker-shared">
+          <span>Replace with…</span>
+          <select><option selected>🖼️ Art</option></select>
+        </label>
+      </section>
+
+      <section class="section" aria-labelledby="cleanup-heading">
+        <div class="section-heading">
+          <h2 id="cleanup-heading">Feed cleanup</h2>
+        </div>
+        <div class="choice-block cleanup-choice" data-active="true">
+          <label class="choice">
+            <input type="checkbox" checked />
+            <strong>Hide promoted posts</strong>
+          </label>
+          <label class="stream-picker">
+            <span>Replace with…</span>
+            <select><option selected>❌ Hide all promoted</option></select>
+          </label>
+        </div>
+        <div class="choice-block cleanup-choice" data-active="true">
+          <label class="choice">
+            <input type="checkbox" checked />
+            <strong>Hide suggested posts</strong>
+          </label>
+          <label class="stream-picker">
+            <span>Replace with…</span>
+            <select><option selected>❌ Hide all suggested</option></select>
+          </label>
+        </div>
+      </section>
+
+    </main>
+  </body>
+</html>
