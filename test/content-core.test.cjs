@@ -215,12 +215,13 @@ test('does not rescan a mutation parent when a replacement card mounts', () => {
   assert.match(functionSource, /const owner = getFeedOwner\(record\?\.target\)/);
 });
 
-test('disabled mode never replaces a verdict', () => {
+test('legacy disabled settings cannot turn replacement off', () => {
   const core = loadCore();
   const settings = core.normalizeSettings({ enabled: false, replaceMixed: true });
 
-  assert.equal(core.shouldReplace('ai', settings), false);
-  assert.equal(core.shouldReplace('mixed', settings), false);
+  assert.equal(settings.enabled, true);
+  assert.equal(core.shouldReplace('ai', settings), true);
+  assert.equal(core.shouldReplace('mixed', settings), true);
   assert.equal(core.shouldReplace('ai-assisted', settings), false);
 });
 

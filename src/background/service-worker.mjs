@@ -36,7 +36,7 @@ function readSettings() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(DEFAULT_SETTINGS, (value) => {
       resolve({
-        enabled: value.enabled !== false,
+        enabled: true,
         replaceMixed: value.replaceMixed === true,
         replaceAssisted: value.replaceAssisted === true,
         hidePromoted: value.hidePromoted === true,
@@ -67,10 +67,7 @@ function readSettings() {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(DEFAULT_SETTINGS, (current) => {
     chrome.storage.sync.set({
-      enabled:
-        typeof current.enabled === 'boolean'
-          ? current.enabled
-          : DEFAULT_SETTINGS.enabled,
+      enabled: true,
       replaceMixed:
         typeof current.replaceMixed === 'boolean'
           ? current.replaceMixed

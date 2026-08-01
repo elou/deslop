@@ -22,7 +22,6 @@
     ['hide-suggested', '❌ Hide all suggested']
   ];
   const controls = {
-    enabled: document.querySelector('#enabled'),
     replaceMixed: document.querySelector('#replace-mixed'),
     replaceAssisted: document.querySelector('#replace-assisted'),
     hidePromoted: document.querySelector('#hide-promoted'),
@@ -34,8 +33,18 @@
     streamAssisted: document.querySelector('#stream-assisted'),
     streamPromoted: document.querySelector('#stream-promoted'),
     streamSuggested: document.querySelector('#stream-suggested'),
+    closeOptions: document.querySelector('#close-options'),
     status: document.querySelector('#save-status')
   };
+  const cleanupBlocks = [
+    controls.hidePromoted.closest('.cleanup-choice'),
+    controls.hideSuggested.closest('.cleanup-choice')
+  ];
+  const verdictBlocks = [
+    controls.streamAi.closest('.verdict-choice'),
+    controls.streamMixed.closest('.verdict-choice'),
+    controls.streamAssisted.closest('.verdict-choice')
+  ];
   let styleMode = 'same';
   let statusTimer = null;
 
@@ -79,11 +88,15 @@
 
   function render(settings) {
     styleMode = settings.styleMode;
-    controls.enabled.checked = settings.enabled;
     controls.replaceMixed.checked = settings.replaceMixed;
     controls.replaceAssisted.checked = settings.replaceAssisted;
     controls.hidePromoted.checked = settings.hidePromoted;
     controls.hideSuggested.checked = settings.hideSuggested;
+    cleanupBlocks[0].dataset.active = settings.hidePromoted ? 'true' : 'false';
+    cleanupBlocks[1].dataset.active = settings.hideSuggested ? 'true' : 'false';
+    verdictBlocks[0].dataset.active = 'true';
+    verdictBlocks[1].dataset.active = settings.replaceMixed ? 'true' : 'false';
+    verdictBlocks[2].dataset.active = settings.replaceAssisted ? 'true' : 'false';
     controls.streamShared.value = settings.streams.ai;
     controls.streamAi.value = settings.streams.ai;
     controls.streamMixed.value = settings.streams.mixed;
@@ -96,6 +109,7 @@
   }
 
   function showStatus(message) {
+    if (!controls.status) return;
     window.clearTimeout(statusTimer);
     controls.status.textContent = message;
     statusTimer = window.setTimeout(() => {
@@ -105,7 +119,6 @@
 
   async function save() {
     const settings = core.normalizeSettings({
-      enabled: controls.enabled.checked,
       replaceMixed: controls.replaceMixed.checked,
       replaceAssisted: controls.replaceAssisted.checked,
       hidePromoted: controls.hidePromoted.checked,
@@ -128,7 +141,6 @@
   }
 
   for (const control of [
-    controls.enabled,
     controls.replaceMixed,
     controls.replaceAssisted,
     controls.hidePromoted,
@@ -156,5 +168,14 @@
     void save();
   });
 
-  void readSettings().then(render);
+  controls.closeOptions.addEventListener('click', () => window.close());
+
+  void readSettings().then((settings) => {
+    render(settings);
+    window.requestAnimationFrame(() =>
+      window.requestAnimationFrame(() => {
+        document.body.dataset.optionsReady = 'true';
+      })
+    );
+  });
 })();

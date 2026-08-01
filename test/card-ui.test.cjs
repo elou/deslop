@@ -164,6 +164,14 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('omits provider descriptions from image replacement cards', () => {
+  assert.match(
+    contentSource,
+    /location\.hidden = item\.kind !== 'poem';/,
+    'image cards should show their artwork title and footer without a provider description line'
+  );
+});
+
 test('shows the Pangram verdict at the right of the replacement footer', () => {
   assert.match(contentSource, /pangram-gallery-card__verdict/);
   assert.match(contentSource, /verdict === 'promoted'/);
