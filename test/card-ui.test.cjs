@@ -46,17 +46,17 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*object-fit:\s*contain;/s,
+    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*100%\s*!important;[^}]*max-block-size:\s*100%\s*!important;[^}]*object-fit:\s*contain;/s,
     'the final image should remain inside the reserved frame without cropping'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s,
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px;[^}]*background:\s*inherit;/s,
     'the image should sit in a generous, centered stage'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\)\s*!important;[^}]*max-inline-size:\s*560px\s*!important;[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
     'the image frame should be visually bounded without changing the card metadata'
   );
 });
