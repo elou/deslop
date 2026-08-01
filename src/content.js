@@ -356,7 +356,7 @@
     if (!image || !imageLink || !poem || !title || !location || !source || !author || !verdictChip || !notice || !toggle) return false;
 
     if (item.kind === 'notice') {
-      notice.textContent = item.title || '💩 De-slopped your feed';
+      notice.textContent = item.title || '☢️ AI post hidden';
       notice.hidden = false;
       title.hidden = true;
       location.hidden = true;

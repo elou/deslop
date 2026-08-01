@@ -294,7 +294,7 @@ test('builds the three compact hide replacement notices', () => {
   const suggested = buildHideSuggestedReplacement();
 
   assert.equal(ai.kind, 'notice');
-  assert.equal(ai.title, '💩 De-slopped your feed');
+  assert.equal(ai.title, '☢️ AI post hidden');
   assert.equal(promoted.title, '💸 Promoted post hidden');
   assert.equal(suggested.title, '🤓 Suggested post hidden');
 });
@@ -458,7 +458,7 @@ test('routes the Hide AI stream to a compact notice', async () => {
   );
 
   assert.equal(item.kind, 'notice');
-  assert.equal(item.title, '💩 De-slopped your feed');
+  assert.equal(item.title, '☢️ AI post hidden');
 });
 
 test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {
