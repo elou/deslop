@@ -141,11 +141,11 @@ test('builds the compact source-of-truth composition for every full card', () =>
   );
 });
 
-test('uses the approved artwork radius without inline image padding and shared subtle toggle hover', () => {
+test('uses the approved borderless artwork radius without inline image padding and shared subtle toggle hover', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*border:\s*1px solid var\(--pangram-gallery-border\);[^}]*border-radius:\s*8px;[^}]*box-shadow:/s,
-    'artwork should retain the source-of-truth radius and shadow shell'
+    /img\.pangram-gallery-card__image\s*\{[^}]*border:\s*none;[^}]*border-radius:\s*8px;[^}]*box-shadow:/s,
+    'artwork should retain the source-of-truth radius and shadow without an image border'
   );
   assert.doesNotMatch(
     contentCss,
@@ -181,6 +181,24 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('makes linked titles interactive and truncates descriptions to one line', () => {
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__title\[href\]\s*\{[^}]*cursor:\s*pointer;/s,
+    'linked card titles should use the pointer cursor'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__title\[href\]:hover\s*\{[^}]*text-decoration:\s*underline;/s,
+    'only linked card titles should gain an underline on hover'
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__location\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;[^}]*white-space:\s*nowrap;/s,
+    'the description below the card title should stay on one line and end with an ellipsis when it overflows'
+  );
+});
+
 test('keeps creator, date, and location metadata visible on image replacement cards', () => {
   assert.doesNotMatch(
     contentSource,
@@ -194,11 +212,38 @@ test('shows the Pangram verdict at the right of the replacement footer', () => {
   assert.match(contentSource, /pangram-gallery-card__verdict/);
   assert.match(contentSource, /verdict === 'promoted'/);
   assert.match(contentSource, /verdict === 'suggested'/);
+  assert.match(
+    contentSource,
+    /verdictChip\.classList\.add\(`pangram-gallery-card__verdict--\$\{verdict\}`\);/,
+    'each verdict chip should expose its semantic variant to CSS'
+  );
+  assert.match(
+    contentSource,
+    /verdict === 'suggested'\s*\?\s*'🫥'/,
+    'Suggested cards should use the requested face-in-clouds emoji'
+  );
+  assert.doesNotMatch(
+    contentSource,
+    /\$\{verdictLabel\}\s*›/,
+    'verdict chips should not include a trailing chevron'
+  );
   assert.match(contentSource, /verdictChip\.setAttribute\('aria-label', `Pangram verdict: \$\{verdictLabel\}`\);/);
   assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-inline-start:\s*auto;/s
+    /span\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-block-start:\s*7px;[^}]*margin-inline-start:\s*auto;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict--mixed\s*\{[^}]*background:\s*#f4dfd0;[^}]*color:\s*#8a4b27;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict--ai-assisted\s*\{[^}]*background:\s*#f3ebc9;[^}]*color:\s*#755f18;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__verdict--suggested,\s*\.pangram-gallery-card__verdict--promoted\s*\{[^}]*background:\s*none;[^}]*color:\s*#888;[^}]*padding:\s*0 !important;[^}]*font-weight:\s*400 !important;[^}]*font:\s*400 12px\s*\/\s*1\.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;/s
   );
 });
 
