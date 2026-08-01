@@ -124,7 +124,11 @@ function makeCommentHarness({ initialBadge = true } = {}) {
     MutationObserver,
     NodeFilter: { SHOW_TEXT: 4 },
     window: {
-      location: { href: 'https://www.linkedin.com/feed/', origin: 'https://www.linkedin.com' },
+      location: {
+        href: 'https://www.linkedin.com/feed/',
+        origin: 'https://www.linkedin.com',
+        hostname: 'www.linkedin.com'
+      },
       setTimeout: (callback) => {
         callback();
         return 1;
