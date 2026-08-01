@@ -263,16 +263,12 @@
     body.className = 'pangram-gallery-card__body';
     const notice = createText('p', 'pangram-gallery-card__notice', '');
     notice.hidden = true;
-    const metadata = document.createElement('div');
-    metadata.className = 'pangram-gallery-card__metadata';
     const title = createText('a', 'pangram-gallery-card__title', '');
     title.target = '_blank';
     title.rel = 'noreferrer';
     const location = createText('p', 'pangram-gallery-card__location', '');
-    metadata.append(title, location);
+    body.append(notice, title, location, toggle);
 
-    const footer = document.createElement('div');
-    footer.className = 'pangram-gallery-card__footer';
     const source = document.createElement('span');
     source.className = 'pangram-gallery-card__source';
     const author = document.createElement('a');
@@ -286,8 +282,7 @@
       `${verdict === 'promoted' ? '💸' : verdict === 'suggested' ? '🦟' : '🤖'} ${verdictLabel} ›`
     );
     verdictChip.setAttribute('aria-label', `Pangram verdict: ${verdictLabel}`);
-    footer.append(source, toggle, verdictChip);
-    body.append(notice, metadata, footer);
+    body.append(source, verdictChip);
 
     card.append(imageStage, body);
 

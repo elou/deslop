@@ -46,17 +46,17 @@ test('reserves a stable four-by-three artwork frame while loading', () => {
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*100%\s*!important;[^}]*max-block-size:\s*100%\s*!important;[^}]*object-fit:\s*contain;/s,
+    /\.pangram-gallery-card__image\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*object-fit:\s*contain;/s,
     'the final image should remain inside the reserved frame without cropping'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px;[^}]*background:\s*inherit;/s,
+    /\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px\s+32px\s+32px\s+0;[^}]*background:\s*inherit;/s,
     'the image should sit in a generous, centered stage'
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\)\s*!important;[^}]*max-inline-size:\s*560px\s*!important;[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
+    /\.pangram-gallery-card__image-frame\s*\{[^}]*inline-size:\s*min\(90%,\s*560px\);[^}]*justify-self:\s*center;[^}]*margin-inline:\s*auto;[^}]*border-radius:\s*14px;/s,
     'the image frame should be visually bounded without changing the card metadata'
   );
 });
@@ -72,7 +72,7 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /footer\.append\(source, toggle, verdictChip\);\s*body\.append\(notice, metadata, footer\);/s,
+    /body\.append\(notice, title, location, toggle\);[\s\S]*body\.append\(source, verdictChip\);/,
     'the original toggle should sit below the replacement metadata'
   );
 });
@@ -106,7 +106,7 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   );
   assert.doesNotMatch(
     contentCss,
-    /\.pangram-gallery-card--poem[^,{]*\.(?:pangram-gallery-card__metadata|pangram-gallery-card__footer)[^{]*\{[^}]*display:\s*none;/s,
+    /\.pangram-gallery-card--poem[^,{]*\.(?:pangram-gallery-card__title|pangram-gallery-card__location|pangram-gallery-card__source|pangram-gallery-card__toggle|pangram-gallery-card__verdict)[^{]*\{[^}]*display:\s*none;/s,
     'poetry cards must retain the shared metadata and footer'
   );
   assert.match(
@@ -116,41 +116,36 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   );
 });
 
-test('builds one metadata area and footer row for every full replacement card', () => {
-  assert.match(contentSource, /metadata\.append\(title, location\);/);
-  assert.match(contentSource, /footer\.append\(source, toggle, verdictChip\);/);
-  assert.match(contentSource, /body\.append\(notice, metadata, footer\);/);
+test('builds one tuned wrapping metadata and control composition for every full card', () => {
+  assert.match(contentSource, /body\.append\(notice, title, location, toggle\);/);
+  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__metadata\s*\{[^}]*display:\s*block;/s
+    /\.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*center;[^}]*column-gap:\s*12px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__footer\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*center;[^}]*gap:\s*12px;[^}]*margin-block-start:\s*6px;/s
+    /\.pangram-gallery-card__title\s*\{[^}]*flex-basis:\s*100%;[^}]*font:\s*500 20px\s*\/\s*1\.2 -apple-system/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__title\s*\{[^}]*font:\s*500 20px\s*\/\s*1\.2 -apple-system/s
+    /\.pangram-gallery-card__location\s*\{[^}]*flex-basis:\s*100%;[^}]*margin-block-start:\s*2px;[^}]*margin-block-end:\s*16px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__location\s*\{[^}]*color:\s*inherit;[^}]*margin-block-start:\s*2px;[^}]*margin-block-end:\s*16px;/s
+    /\.pangram-gallery-card__source\s*\{[^}]*order:\s*1;[^}]*flex:\s*1 1 0;[^}]*margin-block-start:\s*6px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__source\s*\{[^}]*flex:\s*1 1 0;[^}]*min-inline-size:\s*0;/s
-  );
-  assert.match(
-    contentCss,
-    /\.pangram-gallery-card__toggle\s*\{[^}]*flex:\s*none;[^}]*min-block-size:\s*24px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
+    /\.pangram-gallery-card__toggle\s*\{[^}]*order:\s*2;[^}]*min-block-size:\s*24px;[^}]*margin-block-start:\s*6px;[^}]*padding:\s*10px\s+10px;[^}]*text-transform:\s*uppercase;/s
   );
 });
 
-test('uses the adjusted artwork radius and shared subtle toggle hover', () => {
+test('uses the approved artwork radius and shared subtle toggle hover', () => {
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__image\s*\{[^}]*border-radius:\s*12px;/s,
-    'artwork should use the 12px radius adjusted in DevTools'
+    /\.pangram-gallery-card__image\s*\{[^}]*border-radius:\s*14px;/s,
+    'artwork should use the approved 14px radius'
   );
   assert.match(
     contentCss,
@@ -195,10 +190,10 @@ test('shows the Pangram verdict at the right of the replacement footer', () => {
   assert.match(contentSource, /verdict === 'promoted'/);
   assert.match(contentSource, /verdict === 'suggested'/);
   assert.match(contentSource, /verdictChip\.setAttribute\('aria-label', `Pangram verdict: \$\{verdictLabel\}`\);/);
-  assert.match(contentSource, /footer\.append\(source, toggle, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__verdict\s*\{[^}]*flex:\s*none;[^}]*margin-inline-start:\s*auto;/s
+    /\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-inline-start:\s*auto;/s
   );
 });
 
@@ -237,11 +232,11 @@ test('renders each hide variant as a compact notice with an unhide control', () 
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*display:\s*flex;[^}]*flex-wrap:\s*nowrap;[^}]*min-block-size:\s*0;[^}]*padding:\s*8px 8px 8px 16px;/s
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__body\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*min-block-size:\s*0;[^}]*padding:\s*8px 8px 8px 16px;/s
   );
   assert.match(
     contentCss,
-    /\.pangram-gallery-card--notice \.pangram-gallery-card__metadata\s*\{[^}]*display:\s*none;/s
+    /\.pangram-gallery-card--notice \.pangram-gallery-card__title,\s*\.pangram-gallery-card--notice \.pangram-gallery-card__location\s*\{[^}]*display:\s*none;/s
   );
   assert.match(
     contentCss,
