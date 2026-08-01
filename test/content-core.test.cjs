@@ -55,6 +55,54 @@ test('formats the shared artwork and poetry metadata line without repeated detai
   );
 });
 
+test('keeps Painting Classics metadata compact when Wikimedia credit is raw catalogue prose', () => {
+  const core = loadCore();
+
+  assert.equal(
+    core.formatCardDetails({
+      provider: 'Painting Classics',
+      creator: 'Pierre-Auguste Renoir',
+      date: '1876-01-01',
+      location:
+        'The Yorck Project (2002) 10.000 Meisterwerke der Malerei (DVD-ROM), distributed by DIRECTMEDIA Publishing GmbH. ISBN: 3936122202.'
+    }),
+    'Pierre-Auguste Renoir · 1876'
+  );
+});
+
+test('uses a concise provider fallback instead of raw credit or identifier-heavy metadata', () => {
+  const core = loadCore();
+
+  assert.equal(
+    core.formatCardDetails({
+      location: 'maderix/farsidecomics-blip-captions · ISBN 978-0-000000-00-0',
+      credit: 'Dataset record 508_17 from a noncommercial research mirror',
+      provider: 'Far Side (experimental)'
+    }),
+    'Far Side (experimental)'
+  );
+  assert.equal(
+    core.formatCardDetails({
+      creator: 'Unknown artist',
+      location: 'Rijksmuseum Amsterdam'
+    }),
+    'Unknown artist · Rijksmuseum Amsterdam'
+  );
+  assert.equal(
+    core.formatCardDetails({
+      location: 'Record Plant, New York',
+      provider: 'maderix/farsidecomics-blip-captions'
+    }),
+    'Record Plant, New York'
+  );
+  assert.equal(
+    core.formatCardDetails({
+      provider: 'maderix/farsidecomics-blip-captions'
+    }),
+    ''
+  );
+});
+
 test('defaults to AI-only replacement', () => {
   const core = loadCore();
   const settings = core.normalizeSettings();
