@@ -102,6 +102,10 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   );
   assert.match(
     contentCss,
+    /\.pangram-gallery-card--poem\s+\.pangram-gallery-card__image-stage\s*\{[^}]*padding:\s*32px 16px 0 0px;/s
+  );
+  assert.match(
+    contentCss,
     /\.pangram-gallery-card__poem\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*font:\s*400 italic clamp\(16px,\s*1\.2vw,\s*20px\)\s*\/\s*1\.5/s
   );
   assert.doesNotMatch(
