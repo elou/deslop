@@ -291,6 +291,45 @@ test('recognizes explicit promoted markers and LinkedIn disclosure text', () => 
   );
 });
 
+test('treats LinkedIn Learning popular-course cards as promoted', () => {
+  const core = loadCore();
+  const courseHeader = { textContent: 'Popular course on LinkedIn Learning' };
+  const editorialHeader = { textContent: 'Popular post on LinkedIn' };
+
+  assert.equal(
+    core.isPromotedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('update-components-header__text-view') ? [courseHeader] : []
+    }),
+    true
+  );
+  assert.equal(
+    core.isPromotedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('update-components-header__text-view') ? [editorialHeader] : []
+    }),
+    false
+  );
+});
+
+test('does not assign a nested LinkedIn Learning course header to an outer feed item', () => {
+  const core = loadCore();
+  const inner = { matches: () => false, querySelectorAll: () => [] };
+  const courseHeader = {
+    textContent: 'Popular course on LinkedIn Learning',
+    closest: () => inner
+  };
+  const outer = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector.includes('update-components-header__text-view') ? [courseHeader] : []
+  };
+
+  assert.equal(core.isPromotedTarget(outer), false);
+});
+
 test('does not assign a nested promoted disclosure to an outer feed item', () => {
   const core = loadCore();
   const inner = { matches: () => false, querySelectorAll: () => [] };

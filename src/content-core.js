@@ -211,12 +211,20 @@
   const PROMOTED_MARKER_SELECTOR =
     '.feed-shared-update-v2--promoted, [data-promoted="true"]';
   const PROMOTED_LABEL_SELECTOR =
-    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
+    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, .update-components-header__text-view, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
   const SUGGESTED_LABEL_SELECTOR =
     '.update-components-header__text-view, [data-testid="suggested-label"]';
 
   function getFeedOwner(node) {
     return node?.closest?.(FEED_OWNER_SELECTOR) || null;
+  }
+
+  function isPromotedLabelText(value) {
+    const label = normalizeCardDetail(value);
+    return (
+      /^promoted(?:\s|$|·)/i.test(label) ||
+      label.toLocaleLowerCase() === 'popular course on linkedin learning'
+    );
   }
 
   function isPromotedTarget(target) {
@@ -226,7 +234,7 @@
     for (const label of target.querySelectorAll?.(PROMOTED_LABEL_SELECTOR) || []) {
       const owner = getFeedOwner(label);
       if (owner && owner !== target) continue;
-      if (/^promoted(?:\s|$|·)/i.test(label.textContent?.trim() || '')) return true;
+      if (isPromotedLabelText(label.textContent)) return true;
     }
 
     // LinkedIn sometimes emits the label in a plain paragraph, without a
@@ -234,7 +242,7 @@
     for (const label of target.querySelectorAll?.('p, span') || []) {
       const owner = getFeedOwner(label);
       if (owner && owner !== target) continue;
-      if ((label.textContent || '').trim().toLowerCase() === 'promoted') return true;
+      if (isPromotedLabelText(label.textContent)) return true;
     }
     return false;
   }
