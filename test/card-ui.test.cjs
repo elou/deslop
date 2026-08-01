@@ -205,6 +205,13 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('keeps local-only replacement titles inert when no source URL exists', () => {
+  assert.match(
+    contentSource,
+    /if \(item\.sourceUrl\) \{[\s\S]*title\.href = item\.sourceUrl;[\s\S]*\} else \{[\s\S]*title\.removeAttribute\('href'\);/
+  );
+});
+
 test('makes linked titles interactive and truncates descriptions to one line', () => {
   assert.match(
     contentCss,

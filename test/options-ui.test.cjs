@@ -103,18 +103,34 @@ test('supports translucent light and dark option-panel themes', () => {
 test('offers the supported live streams', () => {
   for (const label of [
     '🖼️ Art',
-    '🖼️ Art 2',
     '📜 Poetry',
     '🎨 Modern Art (experimental)',
     '🌌 Deep Space',
-    '🗞️ Publisher feeds',
-    '🃏 New Yorker cartoons',
-    '🃏 Far Side (experimental)',
     '🎾 Garross Gallery',
     '✨ Surprise me'
   ]) {
     assert.ok(optionsSource.includes(`'${label}'`), `missing stream label: ${label}`);
   }
+  for (const removed of ['🖼️ Art 2', '🗞️ Publisher feeds', '🃏 New Yorker cartoons', '🃏 Far Side (experimental)']) {
+    assert.ok(!optionsSource.includes(`'${removed}'`), `removed stream still offered: ${removed}`);
+  }
+});
+
+test('puts an opt-in vocabulary configuration at the bottom of the popup', () => {
+  assert.match(optionsHtml, /id="vocabulary-heading"/);
+  assert.match(optionsHtml, /id="vocabulary-enabled"/);
+  assert.match(optionsHtml, /id="vocabulary-status"/);
+  assert.ok(
+    optionsHtml.indexOf('id="vocabulary-heading"') > optionsHtml.indexOf('id="cleanup-heading"'),
+    'vocabulary configuration should follow the feed cleanup section'
+  );
+});
+
+test('adds Vocabulary to dropdowns only when local state is enabled and nonempty', () => {
+  assert.match(optionsSource, /isVocabularyAvailable/);
+  assert.match(optionsSource, /renderStreamOptions/);
+  assert.match(optionsSource, /\['vocabulary', '📚 Vocabulary'\]/);
+  assert.match(optionsSource, /repairVocabularyStreams/);
 });
 
 test('switches between one shared stream and per-verdict stream menus', () => {

@@ -21,15 +21,12 @@
 
   const STREAM_IDS = Object.freeze([
     'painting-classics',
-    'art-2',
     'classic-poetry',
     'modern-art',
     'deep-space',
-    'newyorker-latest',
-    'newyorker-cartoons',
-    'far-side',
     'garros-gallery',
     'surprise-me',
+    'vocabulary',
     'hide-ai',
     'hide-promoted',
     'hide-suggested'

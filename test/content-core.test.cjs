@@ -174,7 +174,7 @@ test('routes one shared stream or separate streams per verdict', () => {
     streams: {
       ai: 'classic-poetry',
       mixed: 'deep-space',
-      assisted: 'art-2'
+      assisted: 'vocabulary'
     }
   });
   const separate = core.normalizeSettings({
@@ -182,7 +182,7 @@ test('routes one shared stream or separate streams per verdict', () => {
     streams: {
       ai: 'classic-poetry',
       mixed: 'deep-space',
-      assisted: 'art-2'
+      assisted: 'vocabulary'
     }
   });
 
@@ -190,7 +190,7 @@ test('routes one shared stream or separate streams per verdict', () => {
   assert.equal(core.getStreamForVerdict(separate, 'ai'), 'classic-poetry');
   assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'deep-space');
   assert.equal(core.getStreamForVerdict(shared, 'ai-assisted'), 'classic-poetry');
-  assert.equal(core.getStreamForVerdict(separate, 'ai-assisted'), 'art-2');
+  assert.equal(core.getStreamForVerdict(separate, 'ai-assisted'), 'vocabulary');
 });
 
 test('falls back to Painting Classics for unknown stream choices', () => {
@@ -202,7 +202,7 @@ test('falls back to Painting Classics for unknown stream choices', () => {
 
   assert.equal(settings.styleMode, 'same');
   assert.equal(settings.streams.ai, 'painting-classics');
-  assert.equal(settings.streams.mixed, 'newyorker-cartoons');
+  assert.equal(settings.streams.mixed, 'painting-classics');
 });
 
 test('can opt into Mixed verdicts', () => {

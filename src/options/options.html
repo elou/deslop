@@ -104,6 +104,16 @@
             <input id="platform-x" type="checkbox" />
             <strong>X.com</strong>
           </label>
+          <section class="vocabulary-section" aria-labelledby="vocabulary-heading">
+            <div class="section-heading">
+              <h2 id="vocabulary-heading">Vocabulary feed</h2>
+            </div>
+            <label class="choice">
+              <input id="vocabulary-enabled" type="checkbox" />
+              <strong>Use saved vocabulary</strong>
+            </label>
+            <p id="vocabulary-status" role="status">Loading saved vocabulary…</p>
+          </section>
         </div>
       </details>
 
@@ -117,6 +127,6 @@
     </main>
 
     <script src="../content-core.js"></script>
-    <script src="options.js"></script>
+    <script type="module" src="options.js"></script>
   </body>
 </html>

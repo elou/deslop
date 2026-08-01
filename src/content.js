@@ -868,7 +868,13 @@
     }
     if (item.kind !== 'notice') {
       title.textContent = item.title;
-      title.href = item.sourceUrl;
+      if (item.sourceUrl) {
+        title.href = item.sourceUrl;
+      } else {
+        title.removeAttribute('href');
+        title.removeAttribute('target');
+        title.removeAttribute('rel');
+      }
       location.textContent = core.formatCardDetails(item);
       renderOriginalPostAuthor(card);
       renderFeedSourceActor(card);

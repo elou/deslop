@@ -1,4 +1,18 @@
 import { getReplacement } from './providers.mjs';
+import {
+  STORAGE_KEY as VOCABULARY_STORAGE_KEY,
+  STREAM_ID as VOCABULARY_STREAM_ID,
+  addVocabularyEntry,
+  applyVocabularyDefinition,
+  buildVocabularyReplacement,
+  isVocabularyAvailable,
+  normalizeVocabularyState,
+  pickVocabularyEntry,
+  repairVocabularyStreams
+} from '../vocabulary-core.mjs';
+
+const VOCABULARY_MENU_ID = 'deslop-add-vocabulary';
+const DICTIONARY_HOST = 'com.elou.deslop.dictionary';
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -22,19 +36,98 @@ const DEFAULT_SETTINGS = {
 
 const STREAM_IDS = new Set([
   'painting-classics',
-  'art-2',
   'classic-poetry',
   'modern-art',
   'deep-space',
-  'newyorker-latest',
-  'newyorker-cartoons',
-  'far-side',
   'garros-gallery',
   'surprise-me',
+  VOCABULARY_STREAM_ID,
   'hide-ai',
   'hide-promoted',
   'hide-suggested'
 ]);
+
+function storageGet(area, defaults) {
+  return new Promise((resolve) => chrome.storage[area].get(defaults, resolve));
+}
+
+function storageSet(area, value) {
+  return new Promise((resolve) => chrome.storage[area].set(value, resolve));
+}
+
+async function readVocabulary() {
+  const value = await storageGet('local', {
+    [VOCABULARY_STORAGE_KEY]: normalizeVocabularyState()
+  });
+  return normalizeVocabularyState(value[VOCABULARY_STORAGE_KEY]);
+}
+
+function writeVocabulary(value) {
+  return storageSet('local', {
+    [VOCABULARY_STORAGE_KEY]: normalizeVocabularyState(value)
+  });
+}
+
+function getSelectedStream(settings, verdict) {
+  if (settings.styleMode !== 'different') return settings.streams.ai;
+  if (verdict === 'mixed') return settings.streams.mixed;
+  if (verdict === 'ai-assisted') return settings.streams.assisted;
+  return settings.streams.ai;
+}
+
+function lookUpSystemDefinition(term) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendNativeMessage(
+      DICTIONARY_HOST,
+      { type: 'define', term },
+      (response) => {
+        const runtimeError = chrome.runtime.lastError?.message;
+        if (runtimeError) {
+          resolve({ error: runtimeError });
+          return;
+        }
+        if (!response?.ok || !response.definition) {
+          resolve({ error: response?.error || 'No system dictionary match' });
+          return;
+        }
+        resolve({
+          definition: response.definition,
+          source: response.source || 'macOS Dictionary'
+        });
+      }
+    );
+  });
+}
+
+async function saveVocabularySelection(selectionText) {
+  const before = await readVocabulary();
+  const after = addVocabularyEntry(before, selectionText);
+  const entry = after.entries.at(-1);
+  if (!entry || after.entries.length === before.entries.length) return;
+  await writeVocabulary(after);
+
+  const definition = await lookUpSystemDefinition(entry.term);
+  const latest = await readVocabulary();
+  await writeVocabulary(applyVocabularyDefinition(latest, entry.id, definition));
+}
+
+let vocabularyWriteQueue = Promise.resolve();
+
+function queueVocabularySelection(selectionText) {
+  vocabularyWriteQueue = vocabularyWriteQueue
+    .then(() => saveVocabularySelection(selectionText))
+    .catch(() => undefined);
+  return vocabularyWriteQueue;
+}
+
+async function repairStoredVocabularyRouting(vocabulary) {
+  if (isVocabularyAvailable(vocabulary)) return;
+  const current = await storageGet('sync', DEFAULT_SETTINGS);
+  const repaired = repairVocabularyStreams(current, vocabulary);
+  if (JSON.stringify(repaired.streams) !== JSON.stringify(current.streams)) {
+    await storageSet('sync', repaired);
+  }
+}
 
 function readSettings() {
   return new Promise((resolve) => {
@@ -73,6 +166,16 @@ function readSettings() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: VOCABULARY_MENU_ID,
+      title: 'Add “%s” to De-Slop vocabulary',
+      contexts: ['selection']
+    });
+  });
+  chrome.storage.local
+    .setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' })
+    ?.catch?.(() => undefined);
   chrome.storage.sync.get(DEFAULT_SETTINGS, (current) => {
     chrome.storage.sync.set({
       enabled: true,
@@ -122,6 +225,20 @@ chrome.runtime.onInstalled.addListener(() => {
       }
     });
   });
+  void readVocabulary().then(repairStoredVocabularyRouting);
+});
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== VOCABULARY_MENU_ID) return;
+  void queueVocabularySelection(info.selectionText || '');
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !changes[VOCABULARY_STORAGE_KEY]) return;
+  const vocabulary = normalizeVocabularyState(
+    changes[VOCABULARY_STORAGE_KEY].newValue
+  );
+  void repairStoredVocabularyRouting(vocabulary);
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -134,16 +251,27 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         ? message.verdict
         : 'ai';
       const stream = STREAM_IDS.has(message.stream) ? message.stream : '';
-      const item = await getReplacement(
-        stream
-          ? {
+      const selectedStream = stream || getSelectedStream(settings, verdict);
+      const vocabulary = selectedStream === VOCABULARY_STREAM_ID
+        ? await readVocabulary()
+        : null;
+      const item = selectedStream === VOCABULARY_STREAM_ID &&
+        isVocabularyAvailable(vocabulary)
+        ? buildVocabularyReplacement(pickVocabularyEntry(vocabulary))
+        : await getReplacement(
+            {
               ...settings,
               styleMode: 'same',
-              streams: { ...settings.streams, ai: stream }
-            }
-          : settings,
-        verdict
-      );
+              streams: {
+                ...settings.streams,
+                ai:
+                  selectedStream === VOCABULARY_STREAM_ID
+                    ? 'painting-classics'
+                    : selectedStream
+              }
+            },
+            verdict
+          );
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({
