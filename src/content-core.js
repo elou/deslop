@@ -47,22 +47,39 @@
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
   }
 
+  function formatCardDate(value) {
+    return /^\d{4}-01-01(?:T00:00:00(?:\.000)?Z?)?$/.test(value)
+      ? value.slice(0, 4)
+      : value;
+  }
+
+  function isRawAttribution(value) {
+    return /\b(?:isbn(?:-1[03])?|issn|catalog(?:ue)?|credit|courtesy|copyright|distributed by|dvd-rom|dataset|mirror|corpus|wikimedia(?: commons)?|wikidata)\b|\brecord\s*(?:#|no\.?|id)?\s*[\w-]*\d[\w-]*\b|(?:\b[\w.-]+\/)+[\w.-]+\b/i.test(
+      value
+    );
+  }
+
   function formatCardDetails(item = {}) {
     const location = normalizeCardDetail(item.location);
-    const locationKey = location.toLowerCase();
+    const cleanLocation = isRawAttribution(location) ? '' : location;
+    const locationKey = cleanLocation.toLowerCase();
     const creator = normalizeCardDetail(item.creator);
-    const date = normalizeCardDetail(item.date);
+    const date = formatCardDate(normalizeCardDetail(item.date));
     const dateKey = date.slice(0, 10).toLowerCase();
     const details = [];
 
     if (creator && !locationKey.includes(creator.toLowerCase())) details.push(creator);
     if (date && (!dateKey || !locationKey.includes(dateKey))) details.push(date);
-    if (location) details.push(location);
+    if (cleanLocation) details.push(cleanLocation);
 
     return (
       details.join(' · ') ||
-      normalizeCardDetail(item.credit) ||
-      normalizeCardDetail(item.provider)
+      (isRawAttribution(normalizeCardDetail(item.credit))
+        ? ''
+        : normalizeCardDetail(item.credit)) ||
+      (isRawAttribution(normalizeCardDetail(item.provider))
+        ? ''
+        : normalizeCardDetail(item.provider))
     );
   }
 
