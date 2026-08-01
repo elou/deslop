@@ -205,7 +205,7 @@ test('links the original post author to the post permalink or their profile', ()
 
 test('renders each hide variant as a compact notice with an unhide control', () => {
   assert.match(contentSource, /item\.kind === 'notice'/);
-  assert.match(contentSource, /💩 De-slopped your feed/);
+  assert.match(contentSource, /☢️ AI post hidden/);
   assert.match(contentSource, /toggle\.textContent = 'Unhide'/);
   assert.match(contentSource, /pangram-gallery-card--notice/);
   assert.match(

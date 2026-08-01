@@ -564,7 +564,7 @@ export function buildHideReplacement() {
   return {
     kind: 'notice',
     id: 'slop-cleansed',
-    title: '💩 De-slopped your feed',
+    title: '☢️ AI post hidden',
     provider: 'Pangram Gallery',
     rights: 'Local filter'
   };
