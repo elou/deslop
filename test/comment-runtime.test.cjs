@@ -135,6 +135,7 @@ function makeCommentHarness({ initialBadge = true } = {}) {
       }
     }
   };
+  context.window.top = context.window;
   context.globalThis = context;
   vm.createContext(context);
 

@@ -41,7 +41,7 @@
       "matches": ["<all_urls>"],
       "js": ["src/history-core.js", "src/content-core.js", "src/content.js"],
       "css": ["src/content.css"],
-      "all_frames": true,
+      "all_frames": false,
       "run_at": "document_idle"
     }
   ]
