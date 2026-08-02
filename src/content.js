@@ -10,10 +10,13 @@
   const COMMENT_STATE_ATTRIBUTE = 'data-pangram-gallery-comment-state';
   const COMMENT_ORIGINAL_CLASS = 'pangram-gallery-comment-original';
   const COMMENT_CLOWNS_CLASS = 'pangram-gallery-comment-clowns';
+  const REPLACEMENT_RESPONSE_TTL_MS = 10 * 60 * 1000;
+  const REPLACEMENT_RESPONSE_MAX_ENTRIES = 200;
   let settings = core.normalizeSettings();
   let scanTimer = null;
   let generation = 0;
   let historyWriteQueue = Promise.resolve();
+  const replacementResponseCache = new Map();
   const residencyObserver =
     typeof IntersectionObserver === 'function'
       ? new IntersectionObserver(
@@ -54,6 +57,63 @@
     });
   }
 
+  function replacementResponseKey(message) {
+    const postKey = typeof message.postKey === 'string' ? message.postKey.trim() : '';
+    return postKey
+      ? `${postKey}\u0000${message.verdict || ''}\u0000${message.stream || ''}`
+      : '';
+  }
+
+  function requestReplacement(message) {
+    const key = replacementResponseKey(message);
+    if (!key) return sendMessage(message);
+
+    const now = Date.now();
+    for (const [cachedKey, entry] of replacementResponseCache) {
+      if (entry.expiresAt <= now) replacementResponseCache.delete(cachedKey);
+    }
+    const cached = replacementResponseCache.get(key);
+    if (cached) return cached.promise;
+
+    let pending;
+    pending = sendMessage(message)
+      .then((response) => {
+        const entry = replacementResponseCache.get(key);
+        if (!response?.ok || !response.item) {
+          if (entry?.promise === pending) replacementResponseCache.delete(key);
+          return response;
+        }
+        if (entry?.promise === pending) {
+          entry.expiresAt = Date.now() + REPLACEMENT_RESPONSE_TTL_MS;
+        }
+        return response;
+      })
+      .catch((error) => {
+        if (replacementResponseCache.get(key)?.promise === pending) {
+          replacementResponseCache.delete(key);
+        }
+        throw error;
+      });
+    replacementResponseCache.set(key, { promise: pending, expiresAt: Infinity });
+    while (replacementResponseCache.size > REPLACEMENT_RESPONSE_MAX_ENTRIES) {
+      replacementResponseCache.delete(replacementResponseCache.keys().next().value);
+    }
+    return pending;
+  }
+
+  function invalidateReplacementResponse({ postKey, verdict, stream }) {
+    const message = {
+      type: 'PANGRAM_GALLERY_INVALIDATE_REPLACEMENT',
+      postKey,
+      verdict,
+      stream
+    };
+    const key = replacementResponseKey(message);
+    if (!key) return;
+    replacementResponseCache.delete(key);
+    void sendMessage(message).catch(() => undefined);
+  }
+
   function readLocalHistory() {
     return new Promise((resolve, reject) => {
       chrome.storage.local.get(
@@ -92,19 +152,82 @@
     return target.querySelector?.('[data-pangram-post-id]') || target;
   }
 
-  function getHistoryPostKey(card) {
-    const target = card?.pangramGalleryTarget;
-    if (!target) return '';
+  function getOpaquePostKey(target) {
+    if (!historyCore || !target) return '';
     const scope = getPostScope(target);
     const pangramHost = scope.matches?.('[data-pangram-post-id]')
       ? scope
       : scope.querySelector?.('[data-pangram-post-id]');
-    const activityHost = scope.querySelector?.('[data-urn*="activity:"]');
+    const activityHost = scope.matches?.('[data-urn*="activity:"]')
+      ? scope
+      : scope.querySelector?.('[data-urn*="activity:"]');
     return historyCore.derivePostKey({
-      permalink: card.pangramGalleryPermalink,
+      permalink: getOriginalPostPermalink(target),
       pangramPostId: pangramHost?.getAttribute('data-pangram-post-id'),
       activityUrn: activityHost?.getAttribute('data-urn')
     });
+  }
+
+  async function getReplacementPostKey(target) {
+    const opaquePostKey = getOpaquePostKey(target);
+    if (opaquePostKey) return opaquePostKey;
+
+    const scope = getPostScope(target);
+    const stableLinks = [...new Set(
+      [...scope.querySelectorAll?.('a[href]') || []]
+        .map((link) => {
+          try {
+            const url = new URL(link.href, window.location.origin);
+            const platformPostLink = /(?:activity:|activity-|\/status\/)(\d+)/i.test(
+              url.pathname
+            );
+            const externalLink = url.hostname !== window.location.hostname;
+            const localContentLink =
+              !/^\/(?:in|company|school|feed|mynetwork|jobs|messaging|notifications)(?:\/|$)/i
+                .test(url.pathname) &&
+              url.pathname !== '/';
+            return platformPostLink || externalLink || localContentLink
+              ? `${url.origin}${url.pathname}`
+              : '';
+          } catch (_error) {
+            return '';
+          }
+        })
+        .filter(Boolean)
+    )]
+      .sort()
+      .slice(0, 20);
+    const fingerprintText = stableLinks.length ? '' : cleanName(
+      scope.innerText || scope.textContent
+    )
+      .replace(
+        /\b\d+(?:[.,]\d+)?[kmb]?\s*(?:reactions?|likes?|comments?|reposts?|views?)\b/gi,
+        ''
+      )
+      .replace(/\b\d+\s*(?:s|m|h|d|w|mo|y)\b/gi, '')
+      .replace(/\b(?:see|show)?\s*more\b/gi, '')
+      .trim()
+      .slice(0, 512);
+    const fingerprintSource = [
+      window.location.hostname,
+      stableLinks.join('\n'),
+      fingerprintText
+    ].join('\n');
+    if (!fingerprintText && !stableLinks.length) return '';
+
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(fingerprintSource)
+    );
+    return `fingerprint:${[...new Uint8Array(digest)]
+      .slice(0, 16)
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('')}`;
+  }
+
+  function getHistoryPostKey(card) {
+    const target = card?.pangramGalleryTarget;
+    return target ? getOpaquePostKey(target) : '';
   }
 
   function recordHiddenPangramPost(card, verdict) {
@@ -439,6 +562,11 @@
       () => {
         // Removing src for offscreen cards is intentional, not a provider failure.
         if (image.dataset.pangramGalleryUnloaded === 'true' || !card.isConnected) return;
+        invalidateReplacementResponse({
+          postKey: card.pangramGalleryPostKey,
+          verdict: card.pangramGalleryVerdict,
+          stream: card.pangramGalleryStream
+        });
         disposeCard(card);
         target.classList.remove(HIDDEN_CLASS);
         target.removeAttribute(STATE_ATTRIBUTE);
@@ -588,10 +716,15 @@
     target.classList.add(HIDDEN_CLASS);
 
     try {
-      const response = await sendMessage({
+      const postKey = await getReplacementPostKey(target);
+      const selectedStream = stream || core.getStreamForVerdict(settings, verdict);
+      card.pangramGalleryPostKey = postKey;
+      card.pangramGalleryStream = selectedStream;
+      const response = await requestReplacement({
         type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
+        postKey,
         verdict,
-        stream
+        stream: selectedStream
       });
       if (activeGeneration !== generation || !target.isConnected) {
         disposeCard(card);

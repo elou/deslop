@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw4eilDEnJAePkn60qM/BPfaNgsDj40YPvyKvocSaxp1z606bxsw2dhWogjENxph47hk7O8P6jMnGx/iuM6aAQb1waAGyma06P8Zmf/66msu5I5gHG5ORZi7lbUOuULwx9UJjNG4I2MnhnP3eKE5cAQTU47kOQCUZW3wdJW8O1ITvx9/TGxpt1tA0b218YT5M3DTguXDlpH+NsquQodXUGEHSzGnbcnl73lYmXwJ9i/qksFUOXQnXFAeSm3/YpGatuDkxSoO81JscDy3gDfFK2LP1mDhQlPu8OUak37DsWmni1ad/Cfi020deSfhMHaD9VOIXHwFyLmYawaA3YD3vXwIDAQAB",
   "name": "De-Slop",
   "version": "0.2.0",
   "description": "Replace Pangram-labeled AI feed posts with art, poetry, or space.",
