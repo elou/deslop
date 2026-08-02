@@ -28,10 +28,10 @@ assert.ok(Array.isArray(manifest.content_scripts));
 assert.ok(manifest.permissions?.includes('storage'));
 assert.ok(!manifest.permissions?.includes('contextMenus'));
 assert.ok(!manifest.permissions?.includes('nativeMessaging'));
-assert.equal(
+assert.notEqual(
   manifest.content_scripts[0]?.all_frames,
   true,
-  'De-Slop must run in the same child frames that Pangram scans'
+  'De-Slop must not inject scripts or CSS into transient feed-page subframes'
 );
 
 const requiredHosts = [
