@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  FEATURE_ENABLED,
   STORAGE_KEY,
   addVocabularyEntry,
   applyVocabularyDefinition,
@@ -11,6 +12,17 @@ import {
   pickVocabularyEntry,
   repairVocabularyStreams
 } from '../src/vocabulary-core.mjs';
+
+test('keeps vocabulary dormant in the release UI', () => {
+  assert.equal(FEATURE_ENABLED, false);
+  assert.equal(
+    isVocabularyAvailable({
+      enabled: true,
+      entries: [{ id: 'saved', term: 'erudition' }]
+    }),
+    false
+  );
+});
 
 test('uses a dedicated local storage key and defaults to an unavailable feed', () => {
   assert.equal(STORAGE_KEY, 'pangramGalleryVocabulary');
@@ -63,14 +75,14 @@ test('keeps a renderable entry when definition lookup fails', () => {
   assert.deepEqual(card.lines, ['Definition unavailable']);
 });
 
-test('only exposes and samples vocabulary when enabled and nonempty', () => {
+test('does not expose or sample vocabulary while the feature is dormant', () => {
   const populated = addVocabularyEntry({}, 'one', { id: 'one', addedAt: '2026-08-01T20:00:00.000Z' });
   assert.equal(isVocabularyAvailable(populated), false);
   assert.throws(() => pickVocabularyEntry(populated), /not available/i);
 
   const enabled = { ...populated, enabled: true };
-  assert.equal(isVocabularyAvailable(enabled), true);
-  assert.equal(pickVocabularyEntry(enabled, () => 0).term, 'one');
+  assert.equal(isVocabularyAvailable(enabled), false);
+  assert.throws(() => pickVocabularyEntry(enabled, () => 0), /not available/i);
 });
 
 test('repairs every stale vocabulary routing slot to Painting Classics', () => {

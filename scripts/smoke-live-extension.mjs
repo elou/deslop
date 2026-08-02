@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   existsSync,
@@ -173,29 +173,6 @@ let instance;
 let client;
 
 try {
-  const install = spawnSync(
-    join(projectRoot, 'scripts', 'install-dictionary-host.sh'),
-    [extensionId],
-    { encoding: 'utf8' }
-  );
-  assert.equal(install.status, 0, install.stderr || install.stdout);
-  const profileInstall = spawnSync(
-    join(projectRoot, 'scripts', 'install-dictionary-host.sh'),
-    [extensionId],
-    {
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        DESLOP_NATIVE_MANIFEST_DIR: join(profileDirectory, 'NativeMessagingHosts')
-      }
-    }
-  );
-  assert.equal(
-    profileInstall.status,
-    0,
-    profileInstall.stderr || profileInstall.stdout
-  );
-
   instance = await launchChrome(chrome);
   const liveTarget = await createTarget(
     instance.port,
@@ -234,28 +211,10 @@ try {
     client,
     `(async () => await chrome.permissions.getAll())()`
   );
-  assert.ok(permissions.permissions.includes('contextMenus'));
-  assert.ok(permissions.permissions.includes('nativeMessaging'));
+  assert.ok(!permissions.permissions.includes('contextMenus'));
+  assert.ok(!permissions.permissions.includes('nativeMessaging'));
 
-  const definition = await evaluate(
-    client,
-    `(async () => await new Promise((resolve) => {
-      chrome.runtime.sendNativeMessage(
-        'com.elou.deslop.dictionary',
-        { type: 'define', term: 'erudition' },
-        (response) => resolve({
-          response,
-          error: chrome.runtime.lastError?.message || ''
-        })
-      );
-    }))()`
-  );
-  assert.equal(definition.error, '');
-  assert.equal(definition.response.ok, true);
-  assert.equal(definition.response.source, 'macOS Dictionary');
-  assert.match(definition.response.definition, /erudition/i);
-
-  const gating = await evaluate(
+  const dormant = await evaluate(
     client,
     `(async () => {
       const entry = {
@@ -268,56 +227,29 @@ try {
         definitionError: ''
       };
       await chrome.storage.local.set({
-        pangramGalleryVocabulary: { enabled: false, entries: [entry] }
+        pangramGalleryVocabulary: { enabled: true, entries: [entry] }
       });
       await new Promise((resolve) => setTimeout(resolve, 100));
       const selects = [...document.querySelectorAll('select')];
-      const before = selects.some((select) =>
+      const vocabularyInDropdowns = selects.some((select) =>
         [...select.options].some((option) => option.value === 'vocabulary')
       );
       const configure = document.querySelector('.configure-section');
       const initiallyCollapsed = !configure.open;
-      const vocabularyInsideConfigure = Boolean(
-        document.querySelector('#vocabulary-heading')?.closest('.configure-section')
-      );
-      document.querySelector('#vocabulary-enabled').click();
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      const after = selects.every((select) =>
-        [...select.options].some((option) => option.value === 'vocabulary')
-      );
-      const shared = document.querySelector('#stream-shared');
-      shared.value = 'vocabulary';
-      shared.dispatchEvent(new Event('change', { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      const replacement = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          {
-            type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
-            verdict: 'ai',
-            stream: 'vocabulary'
-          },
-          resolve
-        );
-      });
+      const vocabularySection = document.querySelector('.vocabulary-section');
       configure.open = true;
       return {
         initiallyCollapsed,
-        vocabularyInsideConfigure,
-        before,
-        after,
-        enabled: (await chrome.storage.local.get('pangramGalleryVocabulary'))
-          .pangramGalleryVocabulary.enabled,
-        replacement
+        vocabularyInDropdowns,
+        vocabularyControlsHidden: vocabularySection.hidden,
+        vocabularyControlsVisible: vocabularySection.getClientRects().length > 0
       };
     })()`
   );
-  assert.equal(gating.initiallyCollapsed, true);
-  assert.equal(gating.vocabularyInsideConfigure, true);
-  assert.equal(gating.before, false);
-  assert.equal(gating.after, true);
-  assert.equal(gating.enabled, true);
-  assert.equal(gating.replacement.ok, true);
-  assert.equal(gating.replacement.item.title, 'erudition');
+  assert.equal(dormant.initiallyCollapsed, true);
+  assert.equal(dormant.vocabularyInDropdowns, false);
+  assert.equal(dormant.vocabularyControlsHidden, true);
+  assert.equal(dormant.vocabularyControlsVisible, false);
 
   if (screenshotPath) {
     const screenshot = await client.send('Page.captureScreenshot', {
@@ -331,16 +263,10 @@ try {
     `${JSON.stringify(
       {
         extensionId,
-        nativeDefinition: {
-          ok: definition.response.ok,
-          source: definition.response.source,
-          term: 'erudition'
-        },
-        gating: {
-          absentBeforeEnabled: !gating.before,
-          presentAfterEnabled: gating.after,
-          replacementTitle: gating.replacement.item.title,
-          insideConfigure: gating.vocabularyInsideConfigure
+        permissions: permissions.permissions,
+        vocabularyDormant: {
+          controlsHidden: dormant.vocabularyControlsHidden,
+          dropdownAbsent: !dormant.vocabularyInDropdowns
         },
         screenshot: screenshotPath
       },

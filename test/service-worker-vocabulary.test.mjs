@@ -18,11 +18,23 @@ function waitFor(predicate, timeout = 1000) {
   });
 }
 
-test('the service worker saves a selection, resolves its definition, and serves it', async () => {
+test('the service worker keeps saved vocabulary dormant and repairs stale routing', async () => {
   const listeners = {};
-  const local = {};
-  const sync = {};
-  let createdMenu = null;
+  const local = {
+    [STORAGE_KEY]: {
+      enabled: true,
+      entries: [{ id: 'saved', term: 'erudition' }]
+    }
+  };
+  const sync = {
+    streams: {
+      ai: 'vocabulary',
+      mixed: 'vocabulary',
+      assisted: 'vocabulary',
+      promoted: 'vocabulary',
+      suggested: 'vocabulary'
+    }
+  };
 
   function area(store) {
     return {
@@ -40,24 +52,10 @@ test('the service worker saves a selection, resolves its definition, and serves 
   }
 
   globalThis.chrome = {
-    contextMenus: {
-      removeAll(callback) { callback(); },
-      create(value) { createdMenu = value; },
-      onClicked: { addListener(listener) { listeners.contextClick = listener; } }
-    },
     runtime: {
       lastError: undefined,
       onInstalled: { addListener(listener) { listeners.installed = listener; } },
-      onMessage: { addListener(listener) { listeners.message = listener; } },
-      sendNativeMessage(host, request, callback) {
-        assert.equal(host, 'com.elou.deslop.dictionary');
-        assert.equal(request.term, 'accidental multiple words');
-        queueMicrotask(() => callback({
-          ok: true,
-          definition: 'A test definition.',
-          source: 'macOS Dictionary'
-        }));
-      }
+      onMessage: { addListener(listener) { listeners.message = listener; } }
     },
     storage: {
       local: area(local),
@@ -68,38 +66,17 @@ test('the service worker saves a selection, resolves its definition, and serves 
 
   await import(`../src/background/service-worker.mjs?test=${Date.now()}`);
   listeners.installed({ reason: 'install' });
-  assert.deepEqual(createdMenu.contexts, ['selection']);
+  await waitFor(() => sync.streams?.ai === 'painting-classics');
 
-  listeners.contextClick({
-    menuItemId: createdMenu.id,
-    selectionText: '  accidental multiple words  '
+  assert.equal(listeners.contextClick, undefined);
+  assert.equal(local[STORAGE_KEY].entries[0].term, 'erudition');
+  assert.deepEqual(sync.streams, {
+    ai: 'painting-classics',
+    mixed: 'painting-classics',
+    assisted: 'painting-classics',
+    promoted: 'painting-classics',
+    suggested: 'painting-classics'
   });
-  await waitFor(() => local[STORAGE_KEY]?.entries?.[0]?.definitionStatus === 'defined');
-
-  const [entry] = local[STORAGE_KEY].entries;
-  assert.equal(entry.term, 'accidental multiple words');
-  assert.equal(entry.definition, 'A test definition.');
-
-  local[STORAGE_KEY] = {
-    ...local[STORAGE_KEY],
-    enabled: true
-  };
-  const response = await new Promise((resolve) => {
-    const keepsChannelOpen = listeners.message(
-      {
-        type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
-        verdict: 'ai',
-        stream: 'vocabulary'
-      },
-      {},
-      resolve
-    );
-    assert.equal(keepsChannelOpen, true);
-  });
-
-  assert.equal(response.ok, true);
-  assert.equal(response.item.title, 'accidental multiple words');
-  assert.deepEqual(response.item.lines, ['A test definition.']);
 
   delete globalThis.chrome;
 });

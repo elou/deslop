@@ -11,9 +11,10 @@ const worker = await readFile(
   'utf8'
 );
 
-test('registers selection capture and local native-definition permissions', () => {
-  assert.ok(manifest.permissions.includes('contextMenus'));
-  assert.ok(manifest.permissions.includes('nativeMessaging'));
+test('keeps selection capture and native definitions dormant in the release', () => {
+  assert.ok(!manifest.permissions.includes('contextMenus'));
+  assert.ok(!manifest.permissions.includes('nativeMessaging'));
+  assert.match(worker, /VOCABULARY_FEATURE_ENABLED && chrome\.contextMenus/);
   assert.match(worker, /contexts:\s*\['selection'\]/);
   assert.match(worker, /info\.selectionText/);
   assert.match(worker, /chrome\.runtime\.sendNativeMessage/);

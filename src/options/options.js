@@ -19,6 +19,7 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
     hideSuggested: document.querySelector('#hide-suggested'),
     platformLinkedIn: document.querySelector('#platform-linkedin'),
     platformX: document.querySelector('#platform-x'),
+    vocabularySection: document.querySelector('.vocabulary-section'),
     vocabularyEnabled: document.querySelector('#vocabulary-enabled'),
     vocabularyStatus: document.querySelector('#vocabulary-status'),
     styleModeToggle: document.querySelector('#style-mode-toggle'),
@@ -52,6 +53,7 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
   ];
   let styleMode = 'same';
   let vocabularyState = vocabularyCore.normalizeVocabularyState();
+  controls.vocabularySection.hidden = !vocabularyCore.FEATURE_ENABLED;
 
   function storageGet(area, defaults) {
     return new Promise((resolve) => chrome.storage[area].get(defaults, resolve));

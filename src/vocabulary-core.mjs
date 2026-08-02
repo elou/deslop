@@ -1,3 +1,4 @@
+export const FEATURE_ENABLED = false;
 export const STORAGE_KEY = 'pangramGalleryVocabulary';
 export const STREAM_ID = 'vocabulary';
 
@@ -101,7 +102,7 @@ export function applyVocabularyDefinition(stateValue, entryId, result = {}) {
 
 export function isVocabularyAvailable(stateValue) {
   const state = normalizeVocabularyState(stateValue);
-  return state.enabled && state.entries.length > 0;
+  return FEATURE_ENABLED && state.enabled && state.entries.length > 0;
 }
 
 export function pickVocabularyEntry(stateValue, random = Math.random) {

@@ -116,13 +116,17 @@ test('offers the supported live streams', () => {
   }
 });
 
-test('puts an opt-in vocabulary configuration at the bottom of the popup', () => {
+test('keeps the dormant vocabulary configuration out of the popup UI', () => {
   const configureStart = optionsHtml.indexOf('<details class="configure-section">');
   const configureEnd = optionsHtml.indexOf('</details>', configureStart);
   const vocabularyStart = optionsHtml.indexOf('id="vocabulary-heading"');
-  assert.match(optionsHtml, /id="vocabulary-heading"/);
+  assert.match(
+    optionsHtml,
+    /class="vocabulary-section"[^>]*aria-labelledby="vocabulary-heading"[^>]*hidden/
+  );
   assert.match(optionsHtml, /id="vocabulary-enabled"/);
   assert.match(optionsHtml, /id="vocabulary-status"/);
+  assert.match(optionsSource, /vocabularySection\.hidden = !vocabularyCore\.FEATURE_ENABLED/);
   assert.ok(
     vocabularyStart > optionsHtml.indexOf('id="cleanup-heading"'),
     'vocabulary configuration should follow the feed cleanup section'
@@ -133,7 +137,8 @@ test('puts an opt-in vocabulary configuration at the bottom of the popup', () =>
   );
 });
 
-test('adds Vocabulary to dropdowns only when local state is enabled and nonempty', () => {
+test('keeps Vocabulary out of dropdowns while the feature is dormant', () => {
+  assert.match(optionsSource, /FEATURE_ENABLED/);
   assert.match(optionsSource, /isVocabularyAvailable/);
   assert.match(optionsSource, /renderStreamOptions/);
   assert.match(optionsSource, /\['vocabulary', '📚 Vocabulary'\]/);

@@ -1,5 +1,6 @@
 import { getReplacement } from './providers.mjs';
 import {
+  FEATURE_ENABLED as VOCABULARY_FEATURE_ENABLED,
   STORAGE_KEY as VOCABULARY_STORAGE_KEY,
   STREAM_ID as VOCABULARY_STREAM_ID,
   addVocabularyEntry,
@@ -166,13 +167,15 @@ function readSettings() {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: VOCABULARY_MENU_ID,
-      title: 'Add “%s” to De-Slop vocabulary',
-      contexts: ['selection']
+  if (VOCABULARY_FEATURE_ENABLED && chrome.contextMenus) {
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: VOCABULARY_MENU_ID,
+        title: 'Add “%s” to De-Slop vocabulary',
+        contexts: ['selection']
+      });
     });
-  });
+  }
   chrome.storage.local
     .setAccessLevel?.({ accessLevel: 'TRUSTED_CONTEXTS' })
     ?.catch?.(() => undefined);
@@ -228,10 +231,12 @@ chrome.runtime.onInstalled.addListener(() => {
   void readVocabulary().then(repairStoredVocabularyRouting);
 });
 
-chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId !== VOCABULARY_MENU_ID) return;
-  void queueVocabularySelection(info.selectionText || '');
-});
+if (VOCABULARY_FEATURE_ENABLED && chrome.contextMenus) {
+  chrome.contextMenus.onClicked.addListener((info) => {
+    if (info.menuItemId !== VOCABULARY_MENU_ID) return;
+    void queueVocabularySelection(info.selectionText || '');
+  });
+}
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local' || !changes[VOCABULARY_STORAGE_KEY]) return;
