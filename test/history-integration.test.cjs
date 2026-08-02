@@ -41,3 +41,15 @@ test('serializes history writes and never sends roll-up history to a remote serv
   assert.doesNotMatch(contentSource, /sendMessage\([^)]*history/i);
   assert.doesNotMatch(contentSource, /fetch\([^)]*history/i);
 });
+
+test('contains a rejected local history write immediately during extension reload', () => {
+  const recordStart = contentSource.indexOf('function recordHiddenPangramPost');
+  const recordEnd = contentSource.indexOf('\n  function cleanName', recordStart);
+  const recordSource = contentSource.slice(recordStart, recordEnd);
+
+  assert.match(
+    recordSource,
+    /historyWriteQueue\s*=\s*historyWriteQueue[\s\S]*?\.catch\(\(\)\s*=>\s*\{\}\);/,
+    'storage denial from an invalidated page context must be handled on the same queued promise'
+  );
+});
