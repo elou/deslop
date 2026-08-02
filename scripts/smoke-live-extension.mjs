@@ -47,8 +47,17 @@ function findChrome() {
   return candidates.find((candidate) => candidate && existsSync(candidate));
 }
 
-function extensionIdForPath(path) {
-  const prefix = createHash('sha256').update(path).digest('hex').slice(0, 32);
+function extensionIdForManifest() {
+  const manifest = JSON.parse(
+    readFileSync(join(projectRoot, 'manifest.json'), 'utf8')
+  );
+  if (typeof manifest.key !== 'string' || !manifest.key) {
+    throw new Error('The unpacked extension manifest must include its stable key.');
+  }
+  const prefix = createHash('sha256')
+    .update(Buffer.from(manifest.key, 'base64'))
+    .digest('hex')
+    .slice(0, 32);
   return prefix.replace(/[0-9a-f]/g, (value) =>
     String.fromCharCode(97 + Number.parseInt(value, 16))
   );
@@ -168,7 +177,7 @@ async function evaluate(client, expression) {
 const chrome = findChrome();
 if (!chrome) throw new Error('Google Chrome or Chromium is required.');
 
-const extensionId = extensionIdForPath(projectRoot);
+const extensionId = extensionIdForManifest();
 let instance;
 let client;
 

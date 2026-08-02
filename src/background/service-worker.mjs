@@ -14,6 +14,9 @@ import {
 
 const VOCABULARY_MENU_ID = 'deslop-add-vocabulary';
 const DICTIONARY_HOST = 'com.elou.deslop.dictionary';
+const REPLACEMENT_CACHE_TTL_MS = 10 * 60 * 1000;
+const REPLACEMENT_FAILURE_BACKOFF_MS = 15 * 1000;
+const REPLACEMENT_CACHE_MAX_ENTRIES = 200;
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -47,6 +50,98 @@ const STREAM_IDS = new Set([
   'hide-promoted',
   'hide-suggested'
 ]);
+
+export function createReplacementRequestCache({
+  ttlMs = REPLACEMENT_CACHE_TTL_MS,
+  negativeTtlMs = REPLACEMENT_FAILURE_BACKOFF_MS,
+  maxEntries = REPLACEMENT_CACHE_MAX_ENTRIES,
+  now = Date.now
+} = {}) {
+  const inFlight = new Map();
+  const completed = new Map();
+
+  function pruneExpired(timestamp) {
+    for (const [key, entry] of completed) {
+      if (entry.expiresAt <= timestamp) completed.delete(key);
+    }
+  }
+
+  function store(key, entry) {
+    completed.delete(key);
+    completed.set(key, entry);
+    while (completed.size > maxEntries) {
+      completed.delete(completed.keys().next().value);
+    }
+  }
+
+  return {
+    delete(key) {
+      return completed.delete(key);
+    },
+    get(key, load) {
+      const timestamp = now();
+      pruneExpired(timestamp);
+      const cached = completed.get(key);
+      if (cached?.status === 'fulfilled') return Promise.resolve(cached.value);
+      if (cached?.status === 'rejected') return Promise.reject(cached.error);
+
+      const pending = inFlight.get(key);
+      if (pending) return pending;
+
+      const request = Promise.resolve()
+        .then(load)
+        .then((value) => {
+          store(key, {
+            status: 'fulfilled',
+            value,
+            expiresAt: now() + ttlMs
+          });
+          return value;
+        })
+        .catch((error) => {
+          store(key, {
+            status: 'rejected',
+            error,
+            expiresAt: now() + negativeTtlMs
+          });
+          throw error;
+        })
+        .finally(() => {
+          inFlight.delete(key);
+        });
+      inFlight.set(key, request);
+      return request;
+    }
+  };
+}
+
+const replacementRequestCache = createReplacementRequestCache();
+
+function replacementRequestKey(postKey, verdict, stream) {
+  if (typeof postKey !== 'string') return '';
+  const normalizedPostKey = postKey.trim().slice(0, 512);
+  if (!normalizedPostKey) return '';
+  return `${normalizedPostKey}\u0000${verdict}\u0000${stream}`;
+}
+
+export function resolveReplacementRequest(
+  { postKey, verdict, stream },
+  load,
+  cache = replacementRequestCache
+) {
+  const requestKey = replacementRequestKey(postKey, verdict, stream);
+  return requestKey
+    ? cache.get(requestKey, load)
+    : Promise.resolve().then(load);
+}
+
+export function invalidateReplacementRequest(
+  { postKey, verdict, stream },
+  cache = replacementRequestCache
+) {
+  const requestKey = replacementRequestKey(postKey, verdict, stream);
+  return requestKey ? cache.delete(requestKey) : false;
+}
 
 function storageGet(area, defaults) {
   return new Promise((resolve) => chrome.storage[area].get(defaults, resolve));
@@ -247,7 +342,11 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== 'PANGRAM_GALLERY_GET_REPLACEMENT') return false;
+  const isReplacementRequest =
+    message?.type === 'PANGRAM_GALLERY_GET_REPLACEMENT';
+  const isInvalidationRequest =
+    message?.type === 'PANGRAM_GALLERY_INVALIDATE_REPLACEMENT';
+  if (!isReplacementRequest && !isInvalidationRequest) return false;
 
   (async () => {
     try {
@@ -257,26 +356,43 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         : 'ai';
       const stream = STREAM_IDS.has(message.stream) ? message.stream : '';
       const selectedStream = stream || getSelectedStream(settings, verdict);
+      if (isInvalidationRequest) {
+        const invalidated = invalidateReplacementRequest({
+          postKey: message.postKey,
+          verdict,
+          stream: selectedStream
+        });
+        sendResponse({ ok: true, invalidated });
+        return;
+      }
       const vocabulary = selectedStream === VOCABULARY_STREAM_ID
         ? await readVocabulary()
         : null;
-      const item = selectedStream === VOCABULARY_STREAM_ID &&
-        isVocabularyAvailable(vocabulary)
-        ? buildVocabularyReplacement(pickVocabularyEntry(vocabulary))
-        : await getReplacement(
-            {
-              ...settings,
-              styleMode: 'same',
-              streams: {
-                ...settings.streams,
-                ai:
-                  selectedStream === VOCABULARY_STREAM_ID
-                    ? 'painting-classics'
-                    : selectedStream
-              }
-            },
-            verdict
-          );
+      const loadReplacement = async () => {
+        const replacement = selectedStream === VOCABULARY_STREAM_ID &&
+            isVocabularyAvailable(vocabulary)
+          ? buildVocabularyReplacement(pickVocabularyEntry(vocabulary))
+          : await getReplacement(
+              {
+                ...settings,
+                styleMode: 'same',
+                streams: {
+                  ...settings.streams,
+                  ai:
+                    selectedStream === VOCABULARY_STREAM_ID
+                      ? 'painting-classics'
+                      : selectedStream
+                }
+              },
+              verdict
+            );
+        if (!replacement) throw new Error('No replacement available');
+        return replacement;
+      };
+      const item = await resolveReplacementRequest(
+        { postKey: message.postKey, verdict, stream: selectedStream },
+        loadReplacement
+      );
       sendResponse({ ok: true, item });
     } catch (error) {
       sendResponse({

@@ -17,7 +17,7 @@ test('mounts a reserved replacement card before requesting museum content', () =
   const replaceTargetEnd = contentSource.indexOf('\n  function processBadges', replaceTargetStart);
   const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
   const mountIndex = replaceTargetSource.indexOf('target.before(card)');
-  const requestIndex = replaceTargetSource.indexOf('await sendMessage');
+  const requestIndex = replaceTargetSource.indexOf('await requestReplacement');
 
   assert.notEqual(mountIndex, -1, 'replacement card should be mounted');
   assert.notEqual(requestIndex, -1, 'museum content should be requested');
@@ -216,7 +216,41 @@ test('uses the approved borderless artwork radius without inline image padding a
 test('sends each Pangram verdict to the selected stream router', () => {
   assert.match(
     contentSource,
-    /type:\s*'PANGRAM_GALLERY_GET_REPLACEMENT',\s*verdict/s
+    /type:\s*'PANGRAM_GALLERY_GET_REPLACEMENT',[\s\S]*?verdict/
+  );
+});
+
+test('identifies replacement requests by their logical post across DOM remounts', () => {
+  assert.match(contentSource, /async function getReplacementPostKey\(target\)/);
+  assert.match(
+    contentSource,
+    /crypto\.subtle\.digest\(\s*'SHA-256'/,
+    'identifier-less cards need a local opaque fallback rather than bypassing protection'
+  );
+  assert.match(
+    contentSource,
+    /const replacementResponseCache = new Map\(\)/,
+    'successful replacements should survive MV3 worker suspension for the page lifetime'
+  );
+  assert.match(
+    contentSource,
+    /type:\s*'PANGRAM_GALLERY_INVALIDATE_REPLACEMENT'/,
+    'a broken asset must invalidate both page and service-worker caches before retrying'
+  );
+  assert.match(
+    contentSource,
+    /const fingerprintText = stableLinks\.length \? '' :/,
+    'volatile feed text must not perturb a fallback identity when durable links exist'
+  );
+  assert.match(
+    contentSource,
+    /const stableLinks = \[\.\.\.new Set\([\s\S]*?\)\]\s*\.sort\(\)\s*\.slice\(0, 20\)/,
+    'fallback links must be deduplicated and sorted before the cap is applied'
+  );
+  assert.match(
+    contentSource,
+    /await requestReplacement\(\{\s*type:\s*'PANGRAM_GALLERY_GET_REPLACEMENT',\s*postKey,\s*verdict/s,
+    'the service worker needs a stable logical post key rather than DOM-node identity'
   );
 });
 

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,21 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
 
 assert.equal(manifest.manifest_version, 3);
+assert.ok(
+  typeof manifest.key === 'string' && manifest.key.length > 40,
+  'Unpacked installs must use one stable manifest key so canonical and worktree paths cannot run as competing extension IDs'
+);
+const extensionId = [...createHash('sha256')
+  .update(Buffer.from(manifest.key, 'base64'))
+  .digest()
+  .subarray(0, 16)]
+  .map((byte) => String.fromCharCode(97 + (byte >> 4), 97 + (byte & 15)))
+  .join('');
+assert.equal(
+  extensionId,
+  'fdopmnabjnidbaigfgdfelcnpcmgiopg',
+  'The manifest key must keep the chosen De-Slop development extension ID stable'
+);
 assert.ok(manifest.background?.service_worker);
 assert.ok(Array.isArray(manifest.content_scripts));
 assert.ok(manifest.permissions?.includes('storage'));
@@ -66,5 +82,20 @@ const referencedFiles = [
 for (const file of referencedFiles) {
   await access(path.join(root, file));
 }
+
+const smokeSource = await readFile(
+  path.join(root, 'scripts/smoke-live-extension.mjs'),
+  'utf8'
+);
+assert.match(
+  smokeSource,
+  /Buffer\.from\(manifest\.key, 'base64'\)/,
+  'The live smoke must open the stable manifest-key extension ID'
+);
+assert.doesNotMatch(
+  smokeSource,
+  /extensionIdForPath/,
+  'The live smoke must not fall back to a path-derived extension ID'
+);
 
 console.log(`Checked manifest and ${referencedFiles.length} referenced files.`);
