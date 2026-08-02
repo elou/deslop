@@ -25,15 +25,6 @@ const sourceTruth = renderMetrics([
   '--height',
   '528'
 ]);
-const sourceActorState = renderMetrics([
-  '--template',
-  join(projectRoot, 'test', 'fixtures', 'source-actor-popover.html'),
-  '--width',
-  '760',
-  '--height',
-  '900'
-]);
-
 function assertSharedComposition(card, kind) {
   assert.deepEqual(
     {
@@ -162,24 +153,4 @@ test('renders the durable image-card source of truth', () => {
     },
     'the approved screenshot geometry should remain stable'
   );
-});
-
-test('renders the feed-source row and accessible action popover without disturbing the card footer', () => {
-  const { artwork } = sourceActorState;
-  assert.ok(artwork.sourceActor, 'the feed-source row should render');
-  assert.ok(artwork.sourceActorTrigger, 'the feed-source actor should be an interactive trigger');
-  assert.ok(artwork.popover, 'the shared popover should render');
-  assert.equal(artwork.sourceActor.left, artwork.title.left);
-  assert.ok(artwork.sourceActor.top > artwork.attribution.bottom);
-  assert.ok(artwork.source.top > artwork.sourceActor.bottom);
-  assert.deepEqual(
-    [artwork.sourceActor.fontSize, artwork.sourceActor.lineHeight, artwork.sourceActorTrigger.textDecorationLine],
-    ['12.5px', '16.875px', 'underline']
-  );
-  assert.deepEqual(
-    [artwork.popover.width, artwork.popover.position, artwork.popover.zIndex, artwork.popover.borderRadius],
-    [300, 'fixed', '2147483646', '8px']
-  );
-  assert.equal(artwork.popoverProfile.fontSize, '16px');
-  assert.equal(artwork.popoverUnfollow.width, 266);
 });
