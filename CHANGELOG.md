@@ -4,6 +4,8 @@ De-Slop follows semantic versioning from its first cumulative GitHub release.
 
 ## Unreleased
 
+- Retired the Art 2, New Yorker, and Far Side streams and removed their active provider routing and dedicated host permissions.
+- Built the local Vocabulary feed and optional macOS Dictionary helper, but kept them dormant in this release: no context-menu capture, popup controls, feed option, or related Chrome permissions are exposed; stale Vocabulary routing falls back to Art.
 - Renamed the installed extension from Pangram Gallery to De-Slop and replaced its icon with 💩.
 - Replaced the museum, PoetryDB, and APOD options with Painting Classics, Freeverse Classic Poetry, experimental Modern Art, and NASA Deep Space streams.
 - Added live public-domain checks for Painting Classics and an author-balanced Freeverse poem source.

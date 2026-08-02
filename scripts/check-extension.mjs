@@ -10,6 +10,8 @@ assert.equal(manifest.manifest_version, 3);
 assert.ok(manifest.background?.service_worker);
 assert.ok(Array.isArray(manifest.content_scripts));
 assert.ok(manifest.permissions?.includes('storage'));
+assert.ok(!manifest.permissions?.includes('contextMenus'));
+assert.ok(!manifest.permissions?.includes('nativeMessaging'));
 assert.equal(
   manifest.content_scripts[0]?.all_frames,
   true,
@@ -24,9 +26,7 @@ const requiredHosts = [
   'https://raw.githubusercontent.com/*',
   'https://datasets-server.huggingface.co/*',
   'https://images-api.nasa.gov/*',
-  'https://images-assets.nasa.gov/*',
-  'https://www.newyorker.com/*',
-  'https://media.newyorker.com/*'
+  'https://images-assets.nasa.gov/*'
 ];
 for (const host of requiredHosts) {
   assert.ok(manifest.host_permissions?.includes(host), `Missing host permission: ${host}`);
@@ -38,7 +38,12 @@ for (const removedHost of [
   'https://www.artic.edu/*',
   'https://poetrydb.org/*',
   'https://api.nasa.gov/*',
-  'https://apod.nasa.gov/*'
+  'https://apod.nasa.gov/*',
+  'https://api.nga.gov/*',
+  'https://data.rijksmuseum.nl/*',
+  'https://iiif.micr.io/*',
+  'https://www.newyorker.com/*',
+  'https://media.newyorker.com/*'
 ]) {
   assert.ok(!manifest.host_permissions?.includes(removedHost), `Removed host still present: ${removedHost}`);
 }
@@ -52,7 +57,10 @@ const referencedFiles = [
     ...(entry.css || [])
   ]),
   ...Object.values(manifest.icons || {}),
-  ...Object.values(manifest.action?.default_icon || {})
+  ...Object.values(manifest.action?.default_icon || {}),
+  'src/report/report.html',
+  'src/report/report.css',
+  'src/report/report.js'
 ].filter(Boolean);
 
 for (const file of referencedFiles) {

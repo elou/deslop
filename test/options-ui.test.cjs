@@ -103,18 +103,46 @@ test('supports translucent light and dark option-panel themes', () => {
 test('offers the supported live streams', () => {
   for (const label of [
     '🖼️ Art',
-    '🖼️ Art 2',
     '📜 Poetry',
     '🎨 Modern Art (experimental)',
     '🌌 Deep Space',
-    '🗞️ Publisher feeds',
-    '🃏 New Yorker cartoons',
-    '🃏 Far Side (experimental)',
     '🎾 Garross Gallery',
     '✨ Surprise me'
   ]) {
     assert.ok(optionsSource.includes(`'${label}'`), `missing stream label: ${label}`);
   }
+  for (const removed of ['🖼️ Art 2', '🗞️ Publisher feeds', '🃏 New Yorker cartoons', '🃏 Far Side (experimental)']) {
+    assert.ok(!optionsSource.includes(`'${removed}'`), `removed stream still offered: ${removed}`);
+  }
+});
+
+test('keeps the dormant vocabulary configuration out of the popup UI', () => {
+  const configureStart = optionsHtml.indexOf('<details class="configure-section">');
+  const configureEnd = optionsHtml.indexOf('</details>', configureStart);
+  const vocabularyStart = optionsHtml.indexOf('id="vocabulary-heading"');
+  assert.match(
+    optionsHtml,
+    /class="vocabulary-section"[^>]*aria-labelledby="vocabulary-heading"[^>]*hidden/
+  );
+  assert.match(optionsHtml, /id="vocabulary-enabled"/);
+  assert.match(optionsHtml, /id="vocabulary-status"/);
+  assert.match(optionsSource, /vocabularySection\.hidden = !vocabularyCore\.FEATURE_ENABLED/);
+  assert.ok(
+    vocabularyStart > optionsHtml.indexOf('id="cleanup-heading"'),
+    'vocabulary configuration should follow the feed cleanup section'
+  );
+  assert.ok(
+    vocabularyStart > configureStart && vocabularyStart < configureEnd,
+    'vocabulary configuration should live inside the bottom Configure section'
+  );
+});
+
+test('keeps Vocabulary out of dropdowns while the feature is dormant', () => {
+  assert.match(optionsSource, /FEATURE_ENABLED/);
+  assert.match(optionsSource, /isVocabularyAvailable/);
+  assert.match(optionsSource, /renderStreamOptions/);
+  assert.match(optionsSource, /\['vocabulary', '📚 Vocabulary'\]/);
+  assert.match(optionsSource, /repairVocabularyStreams/);
 });
 
 test('switches between one shared stream and per-verdict stream menus', () => {

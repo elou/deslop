@@ -994,18 +994,6 @@ export const PROVIDER_REGISTRY = Object.freeze({
     rightsSafe: true,
     fetch: providerAdapter(fetchPaintingClassicsReplacement)
   },
-  'national-gallery': {
-    id: 'national-gallery',
-    category: 'art',
-    rightsSafe: true,
-    fetch: providerAdapter(fetchNationalGalleryReplacement)
-  },
-  rijksmuseum: {
-    id: 'rijksmuseum',
-    category: 'art',
-    rightsSafe: true,
-    fetch: providerAdapter(fetchRijksmuseumReplacement)
-  },
   freeverse: {
     id: 'freeverse',
     category: 'poetry',
@@ -1023,26 +1011,6 @@ export const PROVIDER_REGISTRY = Object.freeze({
     category: 'space',
     rightsSafe: true,
     fetch: providerAdapter(fetchDeepSpaceReplacement)
-  },
-  'newyorker-latest': {
-    id: 'newyorker-latest',
-    category: 'publisher',
-    rightsSafe: false,
-    fetch: providerAdapter((fetchFn, random) =>
-      fetchNewYorkerReplacement('newyorker-latest', fetchFn, random)
-    )
-  },
-  'newyorker-cartoons': {
-    id: 'newyorker-cartoons',
-    category: 'cartoons',
-    rightsSafe: false,
-    fetch: providerAdapter(fetchNextMlReplacement)
-  },
-  'far-side': {
-    id: 'far-side',
-    category: 'cartoons',
-    rightsSafe: false,
-    fetch: providerAdapter(fetchFarSideReplacement)
   },
   'garros-gallery': {
     id: 'garros-gallery',
@@ -1063,10 +1031,6 @@ export const STREAM_REGISTRY = Object.freeze({
     label: '🖼️ Art',
     providerIds: ['painting-classics']
   },
-  'art-2': {
-    label: '🖼️ Art 2',
-    providerIds: ['national-gallery', 'rijksmuseum']
-  },
   'classic-poetry': {
     label: '📜 Poetry',
     providerIds: ['freeverse']
@@ -1078,18 +1042,6 @@ export const STREAM_REGISTRY = Object.freeze({
   'deep-space': {
     label: '🌌 Deep Space',
     providerIds: ['deep-space']
-  },
-  'newyorker-latest': {
-    label: '🗞️ Publisher feeds',
-    providerIds: ['newyorker-latest']
-  },
-  'newyorker-cartoons': {
-    label: '🃏 New Yorker cartoons',
-    providerIds: ['newyorker-cartoons']
-  },
-  'far-side': {
-    label: '🃏 Far Side (experimental)',
-    providerIds: ['far-side']
   },
   'garros-gallery': {
     label: '🎾 Garross Gallery',

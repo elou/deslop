@@ -5,6 +5,10 @@
     replaceAssisted: false,
     hidePromoted: false,
     hideSuggested: false,
+    platforms: Object.freeze({
+      linkedin: true,
+      x: false
+    }),
     styleMode: 'same',
     streams: Object.freeze({
       ai: 'painting-classics',
@@ -17,15 +21,12 @@
 
   const STREAM_IDS = Object.freeze([
     'painting-classics',
-    'art-2',
     'classic-poetry',
     'modern-art',
     'deep-space',
-    'newyorker-latest',
-    'newyorker-cartoons',
-    'far-side',
     'garros-gallery',
     'surprise-me',
+    'vocabulary',
     'hide-ai',
     'hide-promoted',
     'hide-suggested'
@@ -45,6 +46,30 @@
 
   function normalizeCardDetail(value) {
     return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : '';
+  }
+
+  function parseFeedSourceContext(value) {
+    const text = normalizeCardDetail(value);
+    if (!text) return null;
+
+    const actions = [
+      { suffix: /\s+likes this$/i, action: 'likes this' },
+      { suffix: /\s+commented$/i, action: 'commented' },
+      { suffix: /\s+reposted(?: this)?$/i, action: 'reposted this' }
+    ];
+    for (const candidate of actions) {
+      if (!candidate.suffix.test(text)) continue;
+      const name = normalizeCardDetail(text.replace(candidate.suffix, ''));
+      if (!name || name.length > 120) return null;
+      return { name, action: candidate.action };
+    }
+    return null;
+  }
+
+  function isMatchingUnfollowLabel(value, sourceActorName) {
+    const label = normalizeCardDetail(value).toLocaleLowerCase();
+    const actor = normalizeCardDetail(sourceActorName).toLocaleLowerCase();
+    return Boolean(actor && label === `unfollow ${actor}`);
   }
 
   function formatCardDate(value) {
@@ -87,6 +112,8 @@
     const input = value && typeof value === 'object' ? value : {};
     const inputStreams =
       input.streams && typeof input.streams === 'object' ? input.streams : {};
+    const inputPlatforms =
+      input.platforms && typeof input.platforms === 'object' ? input.platforms : {};
     return {
       // Replacement is always on; the former global switch is intentionally
       // ignored so an old saved `enabled: false` value cannot disable the UI.
@@ -107,6 +134,16 @@
         typeof input.hideSuggested === 'boolean'
           ? input.hideSuggested
           : DEFAULT_SETTINGS.hideSuggested,
+      platforms: {
+        linkedin:
+          typeof inputPlatforms.linkedin === 'boolean'
+            ? inputPlatforms.linkedin
+            : DEFAULT_SETTINGS.platforms.linkedin,
+        x:
+          typeof inputPlatforms.x === 'boolean'
+            ? inputPlatforms.x
+            : DEFAULT_SETTINGS.platforms.x
+      },
       styleMode: input.styleMode === 'different' ? 'different' : 'same',
       streams: {
         ai: STREAM_IDS.includes(inputStreams.ai)
@@ -128,6 +165,14 @@
     };
   }
 
+  function isPlatformEnabled(settingsValue, hostnameValue) {
+    const settings = normalizeSettings(settingsValue);
+    const hostname = String(hostnameValue || '').trim().toLocaleLowerCase();
+    if (/(^|\.)linkedin\.com$/.test(hostname)) return settings.platforms.linkedin;
+    if (/(^|\.)x\.com$/.test(hostname)) return settings.platforms.x;
+    return false;
+  }
+
   function getStreamForVerdict(settingsValue, verdict) {
     const settings = normalizeSettings(settingsValue);
     if (settings.styleMode === 'same') return settings.streams.ai;
@@ -144,6 +189,11 @@
     return verdict === 'ai-assisted' && settings.replaceAssisted;
   }
 
+  function clownifyText(value) {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\S+/gu, '🤡');
+  }
+
   function getStreamForCleanup(settingsValue, cleanupType) {
     const settings = normalizeSettings(settingsValue);
     return cleanupType === 'promoted'
@@ -158,12 +208,20 @@
   const PROMOTED_MARKER_SELECTOR =
     '.feed-shared-update-v2--promoted, [data-promoted="true"]';
   const PROMOTED_LABEL_SELECTOR =
-    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
+    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, .update-components-header__text-view, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
   const SUGGESTED_LABEL_SELECTOR =
     '.update-components-header__text-view, [data-testid="suggested-label"]';
 
   function getFeedOwner(node) {
     return node?.closest?.(FEED_OWNER_SELECTOR) || null;
+  }
+
+  function isPromotedLabelText(value) {
+    const label = normalizeCardDetail(value);
+    return (
+      /^promoted(?:\s|$|·)/i.test(label) ||
+      label.toLocaleLowerCase() === 'popular course on linkedin learning'
+    );
   }
 
   function isPromotedTarget(target) {
@@ -173,7 +231,7 @@
     for (const label of target.querySelectorAll?.(PROMOTED_LABEL_SELECTOR) || []) {
       const owner = getFeedOwner(label);
       if (owner && owner !== target) continue;
-      if (/^promoted(?:\s|$|·)/i.test(label.textContent?.trim() || '')) return true;
+      if (isPromotedLabelText(label.textContent)) return true;
     }
 
     // LinkedIn sometimes emits the label in a plain paragraph, without a
@@ -181,7 +239,7 @@
     for (const label of target.querySelectorAll?.('p, span') || []) {
       const owner = getFeedOwner(label);
       if (owner && owner !== target) continue;
-      if ((label.textContent || '').trim().toLowerCase() === 'promoted') return true;
+      if (isPromotedLabelText(label.textContent)) return true;
     }
     return false;
   }
@@ -217,6 +275,36 @@
     if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
     for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
     return [...candidates].filter(isSuggestedTarget);
+  }
+
+  function collectLinkedInSidebarTargets(rootNode) {
+    const root = rootNode?.nodeType === 9 ? rootNode : rootNode?.ownerDocument || rootNode;
+    if (!root?.querySelector) return [];
+    const targets = new Set();
+    const menuAnchors = [
+      'a[href*="/me/profile-views/"]',
+      'a[href*="/premium/my-premium/"]',
+      'a[href*="/company/"][href*="/admin/"]'
+    ];
+    for (const selector of menuAnchors) {
+      const menu = root.querySelector(selector)?.closest?.('[role="menu"]');
+      const visualShell = menu?.parentElement?.parentElement || menu;
+      if (visualShell) targets.add(visualShell);
+    }
+
+    const newsAnchor = root.querySelector('a[href*="/news/story/"]');
+    let candidate = newsAnchor?.parentElement || null;
+    while (candidate && candidate !== root.documentElement) {
+      const newsLinks = candidate.querySelectorAll?.('a[href*="/news/story/"]') || [];
+      const gameLink = candidate.querySelector?.('a[href*="/games/"]');
+      if (newsLinks.length >= 2 && gameLink) {
+        targets.add(candidate.parentElement || candidate);
+        break;
+      }
+      candidate = candidate.parentElement;
+    }
+
+    return [...targets];
   }
 
   function collectPromotedTargetsFromMutationRecords(records) {
@@ -295,6 +383,8 @@
   }
 
   function findReplacementTarget(badge) {
+    if (badge?.closest?.('[data-pangram-comment]')) return null;
+
     const postHost = badge?.closest?.('[data-pangram-post-id]');
     const host =
       postHost || badge?.closest?.('[data-pangram-scanned="true"]');
@@ -313,23 +403,33 @@
     return host.closest?.('article, [role="article"]') || host;
   }
 
+  function findCommentTarget(badge) {
+    return badge?.closest?.('[data-pangram-comment]') || null;
+  }
+
   root.PangramGalleryCore = Object.freeze({
     DEFAULT_SETTINGS,
     STREAM_IDS,
     classifyBadgeText,
+    parseFeedSourceContext,
+    isMatchingUnfollowLabel,
     formatCardDetails,
     normalizeSettings,
+    isPlatformEnabled,
     getStreamForVerdict,
     getStreamForCleanup,
     shouldReplace,
+    clownifyText,
     collectBadgesFromMutationRecords,
     isOrphanedCard,
     findReplacementTarget,
+    findCommentTarget,
     isPromotedTarget,
     collectPromotedTargets,
     collectPromotedTargetsFromMutationRecords,
     isSuggestedTarget,
     collectSuggestedTargets,
-    collectSuggestedTargetsFromMutationRecords
+    collectSuggestedTargetsFromMutationRecords,
+    collectLinkedInSidebarTargets
   });
 })(globalThis);

@@ -33,6 +33,26 @@ test('keeps promoted cleanup on its own explicit target path', () => {
   assert.match(contentSource, /core\.collectPromotedTargetsFromMutationRecords\(records\)/);
 });
 
+test('clowns only an explicitly marked AI comment and never sends it to post replacement', () => {
+  const processStart = contentSource.indexOf('function processBadges');
+  const processEnd = contentSource.indexOf('\n  function processPromotedTargets', processStart);
+  const processSource = contentSource.slice(processStart, processEnd);
+
+  assert.match(processSource, /const commentTarget = core\.findCommentTarget\(badge\)/);
+  assert.match(processSource, /clownCommentTarget\(commentTarget, badge\)/);
+  assert.match(processSource, /restoreCommentTarget\(commentTarget\)/);
+  assert.match(processSource, /continue;/);
+  assert.doesNotMatch(processSource, /replaceTarget\(commentTarget/);
+  assert.match(contentSource, /commentTarget\.querySelector\?\.\('\[data-pangram-text-id\]'\)/);
+  assert.match(contentSource, /clowns\.setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(contentSource, /root\.classList\.add\(COMMENT_ORIGINAL_CLASS\)/);
+  assert.match(contentSource, /document\.querySelectorAll\(`\[\$\{COMMENT_STATE_ATTRIBUTE\}\]`\)/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-comment-original\s*\{[^}]*clip:\s*rect\(0, 0, 0, 0\)/s
+  );
+});
+
 test('reserves a stable four-by-three artwork frame while loading', () => {
   assert.match(
     contentCss,
@@ -72,7 +92,7 @@ test('show original collapses the art card while keeping its toggle available', 
   );
   assert.match(
     contentSource,
-    /body\.append\(notice, title, location, toggle\);[\s\S]*body\.append\(source, verdictChip\);/,
+    /body\.append\(notice, title, location, toggle\);[\s\S]*body\.append\(sourceActorRow, source, verdictChip\);/,
     'the original toggle should sit below the replacement metadata'
   );
 });
@@ -91,10 +111,21 @@ test('constrains portrait and landscape artwork to the reserved frame', () => {
 
 test('renders poem lines inside the same stable replacement frame and gallery shell', () => {
   assert.match(contentSource, /item\.kind === 'poem'/);
-  assert.match(contentSource, /lines\.slice\(0,\s*12\)\.join\('\\n'\)/);
+  assert.match(
+    contentSource,
+    /poem\.textContent\s*=\s*lines\.join\('\\n'\)/,
+    'poetry hydration should keep every line returned by the provider'
+  );
+  assert.doesNotMatch(
+    contentSource,
+    /poem\.textContent\s*=\s*lines\.slice\(/,
+    'poetry hydration should not truncate the poem before the scroll region renders it'
+  );
+  assert.match(contentSource, /poem\.tabIndex\s*=\s*0/);
+  assert.match(contentSource, /poem\.setAttribute\('aria-label',/);
   assert.match(
     contentCss,
-    /\.pangram-gallery-card__poem\s*\{[^}]*white-space:\s*pre-line;/s
+    /\.pangram-gallery-card__poem\s*\{[^}]*overflow:\s*scroll;[^}]*white-space:\s*pre-line;/s
   );
   assert.match(
     contentCss,
@@ -107,6 +138,11 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
   assert.match(
     contentCss,
     /\.pangram-gallery-card__poem\s*\{[^}]*max-inline-size:\s*100%;[^}]*max-block-size:\s*100%;[^}]*font:\s*400 italic clamp\(16px,\s*1\.2vw,\s*20px\)\s*\/\s*1\.5/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__poem:focus-visible[^}]*\{[^}]*outline:\s*2px solid/s,
+    'the keyboard-scrollable poem body should have a visible focus state'
   );
   assert.doesNotMatch(
     contentCss,
@@ -122,7 +158,7 @@ test('renders poem lines inside the same stable replacement frame and gallery sh
 
 test('builds the compact source-of-truth composition for every full card', () => {
   assert.match(contentSource, /body\.append\(notice, title, location, toggle\);/);
-  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(sourceActorRow, source, verdictChip\);/);
   assert.match(
     contentCss,
     /\.pangram-gallery-card__body\s*\{[^}]*box-sizing:\s*border-box;[^}]*display:\s*flex;[^}]*flex-wrap:\s*wrap;[^}]*align-items:\s*center;[^}]*column-gap:\s*10px;[^}]*padding:\s*18px 28px 20px;/s
@@ -185,6 +221,13 @@ test('links replacement artwork and its title to the item source', () => {
   assert.match(contentSource, /title\.href = item\.sourceUrl/);
 });
 
+test('keeps local-only replacement titles inert when no source URL exists', () => {
+  assert.match(
+    contentSource,
+    /if \(item\.sourceUrl\) \{[\s\S]*title\.href = item\.sourceUrl;[\s\S]*\} else \{[\s\S]*title\.removeAttribute\('href'\);/
+  );
+});
+
 test('makes linked titles interactive and truncates descriptions to one line', () => {
   assert.match(
     contentCss,
@@ -232,7 +275,7 @@ test('shows the Pangram verdict at the right of the replacement footer', () => {
     'verdict chips should not include a trailing chevron'
   );
   assert.match(contentSource, /verdictChip\.setAttribute\('aria-label', `Pangram verdict: \$\{verdictLabel\}`\);/);
-  assert.match(contentSource, /body\.append\(source, verdictChip\);/);
+  assert.match(contentSource, /body\.append\(sourceActorRow, source, verdictChip\);/);
   assert.match(
     contentCss,
     /span\.pangram-gallery-card__verdict\s*\{[^}]*order:\s*3;[^}]*margin-block-start:\s*7px;[^}]*margin-inline-start:\s*auto;/s
@@ -269,6 +312,46 @@ test('links the original post author to the post permalink or their profile', ()
     contentCss,
     /\.pangram-gallery-card__author\s*\{[^}]*text-decoration:\s*underline;/s
   );
+});
+
+test('keeps the feed-source actor separate and exposes one accessible shared hover card', () => {
+  assert.match(contentSource, /function getFeedSourceActor\(target, postAuthor, verdict\)/);
+  assert.match(contentSource, /card\.pangramGallerySourceActor = getFeedSourceActor\(/);
+  assert.match(contentSource, /className = 'pangram-gallery-card__source-actor-trigger'/);
+  assert.match(contentSource, /trigger\.setAttribute\('aria-expanded', 'false'\)/);
+  assert.match(contentSource, /function ensureSourceActorPopover\(\)/);
+  assert.match(contentSource, /document\.addEventListener\('pointerover'/);
+  assert.match(contentSource, /document\.addEventListener\('focusin'/);
+  assert.match(contentSource, /event\.key === 'Escape'/);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-source-popover\s*\{[^}]*position:\s*fixed;[^}]*z-index:\s*2147483646;/s
+  );
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-card__author:focus-visible,\s*\.pangram-gallery-card__source-actor-trigger:focus-visible,\s*\.pangram-gallery-card__poem:focus-visible,\s*\.pangram-gallery-card__toggle:focus-visible\s*\{[^}]*outline:/s
+  );
+});
+
+test('proxies only an exact native LinkedIn Unfollow action after an explicit click', () => {
+  assert.match(contentSource, /core\.isMatchingUnfollowLabel\(label, actorName\)/);
+  assert.match(contentSource, /async function findNativeUnfollowAction\(card, actorName\)/);
+  assert.match(contentSource, /unfollow\.hidden = !nativeActionAvailable/);
+  assert.match(contentSource, /unfollow\.addEventListener\('click', async \(\) =>/);
+  assert.match(contentSource, /nativeAction\.click\(\)/);
+  assert.doesNotMatch(contentSource, /fetch\([^\n]*unfollow/i);
+  assert.match(
+    contentCss,
+    /\.pangram-gallery-native-action-proxy\.pangram-gallery-original-hidden\s*\{[^}]*position:\s*fixed !important;[^}]*opacity:\s*0 !important;[^}]*pointer-events:\s*none !important;/s
+  );
+});
+
+test('does not offer source-actor actions for promoted, suggested, company, or unknown actors', () => {
+  assert.match(contentSource, /if \(verdict === 'promoted' \|\| verdict === 'suggested'\) return null;/);
+  assert.match(contentSource, /function isPersonProfile\(value\)/);
+  assert.match(contentSource, /\^\\\/in\\\//);
+  assert.match(contentSource, /target\.matches\?\.\([\s\S]*\[role="comment"\]/);
+  assert.match(contentSource, /sourceActorRow\.hidden = !sourceActor;/);
 });
 
 test('renders each hide variant as a compact notice with an unhide control', () => {

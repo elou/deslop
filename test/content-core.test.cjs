@@ -26,6 +26,40 @@ test('reads only Pangram verdict labels', () => {
   assert.equal(core.classifyBadgeText(''), null);
 });
 
+test('parses the person whose activity caused a post to appear in the feed', () => {
+  const core = loadCore();
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Charles L Mauro CHFP likes this'))),
+    { name: 'Charles L Mauro CHFP', action: 'likes this' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('David Hoang commented'))),
+    { name: 'David Hoang', action: 'commented' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Priya Shah reposted this'))),
+    { name: 'Priya Shah', action: 'reposted this' }
+  );
+  assert.equal(core.parseFeedSourceContext('Senior Design Director at Example'), null);
+  assert.equal(core.parseFeedSourceContext('Acme Corp promoted this'), null);
+});
+
+test('matches only the native unfollow action for the exact feed-source actor', () => {
+  const core = loadCore();
+
+  assert.equal(
+    core.isMatchingUnfollowLabel('Unfollow Charles L Mauro CHFP', 'Charles L Mauro CHFP'),
+    true
+  );
+  assert.equal(
+    core.isMatchingUnfollowLabel('Unfollow Matthew Holloway', 'Charles L Mauro CHFP'),
+    false
+  );
+  assert.equal(core.isMatchingUnfollowLabel('Follow Charles L Mauro CHFP', 'Charles L Mauro CHFP'), false);
+  assert.equal(core.isMatchingUnfollowLabel('Unfollow', ''), false);
+});
+
 test('formats the shared artwork and poetry metadata line without repeated details', () => {
   const core = loadCore();
 
@@ -103,6 +137,15 @@ test('uses a concise provider fallback instead of raw credit or identifier-heavy
   );
 });
 
+test('replaces every visible comment word with one clown while preserving whitespace', () => {
+  const core = loadCore();
+
+  assert.equal(core.clownifyText('This is AI.'), '🤡 🤡 🤡');
+  assert.equal(core.clownifyText('Two\nlines\tremain'), '🤡\n🤡\t🤡');
+  assert.equal(core.clownifyText(''), '');
+  assert.equal(core.clownifyText(null), '');
+});
+
 test('defaults to AI-only replacement', () => {
   const core = loadCore();
   const settings = core.normalizeSettings();
@@ -131,7 +174,7 @@ test('routes one shared stream or separate streams per verdict', () => {
     streams: {
       ai: 'classic-poetry',
       mixed: 'deep-space',
-      assisted: 'art-2'
+      assisted: 'vocabulary'
     }
   });
   const separate = core.normalizeSettings({
@@ -139,7 +182,7 @@ test('routes one shared stream or separate streams per verdict', () => {
     streams: {
       ai: 'classic-poetry',
       mixed: 'deep-space',
-      assisted: 'art-2'
+      assisted: 'vocabulary'
     }
   });
 
@@ -147,7 +190,7 @@ test('routes one shared stream or separate streams per verdict', () => {
   assert.equal(core.getStreamForVerdict(separate, 'ai'), 'classic-poetry');
   assert.equal(core.getStreamForVerdict(separate, 'mixed'), 'deep-space');
   assert.equal(core.getStreamForVerdict(shared, 'ai-assisted'), 'classic-poetry');
-  assert.equal(core.getStreamForVerdict(separate, 'ai-assisted'), 'art-2');
+  assert.equal(core.getStreamForVerdict(separate, 'ai-assisted'), 'vocabulary');
 });
 
 test('falls back to Painting Classics for unknown stream choices', () => {
@@ -159,7 +202,7 @@ test('falls back to Painting Classics for unknown stream choices', () => {
 
   assert.equal(settings.styleMode, 'same');
   assert.equal(settings.streams.ai, 'painting-classics');
-  assert.equal(settings.streams.mixed, 'newyorker-cartoons');
+  assert.equal(settings.streams.mixed, 'painting-classics');
 });
 
 test('can opt into Mixed verdicts', () => {
@@ -246,6 +289,45 @@ test('recognizes explicit promoted markers and LinkedIn disclosure text', () => 
     }),
     true
   );
+});
+
+test('treats LinkedIn Learning popular-course cards as promoted', () => {
+  const core = loadCore();
+  const courseHeader = { textContent: 'Popular course on LinkedIn Learning' };
+  const editorialHeader = { textContent: 'Popular post on LinkedIn' };
+
+  assert.equal(
+    core.isPromotedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('update-components-header__text-view') ? [courseHeader] : []
+    }),
+    true
+  );
+  assert.equal(
+    core.isPromotedTarget({
+      matches: () => false,
+      querySelectorAll: (selector) =>
+        selector.includes('update-components-header__text-view') ? [editorialHeader] : []
+    }),
+    false
+  );
+});
+
+test('does not assign a nested LinkedIn Learning course header to an outer feed item', () => {
+  const core = loadCore();
+  const inner = { matches: () => false, querySelectorAll: () => [] };
+  const courseHeader = {
+    textContent: 'Popular course on LinkedIn Learning',
+    closest: () => inner
+  };
+  const outer = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector.includes('update-components-header__text-view') ? [courseHeader] : []
+  };
+
+  assert.equal(core.isPromotedTarget(outer), false);
 });
 
 test('does not assign a nested promoted disclosure to an outer feed item', () => {
@@ -438,4 +520,26 @@ test('does not expand a comment-only Pangram badge to the surrounding feed item'
   };
 
   assert.equal(core.findReplacementTarget(badge), scannedHost);
+});
+
+test('keeps an explicit Pangram comment boundary out of post replacement', () => {
+  const core = loadCore();
+  const feedItem = { id: 'human-linkedin-post' };
+  const postHost = {
+    closest: (selector) =>
+      selector === 'article, [role="article"], [role="listitem"]'
+        ? feedItem
+        : null
+  };
+  const commentHost = { id: 'ai-linkedin-comment' };
+  const badge = {
+    closest: (selector) => {
+      if (selector === '[data-pangram-comment]') return commentHost;
+      if (selector === '[data-pangram-post-id]') return postHost;
+      return null;
+    }
+  };
+
+  assert.equal(core.findCommentTarget(badge), commentHost);
+  assert.equal(core.findReplacementTarget(badge), null);
 });

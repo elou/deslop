@@ -2,9 +2,10 @@
   "name": "pangram-gallery",
   "version": "0.2.0",
   "private": true,
-  "description": "Replace Pangram-labeled AI feed posts with quiet art, poetry, space, or cartoon cards.",
+  "description": "Replace Pangram-labeled AI feed posts with quiet art, poetry, or space cards.",
   "scripts": {
     "test": "node --test",
-    "check": "node scripts/check-extension.mjs && node --check src/content-core.js && node --check src/content.js && node --check src/options/options.js && node --check src/background/service-worker.mjs && node --check src/background/providers.mjs && node --test"
+    "smoke:extension": "node scripts/smoke-live-extension.mjs",
+    "check": "node scripts/check-extension.mjs && node --check src/history-core.js && node --check src/content-core.js && node --check src/content.js && node --check src/options/options.js && node --check src/report/report.js && node --check src/background/service-worker.mjs && node --check src/background/providers.mjs && node --check src/vocabulary-core.mjs && node --test"
   }
 }
