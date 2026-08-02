@@ -75,6 +75,10 @@ test('finds sidebar modules through semantic roles and stable destinations, not 
   assert.match(source, /\/admin\//);
   assert.match(source, /\/news\/story\//);
   assert.match(source, /\/games\//);
+  assert.match(source, /Recommended for you/);
+  assert.match(source, /\/mynetwork\/discover-hub\//);
+  assert.match(source, /aside\[aria-label="Aside"\]/);
+  assert.match(source, /iframe\[title="advertisement"\]/);
   assert.doesNotMatch(source, /LinkedIn News|Profile viewers|Your Premium features|My pages/);
 });
 
@@ -93,6 +97,20 @@ test('hides the outer LinkedIn shells so dividers and blank bars do not remain',
     querySelector: (selector) => (selector.includes('/games/') ? {} : null)
   };
   const newsAnchor = { parentElement: newsCandidate };
+  const recommendedShell = {
+    id: 'recommended-follow-shell',
+    querySelectorAll: (selector) =>
+      selector === 'button[aria-label^="Follow "]' ? [{}, {}, {}] : [],
+    querySelector: (selector) =>
+      selector.includes('/mynetwork/discover-hub/') ? {} : null
+  };
+  const recommendedTitle = {
+    textContent: 'Recommended for you',
+    closest: (selector) => (selector === '[role="listitem"]' ? recommendedShell : null)
+  };
+  const adShell = { id: 'right-rail-ad-shell' };
+  const adParent = { parentElement: adShell };
+  const adFrame = { parentElement: adParent };
   const documentElement = {};
   const rootNode = {
     nodeType: 9,
@@ -100,12 +118,46 @@ test('hides the outer LinkedIn shells so dividers and blank bars do not remain',
     querySelector: (selector) => {
       if (selector.includes('/me/profile-views/')) return menuAnchor;
       if (selector.includes('/news/story/')) return newsAnchor;
+      if (selector === 'aside[aria-label="Aside"] iframe[title="advertisement"]') {
+        return adFrame;
+      }
       return null;
-    }
+    },
+    querySelectorAll: (selector) => (selector === 'p' ? [recommendedTitle] : [])
   };
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(core.collectLinkedInSidebarTargets(rootNode))),
-    [menuShell, newsShell]
+    [
+      { id: 'left-divider-shell' },
+      { id: 'right-news-shell' },
+      { id: 'recommended-follow-shell' },
+      { id: 'right-rail-ad-shell' }
+    ]
+  );
+});
+
+test('does not hide generic recommendation copy, ordinary feed items, or the right-rail footer', () => {
+  const core = loadCore();
+  const ordinaryPost = {
+    querySelectorAll: () => [{}, {}, {}],
+    querySelector: () => null
+  };
+  const genericTitle = {
+    textContent: 'Recommended for you',
+    closest: () => ordinaryPost
+  };
+  const footer = { id: 'right-rail-footer' };
+  const rootNode = {
+    nodeType: 9,
+    documentElement: {},
+    querySelector: () => null,
+    querySelectorAll: (selector) => (selector === 'p' ? [genericTitle] : []),
+    footer
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.collectLinkedInSidebarTargets(rootNode))),
+    []
   );
 });

@@ -304,6 +304,22 @@
       candidate = candidate.parentElement;
     }
 
+    for (const heading of root.querySelectorAll?.('p') || []) {
+      if (normalizeCardDetail(heading.textContent) !== 'Recommended for you') continue;
+      const shell = heading.closest?.('[role="listitem"]');
+      if (!shell) continue;
+      const followButtons = shell.querySelectorAll?.('button[aria-label^="Follow "]') || [];
+      const discoverLink = shell.querySelector?.('a[href*="/mynetwork/discover-hub/"]');
+      if (followButtons.length >= 2 && discoverLink) targets.add(shell);
+    }
+
+    const promotedFrame = root.querySelector(
+      'aside[aria-label="Aside"] iframe[title="advertisement"]'
+    );
+    const promotedShell =
+      promotedFrame?.parentElement?.parentElement || promotedFrame?.parentElement || promotedFrame;
+    if (promotedShell) targets.add(promotedShell);
+
     return [...targets];
   }
 
