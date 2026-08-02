@@ -25,6 +25,10 @@ assert.equal(
 );
 assert.ok(manifest.background?.service_worker);
 assert.ok(Array.isArray(manifest.content_scripts));
+assert.deepEqual(manifest.content_scripts[0]?.matches, [
+  'https://*.linkedin.com/feed/*',
+  'https://*.x.com/home*'
+]);
 assert.ok(manifest.permissions?.includes('storage'));
 assert.ok(!manifest.permissions?.includes('contextMenus'));
 assert.ok(!manifest.permissions?.includes('nativeMessaging'));

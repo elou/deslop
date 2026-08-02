@@ -1,6 +1,16 @@
 (function startPangramGallery() {
   if (window.top !== window) return;
 
+  const hostname = String(window.location.hostname || '').toLowerCase();
+  if (/(^|\.)linkedin\.com$/.test(hostname)) {
+    const pathname =
+      window.location.pathname ||
+      String(window.location.href || '')
+        .replace(/^[a-z]+:\/\/[^/]+/i, '')
+        .split(/[?#]/, 1)[0];
+    if (!/^\/feed(?:\/|$)/.test(pathname)) return;
+  }
+
   const core = globalThis.PangramGalleryCore;
   const historyCore = globalThis.PangramGalleryHistory;
   if (!core || !globalThis.chrome?.runtime?.id) return;
