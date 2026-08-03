@@ -140,14 +140,9 @@ async function connectCdp(webSocketDebuggerUrl) {
   });
   let nextId = 0;
   const pending = new Map();
-  const listeners = new Map();
   socket.addEventListener('message', (event) => {
     const message = JSON.parse(event.data);
-    if (!message.id) {
-      for (const listener of listeners.get(message.method) || []) listener(message.params || {});
-      return;
-    }
-    if (!pending.has(message.id)) return;
+    if (!message.id || !pending.has(message.id)) return;
     const { resolve: resolvePromise, reject } = pending.get(message.id);
     pending.delete(message.id);
     if (message.error) reject(new Error(message.error.message));
@@ -163,11 +158,6 @@ async function connectCdp(webSocketDebuggerUrl) {
       return new Promise((resolvePromise, reject) => {
         pending.set(id, { resolve: resolvePromise, reject });
       });
-    },
-    on(method, listener) {
-      const methodListeners = listeners.get(method) || [];
-      methodListeners.push(listener);
-      listeners.set(method, methodListeners);
     }
   };
 }
@@ -190,7 +180,6 @@ if (!chrome) throw new Error('Google Chrome or Chromium is required.');
 const extensionId = extensionIdForManifest();
 let instance;
 let client;
-let pageClient;
 
 try {
   instance = await launchChrome(chrome);
@@ -271,80 +260,6 @@ try {
   assert.equal(dormant.vocabularyControlsHidden, true);
   assert.equal(dormant.vocabularyControlsVisible, false);
 
-  const pageTarget = await createTarget(instance.port, 'about:blank');
-  pageClient = await connectCdp(pageTarget.webSocketDebuggerUrl);
-  await pageClient.send('Runtime.enable');
-  await pageClient.send('Page.enable');
-  await pageClient.send('Network.enable');
-  const requests = new Map();
-  const invalidExtensionFailures = [];
-  pageClient.on('Network.requestWillBeSent', ({ requestId, request }) => {
-    requests.set(requestId, request?.url || '');
-  });
-  pageClient.on('Network.loadingFailed', ({ requestId, errorText }) => {
-    const url = requests.get(requestId) || '';
-    if (/^chrome-extension:\/\/invalid\/?$/i.test(url)) {
-      invalidExtensionFailures.push({ url, errorText });
-    }
-  });
-
-  await pageClient.send('Page.navigate', { url: 'https://example.com/' });
-  await waitFor(
-    () => evaluate(pageClient, "location.hostname === 'example.com' && document.readyState === 'complete'"),
-    'The top-frame lifecycle page did not finish loading.'
-  );
-
-  async function inspectFrameBoundary() {
-    return evaluate(
-      pageClient,
-      `(async () => {
-        const topMarker = document.createElement('div');
-        topMarker.className = 'pangram-gallery-original-hidden';
-        document.body.append(topMarker);
-
-        const child = document.createElement('iframe');
-        child.src = 'https://example.com/?deslop-child-frame';
-        document.body.append(child);
-        await new Promise((resolve) => {
-          child.addEventListener('load', resolve, { once: true });
-          setTimeout(resolve, 5000);
-        });
-        const childMarker = child.contentDocument.createElement('div');
-        childMarker.className = 'pangram-gallery-original-hidden';
-        child.contentDocument.body.append(childMarker);
-
-        const sandboxed = document.createElement('iframe');
-        sandboxed.sandbox = 'allow-scripts';
-        sandboxed.src = 'https://example.com/?deslop-sandboxed-frame';
-        document.body.append(sandboxed);
-        await new Promise((resolve) => {
-          sandboxed.addEventListener('load', resolve, { once: true });
-          setTimeout(resolve, 5000);
-        });
-
-        return {
-          topDisplay: getComputedStyle(topMarker).display,
-          childDisplay: child.contentWindow.getComputedStyle(childMarker).display
-        };
-      })()`
-    );
-  }
-
-  const initialFrameBoundary = await inspectFrameBoundary();
-  assert.equal(initialFrameBoundary.topDisplay, 'none');
-  assert.notEqual(initialFrameBoundary.childDisplay, 'none');
-
-  await pageClient.send('Page.reload', { ignoreCache: true });
-  await waitFor(
-    () => evaluate(pageClient, "location.hostname === 'example.com' && document.readyState === 'complete'"),
-    'The lifecycle page did not finish refreshing.'
-  );
-  const refreshedFrameBoundary = await inspectFrameBoundary();
-  assert.equal(refreshedFrameBoundary.topDisplay, 'none');
-  assert.notEqual(refreshedFrameBoundary.childDisplay, 'none');
-  await wait(500);
-  assert.deepEqual(invalidExtensionFailures, []);
-
   if (screenshotPath) {
     const screenshot = await client.send('Page.captureScreenshot', {
       format: 'png',
@@ -362,11 +277,6 @@ try {
           controlsHidden: dormant.vocabularyControlsHidden,
           dropdownAbsent: !dormant.vocabularyInDropdowns
         },
-        frameLifecycle: {
-          topFrameInjected: refreshedFrameBoundary.topDisplay === 'none',
-          childFrameSkipped: refreshedFrameBoundary.childDisplay !== 'none',
-          invalidExtensionFailures: invalidExtensionFailures.length
-        },
         screenshot: screenshotPath
       },
       null,
@@ -374,7 +284,6 @@ try {
     )}\n`
   );
 } finally {
-  pageClient?.close();
   client?.close();
   await stopChrome(instance);
   rmSync(profileDirectory, { recursive: true, force: true });

@@ -1,6 +1,4 @@
 (function startPangramGallery() {
-  if (window.top !== window) return;
-
   const core = globalThis.PangramGalleryCore;
   const historyCore = globalThis.PangramGalleryHistory;
   if (!core || !globalThis.chrome?.runtime?.id) return;
