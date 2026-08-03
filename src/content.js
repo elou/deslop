@@ -827,6 +827,7 @@
       }
       const target = core.findReplacementTarget(badge);
       if (!target) continue;
+      if (getEnabledCleanupType(target)) continue;
 
       if (core.shouldReplace(verdict, settings)) {
         void replaceTarget(target, verdict, activeGeneration);
@@ -834,6 +835,12 @@
         restoreTarget(target);
       }
     }
+  }
+
+  function getEnabledCleanupType(target) {
+    if (settings.hidePromoted && core.isPromotedTarget(target)) return 'promoted';
+    if (settings.hideSuggested && core.isSuggestedTarget(target)) return 'suggested';
+    return null;
   }
 
   function reconcileChangedCommentTreatments(records) {
@@ -925,9 +932,9 @@
   function scanInitialDocument() {
     scanTimer = null;
     if (!core.isPlatformEnabled(settings, window.location.hostname)) return;
-    processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processPromotedTargets(core.collectPromotedTargets(document));
     processSuggestedTargets(core.collectSuggestedTargets(document));
+    processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processLinkedInSidebarTargets();
   }
 
@@ -994,10 +1001,10 @@
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
     if (!currentPlatformIsEnabled()) return;
-    processBadges(core.collectBadgesFromMutationRecords(records));
-    reconcileChangedCommentTreatments(records);
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
     processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
+    processBadges(core.collectBadgesFromMutationRecords(records));
+    reconcileChangedCommentTreatments(records);
     processLinkedInSidebarTargets();
   }
 

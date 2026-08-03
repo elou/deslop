@@ -431,3 +431,57 @@ test('processes Suggested feed targets independently of Pangram verdict badges',
   assert.match(contentSource, /core\.collectSuggestedTargetsFromMutationRecords\(records\)/);
   assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'suggested'\)/);
 });
+
+test('gives an opted-in Suggested cleanup card priority over its Pangram AI badge', () => {
+  const scanStart = contentSource.indexOf('function scanInitialDocument');
+  const scanEnd = contentSource.indexOf('\n  function scheduleInitialScan', scanStart);
+  const scanSource = contentSource.slice(scanStart, scanEnd);
+  const suggestedIndex = scanSource.indexOf('processSuggestedTargets(');
+  const badgeIndex = scanSource.indexOf('processBadges(');
+
+  assert.notEqual(suggestedIndex, -1, 'initial scan should process Suggested cards');
+  assert.notEqual(badgeIndex, -1, 'initial scan should process Pangram badges');
+  assert.ok(
+    suggestedIndex < badgeIndex,
+    'Suggested cleanup must claim an AI-badged Suggested card before artwork replacement begins'
+  );
+});
+
+test('gives opted-in Promoted and Suggested cleanup priority in both scan paths', () => {
+  const scanStart = contentSource.indexOf('function scanInitialDocument');
+  const scanEnd = contentSource.indexOf('\n  function scheduleInitialScan', scanStart);
+  const scanSource = contentSource.slice(scanStart, scanEnd);
+  const mutationStart = contentSource.indexOf('function handleMutations');
+  const mutationEnd = contentSource.indexOf('\n  const observer =', mutationStart);
+  const mutationSource = contentSource.slice(mutationStart, mutationEnd);
+
+  for (const [source, cleanup, badges, label] of [
+    [scanSource, 'processPromotedTargets(', 'processBadges(', 'initial scan'],
+    [mutationSource, 'processPromotedTargets(', 'processBadges(', 'mutation scan']
+  ]) {
+    const promotedIndex = source.indexOf(cleanup);
+    const suggestedIndex = source.indexOf('processSuggestedTargets(');
+    const badgeIndex = source.indexOf(badges);
+
+    assert.ok(promotedIndex !== -1 && suggestedIndex !== -1 && badgeIndex !== -1, `${label} should process every path`);
+    assert.ok(promotedIndex < badgeIndex, `${label} must claim Promoted cards before badges`);
+    assert.ok(suggestedIndex < badgeIndex, `${label} must claim Suggested cards before badges`);
+  }
+});
+
+test('explicit cleanup prevents badge replacement and restoration for Promoted and Suggested cards', () => {
+  const processStart = contentSource.indexOf('function processBadges');
+  const processEnd = contentSource.indexOf('\n  function reconcileChangedCommentTreatments', processStart);
+  const processSource = contentSource.slice(processStart, processEnd);
+  const helperStart = contentSource.indexOf('function getEnabledCleanupType');
+  const helperEnd = contentSource.indexOf('\n  function reconcileChangedCommentTreatments', helperStart);
+  const helperSource = contentSource.slice(helperStart, helperEnd);
+
+  assert.match(
+    processSource,
+    /const target = core\.findReplacementTarget\(badge\);\s*if \(!target\) continue;\s*if \(getEnabledCleanupType\(target\)\) continue;\s*if \(core\.shouldReplace\(verdict, settings\)\)/s,
+    'the cleanup guard must run before both the AI replacement and restore branches'
+  );
+  assert.match(helperSource, /settings\.hidePromoted && core\.isPromotedTarget\(target\)/);
+  assert.match(helperSource, /settings\.hideSuggested && core\.isSuggestedTarget\(target\)/);
+});
