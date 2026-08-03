@@ -6,9 +6,12 @@ const test = require('node:test');
 const root = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const contentSource = fs.readFileSync(path.join(root, 'src', 'content.js'), 'utf8');
+const replacementEntry = manifest.content_scripts.find((entry) =>
+  entry.js?.includes('src/content.js')
+);
 
 test('loads the local history model before the LinkedIn content script', () => {
-  assert.deepEqual(manifest.content_scripts[0].js.slice(0, 3), [
+  assert.deepEqual(replacementEntry?.js?.slice(0, 3), [
     'src/history-core.js',
     'src/content-core.js',
     'src/content.js'

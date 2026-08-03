@@ -6,9 +6,12 @@ const test = require('node:test');
 const root = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const contentSource = fs.readFileSync(path.join(root, 'src', 'content.js'), 'utf8');
+const replacementEntry = manifest.content_scripts.find((entry) =>
+  entry.js?.includes('src/content.js')
+);
 
 test('runs feed replacement only in the top frame across LinkedIn refreshes', () => {
-  const contentScript = manifest.content_scripts[0];
+  const contentScript = replacementEntry;
 
   assert.notEqual(
     contentScript.all_frames,
