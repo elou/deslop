@@ -18,6 +18,8 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
     replaceAssisted: document.querySelector('#replace-assisted'),
     hidePromoted: document.querySelector('#hide-promoted'),
     hideSuggested: document.querySelector('#hide-suggested'),
+    hideLiked: document.querySelector('#hide-liked'),
+    hideCommented: document.querySelector('#hide-commented'),
     platformLinkedIn: document.querySelector('#platform-linkedin'),
     platformX: document.querySelector('#platform-x'),
     vocabularySection: document.querySelector('.vocabulary-section'),
@@ -45,7 +47,9 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
   ];
   const cleanupBlocks = [
     controls.hidePromoted.closest('.cleanup-choice'),
-    controls.hideSuggested.closest('.cleanup-choice')
+    controls.hideSuggested.closest('.cleanup-choice'),
+    controls.hideLiked.closest('.cleanup-choice'),
+    controls.hideCommented.closest('.cleanup-choice')
   ];
   const verdictBlocks = [
     controls.streamAi.closest('.verdict-choice'),
@@ -135,10 +139,14 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
     controls.replaceAssisted.checked = safeSettings.replaceAssisted;
     controls.hidePromoted.checked = safeSettings.hidePromoted;
     controls.hideSuggested.checked = safeSettings.hideSuggested;
+    controls.hideLiked.checked = safeSettings.hideLiked;
+    controls.hideCommented.checked = safeSettings.hideCommented;
     controls.platformLinkedIn.checked = safeSettings.platforms.linkedin;
     controls.platformX.checked = safeSettings.platforms.x;
     cleanupBlocks[0].dataset.active = safeSettings.hidePromoted ? 'true' : 'false';
     cleanupBlocks[1].dataset.active = safeSettings.hideSuggested ? 'true' : 'false';
+    cleanupBlocks[2].dataset.active = safeSettings.hideLiked ? 'true' : 'false';
+    cleanupBlocks[3].dataset.active = safeSettings.hideCommented ? 'true' : 'false';
     verdictBlocks[0].dataset.active = 'true';
     verdictBlocks[1].dataset.active = safeSettings.replaceMixed ? 'true' : 'false';
     verdictBlocks[2].dataset.active = safeSettings.replaceAssisted ? 'true' : 'false';
@@ -160,6 +168,8 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
       replaceAssisted: controls.replaceAssisted.checked,
       hidePromoted: controls.hidePromoted.checked,
       hideSuggested: controls.hideSuggested.checked,
+      hideLiked: controls.hideLiked.checked,
+      hideCommented: controls.hideCommented.checked,
       platforms: {
         linkedin: controls.platformLinkedIn.checked,
         x: controls.platformX.checked
@@ -201,6 +211,8 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
     controls.replaceAssisted,
     controls.hidePromoted,
     controls.hideSuggested,
+    controls.hideLiked,
+    controls.hideCommented,
     controls.platformLinkedIn,
     controls.platformX,
     ...allSelects

@@ -434,6 +434,20 @@ test('routes the Hide AI stream to a compact notice', async () => {
   assert.equal(item.title, '☢️ AI post hidden');
 });
 
+test('routes like and comment cleanup streams to their requested compact notices', async () => {
+  const like = await getReplacement({ streams: { ai: 'hide-liked' } }, 'ai', async () => {
+    throw new Error('Like cleanup should not request a remote provider');
+  });
+  const comment = await getReplacement({ streams: { ai: 'hide-commented' } }, 'ai', async () => {
+    throw new Error('Comment cleanup should not request a remote provider');
+  });
+
+  assert.equal(like.kind, 'notice');
+  assert.equal(like.title, '💔 Like hidden');
+  assert.equal(comment.kind, 'notice');
+  assert.equal(comment.title, '💬 Comment hidden');
+});
+
 test('routes Deep Space through the NASA image library and chooses a bounded rendition', async () => {
   const fetchFn = async (url) => {
     if (url.includes('/search?')) {

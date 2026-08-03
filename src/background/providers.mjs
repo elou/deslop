@@ -24,6 +24,8 @@ const SALLY_BAKING_FEEDS = Object.freeze([
 const HIDE_STREAM_ID = 'hide-ai';
 const HIDE_PROMOTED_STREAM_ID = 'hide-promoted';
 const HIDE_SUGGESTED_STREAM_ID = 'hide-suggested';
+const HIDE_LIKED_STREAM_ID = 'hide-liked';
+const HIDE_COMMENTED_STREAM_ID = 'hide-commented';
 const SURPRISE_STREAM_ID = 'surprise-me';
 const NASA_SEARCH_API = 'https://images-api.nasa.gov/search';
 const NASA_ASSET_API = 'https://images-api.nasa.gov/asset';
@@ -594,6 +596,26 @@ export function buildHideSuggestedReplacement() {
   };
 }
 
+export function buildHideLikedReplacement() {
+  return {
+    kind: 'notice',
+    id: 'de-liked',
+    title: '💔 Like hidden',
+    provider: 'De-Slop',
+    rights: 'Local filter'
+  };
+}
+
+export function buildHideCommentedReplacement() {
+  return {
+    kind: 'notice',
+    id: 'de-commented',
+    title: '💬 Comment hidden',
+    provider: 'De-Slop',
+    rights: 'Local filter'
+  };
+}
+
 function decodeXml(value) {
   return String(value || '')
     .trim()
@@ -1118,6 +1140,14 @@ export const STREAM_REGISTRY = Object.freeze({
   [HIDE_SUGGESTED_STREAM_ID]: {
     label: '❌ Hide all suggested',
     providerIds: []
+  },
+  [HIDE_LIKED_STREAM_ID]: {
+    label: '💔 Hide liked posts',
+    providerIds: []
+  },
+  [HIDE_COMMENTED_STREAM_ID]: {
+    label: '💬 Hide commented posts',
+    providerIds: []
   }
 });
 
@@ -1147,6 +1177,12 @@ export async function getReplacement(
   }
   if (stream === HIDE_SUGGESTED_STREAM_ID) {
     return normalizeCard(buildHideSuggestedReplacement());
+  }
+  if (stream === HIDE_LIKED_STREAM_ID) {
+    return normalizeCard(buildHideLikedReplacement());
+  }
+  if (stream === HIDE_COMMENTED_STREAM_ID) {
+    return normalizeCard(buildHideCommentedReplacement());
   }
   const providerId = streamConfig.providerIds[
     chooseIndex(streamConfig.providerIds.length, random)

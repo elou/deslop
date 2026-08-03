@@ -31,7 +31,15 @@ test('parses the person whose activity caused a post to appear in the feed', () 
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(core.parseFeedSourceContext('Charles L Mauro CHFP likes this'))),
-    { name: 'Charles L Mauro CHFP', action: 'likes this' }
+    { name: 'Charles L Mauro CHFP', action: 'reacted' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Priya Shah celebrates this'))),
+    { name: 'Priya Shah', action: 'reacted' }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(core.parseFeedSourceContext('Eli Chen finds this insightful'))),
+    { name: 'Eli Chen', action: 'reacted' }
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(core.parseFeedSourceContext('David Hoang commented'))),
@@ -154,13 +162,17 @@ test('defaults to AI-only replacement', () => {
   assert.equal(settings.replaceMixed, false);
   assert.equal(settings.replaceAssisted, false);
   assert.equal(settings.hidePromoted, false);
+  assert.equal(settings.hideLiked, false);
+  assert.equal(settings.hideCommented, false);
   assert.equal(settings.styleMode, 'same');
   assert.deepEqual(JSON.parse(JSON.stringify(settings.streams)), {
     ai: 'painting-classics',
     mixed: 'painting-classics',
     assisted: 'painting-classics',
     promoted: 'hide-promoted',
-    suggested: 'hide-suggested'
+    suggested: 'hide-suggested',
+    liked: 'hide-liked',
+    commented: 'hide-commented'
   });
   assert.equal(core.shouldReplace('ai', settings), true);
   assert.equal(core.shouldReplace('mixed', settings), false);
@@ -258,6 +270,72 @@ test('can opt into hiding explicit Suggested impressions with a separate stream'
     }),
     true
   );
+});
+
+test('recognizes only explicit LinkedIn like and comment feed context', () => {
+  const core = loadCore();
+  const likeLabel = { textContent: 'Emily Campbell celebrates this', closest: () => target };
+  const ordinaryBodyText = { textContent: 'I commented on this last week', closest: () => target };
+  const target = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector.includes('update-components-header__text-view') ? [likeLabel] : []
+  };
+
+  assert.equal(core.isLikedTarget(target), true);
+  assert.equal(core.isCommentedTarget(target), false);
+  const commentTarget = {
+    matches: () => false,
+    querySelectorAll: (selector) =>
+      selector.includes('update-components-header__text-view') ? [commentLabel] : []
+  };
+  const commentLabel = {
+    textContent: 'Emily Campbell commented on this',
+    closest: () => commentTarget
+  };
+  assert.equal(core.isCommentedTarget(commentTarget), true);
+  assert.equal(
+    core.isCommentedTarget({
+      matches: () => false,
+      querySelectorAll: () => [ordinaryBodyText]
+    }),
+    false
+  );
+});
+
+test('collects like and comment feed context after late LinkedIn hydration', () => {
+  const core = loadCore();
+  const likedOwner = {
+    nodeType: 1,
+    matches: () => true,
+    querySelectorAll: () => [likedLabel]
+  };
+  const likedLabel = {
+    nodeType: 1,
+    textContent: 'Emily Campbell reacted to this',
+    closest: () => likedOwner
+  };
+  const commentedOwner = {
+    nodeType: 1,
+    matches: () => true,
+    querySelectorAll: () => [commentedLabel]
+  };
+  const commentedLabel = {
+    nodeType: 1,
+    textContent: 'Emily Campbell commented',
+    closest: () => commentedOwner
+  };
+
+  const likedTargets = core.collectLikedTargetsFromMutationRecords([
+    { target: likedLabel, addedNodes: [] }
+  ]);
+  const commentedTargets = core.collectCommentedTargetsFromMutationRecords([
+    { target: commentedLabel, addedNodes: [] }
+  ]);
+  assert.equal(likedTargets.length, 1);
+  assert.equal(likedTargets[0], likedOwner);
+  assert.equal(commentedTargets.length, 1);
+  assert.equal(commentedTargets[0], commentedOwner);
 });
 
 test('does not treat a Featured/profile wrapper as a promoted impression', () => {

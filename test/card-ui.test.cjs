@@ -369,8 +369,8 @@ test('captures the feed-source actor for local history without rendering it on t
   );
 });
 
-test('does not capture promoted, suggested, company, or unknown actors in feed-source history', () => {
-  assert.match(contentSource, /if \(verdict === 'promoted' \|\| verdict === 'suggested'\) return null;/);
+test('does not capture cleanup, company, or unknown actors in feed-source history', () => {
+  assert.match(contentSource, /\['promoted', 'suggested', 'liked', 'commented'\]\.includes\(verdict\)\) return null;/);
   assert.match(contentSource, /function isPersonProfile\(value\)/);
   assert.match(contentSource, /\^\\\/in\\\//);
   assert.match(contentSource, /target\.matches\?\.\([\s\S]*\[role="comment"\]/);
@@ -447,7 +447,7 @@ test('gives an opted-in Suggested cleanup card priority over its Pangram AI badg
   );
 });
 
-test('gives opted-in Promoted and Suggested cleanup priority in both scan paths', () => {
+test('gives every opted-in cleanup category priority in both scan paths', () => {
   const scanStart = contentSource.indexOf('function scanInitialDocument');
   const scanEnd = contentSource.indexOf('\n  function scheduleInitialScan', scanStart);
   const scanSource = contentSource.slice(scanStart, scanEnd);
@@ -455,21 +455,25 @@ test('gives opted-in Promoted and Suggested cleanup priority in both scan paths'
   const mutationEnd = contentSource.indexOf('\n  const observer =', mutationStart);
   const mutationSource = contentSource.slice(mutationStart, mutationEnd);
 
-  for (const [source, cleanup, badges, label] of [
-    [scanSource, 'processPromotedTargets(', 'processBadges(', 'initial scan'],
-    [mutationSource, 'processPromotedTargets(', 'processBadges(', 'mutation scan']
+  for (const [source, label] of [
+    [scanSource, 'initial scan'],
+    [mutationSource, 'mutation scan']
   ]) {
-    const promotedIndex = source.indexOf(cleanup);
-    const suggestedIndex = source.indexOf('processSuggestedTargets(');
-    const badgeIndex = source.indexOf(badges);
-
-    assert.ok(promotedIndex !== -1 && suggestedIndex !== -1 && badgeIndex !== -1, `${label} should process every path`);
-    assert.ok(promotedIndex < badgeIndex, `${label} must claim Promoted cards before badges`);
-    assert.ok(suggestedIndex < badgeIndex, `${label} must claim Suggested cards before badges`);
+    const badgeIndex = source.indexOf('processBadges(');
+    for (const cleanup of [
+      'processPromotedTargets(',
+      'processSuggestedTargets(',
+      'processLikedTargets(',
+      'processCommentedTargets('
+    ]) {
+      const cleanupIndex = source.indexOf(cleanup);
+      assert.ok(cleanupIndex !== -1 && badgeIndex !== -1, `${label} should process ${cleanup} and badges`);
+      assert.ok(cleanupIndex < badgeIndex, `${label} must claim ${cleanup} before badges`);
+    }
   }
 });
 
-test('explicit cleanup prevents badge replacement and restoration for Promoted and Suggested cards', () => {
+test('explicit cleanup prevents badge replacement and restoration for every cleanup category', () => {
   const processStart = contentSource.indexOf('function processBadges');
   const processEnd = contentSource.indexOf('\n  function reconcileChangedCommentTreatments', processStart);
   const processSource = contentSource.slice(processStart, processEnd);
@@ -484,4 +488,17 @@ test('explicit cleanup prevents badge replacement and restoration for Promoted a
   );
   assert.match(helperSource, /settings\.hidePromoted && core\.isPromotedTarget\(target\)/);
   assert.match(helperSource, /settings\.hideSuggested && core\.isSuggestedTarget\(target\)/);
+  assert.match(helperSource, /settings\.hideLiked && core\.isLikedTarget\(target\)/);
+  assert.match(helperSource, /settings\.hideCommented && core\.isCommentedTarget\(target\)/);
+});
+
+test('processes LinkedIn like and comment context through independent cleanup paths', () => {
+  assert.match(contentSource, /function processLikedTargets\(targets\)/);
+  assert.match(contentSource, /core\.collectLikedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectLikedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'liked'\)/);
+  assert.match(contentSource, /function processCommentedTargets\(targets\)/);
+  assert.match(contentSource, /core\.collectCommentedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectCommentedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'commented'\)/);
 });

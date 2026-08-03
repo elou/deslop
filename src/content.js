@@ -380,7 +380,7 @@
   }
 
   function getFeedSourceActor(target, postAuthor, verdict) {
-    if (verdict === 'promoted' || verdict === 'suggested') return null;
+    if (['promoted', 'suggested', 'liked', 'commented'].includes(verdict)) return null;
     if (
       target.matches?.(
         '[role="comment"], .comments-comment-item, .comments-comment-social-activity'
@@ -475,8 +475,12 @@
         ? 'AI-assisted'
         : verdict === 'promoted'
           ? 'Promoted'
-          : verdict === 'suggested'
-            ? 'Suggested'
+            : verdict === 'suggested'
+              ? 'Suggested'
+              : verdict === 'liked'
+                ? 'Like'
+                : verdict === 'commented'
+                  ? 'Comment'
             : 'AI';
     card.setAttribute('aria-label', `${verdictLabel} post replaced`);
     card.setAttribute('aria-busy', 'true');
@@ -545,6 +549,10 @@
       ? '🫥'
       : verdict === 'promoted'
         ? '💸'
+        : verdict === 'liked'
+          ? '💔'
+          : verdict === 'commented'
+            ? '💬'
         : '🤖';
     const verdictChip = createText(
       'span',
@@ -840,6 +848,8 @@
   function getEnabledCleanupType(target) {
     if (settings.hidePromoted && core.isPromotedTarget(target)) return 'promoted';
     if (settings.hideSuggested && core.isSuggestedTarget(target)) return 'suggested';
+    if (settings.hideLiked && core.isLikedTarget(target)) return 'liked';
+    if (settings.hideCommented && core.isCommentedTarget(target)) return 'commented';
     return null;
   }
 
@@ -916,6 +926,24 @@
     }
   }
 
+  function processLikedTargets(targets) {
+    if (!settings.hideLiked) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(target, 'liked', activeGeneration, core.getStreamForCleanup(settings, 'liked'));
+    }
+  }
+
+  function processCommentedTargets(targets) {
+    if (!settings.hideCommented) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(target, 'commented', activeGeneration, core.getStreamForCleanup(settings, 'commented'));
+    }
+  }
+
   function currentPlatformIsEnabled() {
     return core.isPlatformEnabled(settings, window.location.hostname);
   }
@@ -934,6 +962,8 @@
     if (!core.isPlatformEnabled(settings, window.location.hostname)) return;
     processPromotedTargets(core.collectPromotedTargets(document));
     processSuggestedTargets(core.collectSuggestedTargets(document));
+    processLikedTargets(core.collectLikedTargets(document));
+    processCommentedTargets(core.collectCommentedTargets(document));
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processLinkedInSidebarTargets();
   }
@@ -1003,6 +1033,8 @@
     if (!currentPlatformIsEnabled()) return;
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
     processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
+    processLikedTargets(core.collectLikedTargetsFromMutationRecords(records));
+    processCommentedTargets(core.collectCommentedTargetsFromMutationRecords(records));
     processBadges(core.collectBadgesFromMutationRecords(records));
     reconcileChangedCommentTreatments(records);
     processLinkedInSidebarTargets();

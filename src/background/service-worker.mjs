@@ -24,6 +24,8 @@ const DEFAULT_SETTINGS = {
   replaceAssisted: false,
   hidePromoted: false,
   hideSuggested: false,
+  hideLiked: false,
+  hideCommented: false,
   platforms: {
     linkedin: true,
     x: false
@@ -34,7 +36,9 @@ const DEFAULT_SETTINGS = {
     mixed: 'painting-classics',
     assisted: 'painting-classics',
     promoted: 'hide-promoted',
-    suggested: 'hide-suggested'
+    suggested: 'hide-suggested',
+    liked: 'hide-liked',
+    commented: 'hide-commented'
   }
 };
 
@@ -49,7 +53,9 @@ const STREAM_IDS = new Set([
   VOCABULARY_STREAM_ID,
   'hide-ai',
   'hide-promoted',
-  'hide-suggested'
+  'hide-suggested',
+  'hide-liked',
+  'hide-commented'
 ]);
 
 export function createReplacementRequestCache({
@@ -235,6 +241,8 @@ function readSettings() {
         replaceAssisted: value.replaceAssisted === true,
         hidePromoted: value.hidePromoted === true,
         hideSuggested: value.hideSuggested === true,
+        hideLiked: value.hideLiked === true,
+        hideCommented: value.hideCommented === true,
         platforms: {
           linkedin: value.platforms?.linkedin !== false,
           x: value.platforms?.x === true
@@ -255,7 +263,13 @@ function readSettings() {
             : 'hide-promoted',
           suggested: STREAM_IDS.has(value.streams?.suggested)
             ? value.streams.suggested
-            : 'hide-suggested'
+            : 'hide-suggested',
+          liked: STREAM_IDS.has(value.streams?.liked)
+            ? value.streams.liked
+            : 'hide-liked',
+          commented: STREAM_IDS.has(value.streams?.commented)
+            ? value.streams.commented
+            : 'hide-commented'
         }
       });
     });
@@ -294,6 +308,14 @@ chrome.runtime.onInstalled.addListener(() => {
         typeof current.hideSuggested === 'boolean'
           ? current.hideSuggested
           : DEFAULT_SETTINGS.hideSuggested,
+      hideLiked:
+        typeof current.hideLiked === 'boolean'
+          ? current.hideLiked
+          : DEFAULT_SETTINGS.hideLiked,
+      hideCommented:
+        typeof current.hideCommented === 'boolean'
+          ? current.hideCommented
+          : DEFAULT_SETTINGS.hideCommented,
       platforms: {
         linkedin:
           typeof current.platforms?.linkedin === 'boolean'
@@ -320,7 +342,13 @@ chrome.runtime.onInstalled.addListener(() => {
           : 'hide-promoted',
         suggested: STREAM_IDS.has(current.streams?.suggested)
           ? current.streams.suggested
-          : 'hide-suggested'
+          : 'hide-suggested',
+        liked: STREAM_IDS.has(current.streams?.liked)
+          ? current.streams.liked
+          : 'hide-liked',
+        commented: STREAM_IDS.has(current.streams?.commented)
+          ? current.streams.commented
+          : 'hide-commented'
       }
     });
   });

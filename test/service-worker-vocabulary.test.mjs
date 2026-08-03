@@ -75,7 +75,9 @@ test('the service worker keeps saved vocabulary dormant and repairs stale routin
     mixed: 'painting-classics',
     assisted: 'painting-classics',
     promoted: 'painting-classics',
-    suggested: 'painting-classics'
+    suggested: 'painting-classics',
+    liked: 'hide-liked',
+    commented: 'hide-commented'
   });
 
   delete globalThis.chrome;
