@@ -442,3 +442,29 @@ test('processes LinkedIn like and comment context through independent cleanup pa
   assert.match(contentSource, /core\.collectCommentedTargetsFromMutationRecords\(records\)/);
   assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'commented'\)/);
 });
+
+test('gives explicit cleanup reasons priority over an AI badge on the same LinkedIn post', () => {
+  const fullScanStart = contentSource.indexOf('function scanInitialDocument');
+  const fullScanEnd = contentSource.indexOf('\n  function scheduleInitialScan', fullScanStart);
+  const fullScanSource = contentSource.slice(fullScanStart, fullScanEnd);
+  const suggestedIndex = fullScanSource.indexOf('processSuggestedTargets(');
+  const badgeIndex = fullScanSource.indexOf('processBadges(');
+  assert.notEqual(suggestedIndex, -1, 'full scan should process Suggested cards');
+  assert.notEqual(badgeIndex, -1, 'full scan should process Pangram badges');
+  assert.ok(
+    suggestedIndex < badgeIndex,
+    'Suggested cleanup must claim a post before its AI badge starts an artwork replacement'
+  );
+
+  const mutationStart = contentSource.indexOf('function handleMutations');
+  const mutationEnd = contentSource.indexOf('\n  const observer', mutationStart);
+  const mutationSource = contentSource.slice(mutationStart, mutationEnd);
+  const mutationSuggestedIndex = mutationSource.indexOf('processSuggestedTargets(');
+  const mutationBadgeIndex = mutationSource.indexOf('processBadges(');
+  assert.notEqual(mutationSuggestedIndex, -1, 'mutation scans should process Suggested cards');
+  assert.notEqual(mutationBadgeIndex, -1, 'mutation scans should process Pangram badges');
+  assert.ok(
+    mutationSuggestedIndex < mutationBadgeIndex,
+    'mutation cleanup must claim a Suggested post before its AI badge starts an artwork replacement'
+  );
+});

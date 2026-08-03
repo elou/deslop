@@ -954,11 +954,11 @@
   function scanInitialDocument() {
     scanTimer = null;
     if (!core.isPlatformEnabled(settings, window.location.hostname)) return;
-    processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processPromotedTargets(core.collectPromotedTargets(document));
     processSuggestedTargets(core.collectSuggestedTargets(document));
     processLikedTargets(core.collectLikedTargets(document));
     processCommentedTargets(core.collectCommentedTargets(document));
+    processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processLinkedInSidebarTargets();
   }
 
@@ -1025,12 +1025,12 @@
   function handleMutations(records) {
     removeOrphanedCardsFromRemovedSubtrees(records);
     if (!currentPlatformIsEnabled()) return;
-    processBadges(core.collectBadgesFromMutationRecords(records));
-    reconcileChangedCommentTreatments(records);
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
     processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
     processLikedTargets(core.collectLikedTargetsFromMutationRecords(records));
     processCommentedTargets(core.collectCommentedTargetsFromMutationRecords(records));
+    processBadges(core.collectBadgesFromMutationRecords(records));
+    reconcileChangedCommentTreatments(records);
     processLinkedInSidebarTargets();
   }
 
