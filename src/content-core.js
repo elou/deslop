@@ -5,6 +5,8 @@
     replaceAssisted: false,
     hidePromoted: false,
     hideSuggested: false,
+    hideLiked: false,
+    hideCommented: false,
     platforms: Object.freeze({
       linkedin: true,
       x: false
@@ -15,7 +17,9 @@
       mixed: 'painting-classics',
       assisted: 'painting-classics',
       promoted: 'hide-promoted',
-      suggested: 'hide-suggested'
+      suggested: 'hide-suggested',
+      liked: 'hide-liked',
+      commented: 'hide-commented'
     })
   });
 
@@ -29,7 +33,9 @@
     'vocabulary',
     'hide-ai',
     'hide-promoted',
-    'hide-suggested'
+    'hide-suggested',
+    'hide-liked',
+    'hide-commented'
   ]);
 
   const VERDICTS = new Map([
@@ -53,8 +59,12 @@
     if (!text) return null;
 
     const actions = [
-      { suffix: /\s+likes this$/i, action: 'likes this' },
-      { suffix: /\s+commented$/i, action: 'commented' },
+      {
+        suffix:
+          /\s+(?:likes this|celebrates this|supports this|loves this|finds this insightful|finds this funny|reacted to this)$/i,
+        action: 'reacted'
+      },
+      { suffix: /\s+commented(?:\s+on\s+this)?$/i, action: 'commented' },
       { suffix: /\s+reposted(?: this)?$/i, action: 'reposted this' }
     ];
     for (const candidate of actions) {
@@ -134,6 +144,14 @@
         typeof input.hideSuggested === 'boolean'
           ? input.hideSuggested
           : DEFAULT_SETTINGS.hideSuggested,
+      hideLiked:
+        typeof input.hideLiked === 'boolean'
+          ? input.hideLiked
+          : DEFAULT_SETTINGS.hideLiked,
+      hideCommented:
+        typeof input.hideCommented === 'boolean'
+          ? input.hideCommented
+          : DEFAULT_SETTINGS.hideCommented,
       platforms: {
         linkedin:
           typeof inputPlatforms.linkedin === 'boolean'
@@ -160,7 +178,13 @@
           : DEFAULT_SETTINGS.streams.promoted,
         suggested: STREAM_IDS.includes(inputStreams.suggested)
           ? inputStreams.suggested
-          : DEFAULT_SETTINGS.streams.suggested
+          : DEFAULT_SETTINGS.streams.suggested,
+        liked: STREAM_IDS.includes(inputStreams.liked)
+          ? inputStreams.liked
+          : DEFAULT_SETTINGS.streams.liked,
+        commented: STREAM_IDS.includes(inputStreams.commented)
+          ? inputStreams.commented
+          : DEFAULT_SETTINGS.streams.commented
       }
     };
   }
@@ -200,6 +224,10 @@
       ? settings.streams.promoted
       : cleanupType === 'suggested'
         ? settings.streams.suggested
+        : cleanupType === 'liked'
+          ? settings.streams.liked
+          : cleanupType === 'commented'
+            ? settings.streams.commented
         : 'painting-classics';
   }
 
@@ -211,6 +239,8 @@
     '.feed-shared-actor__sub-description, .update-components-actor__sub-description, .update-components-header__text-view, [data-testid="promotedIndicator"], [data-test-id="promoted-indicator"]';
   const SUGGESTED_LABEL_SELECTOR =
     '.update-components-header__text-view, [data-testid="suggested-label"]';
+  const SOCIAL_CONTEXT_LABEL_SELECTOR =
+    '.feed-shared-actor__sub-description, .update-components-actor__sub-description, .update-components-header__text-view';
 
   function getFeedOwner(node) {
     return node?.closest?.(FEED_OWNER_SELECTOR) || null;
@@ -259,6 +289,25 @@
     return false;
   }
 
+  function getSocialContextAction(target) {
+    if (!target || typeof target.matches !== 'function') return null;
+    for (const label of target.querySelectorAll?.(SOCIAL_CONTEXT_LABEL_SELECTOR) || []) {
+      const owner = getFeedOwner(label);
+      if (owner && owner !== target) continue;
+      const source = parseFeedSourceContext(label.textContent);
+      if (source?.action === 'reacted' || source?.action === 'commented') return source.action;
+    }
+    return null;
+  }
+
+  function isLikedTarget(target) {
+    return getSocialContextAction(target) === 'reacted';
+  }
+
+  function isCommentedTarget(target) {
+    return getSocialContextAction(target) === 'commented';
+  }
+
   function collectPromotedTargets(rootNode) {
     const candidates = new Set();
     const root = rootNode?.nodeType === 9 ? rootNode.documentElement : rootNode;
@@ -275,6 +324,23 @@
     if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
     for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
     return [...candidates].filter(isSuggestedTarget);
+  }
+
+  function collectTargets(rootNode, predicate) {
+    const candidates = new Set();
+    const root = rootNode?.nodeType === 9 ? rootNode.documentElement : rootNode;
+    if (!root) return [];
+    if (root.nodeType === 1 && root.matches?.(FEED_OWNER_SELECTOR)) candidates.add(root);
+    for (const element of root.querySelectorAll?.(FEED_OWNER_SELECTOR) || []) candidates.add(element);
+    return [...candidates].filter(predicate);
+  }
+
+  function collectLikedTargets(rootNode) {
+    return collectTargets(rootNode, isLikedTarget);
+  }
+
+  function collectCommentedTargets(rootNode) {
+    return collectTargets(rootNode, isCommentedTarget);
   }
 
   function collectLinkedInSidebarTargets(rootNode) {
@@ -357,6 +423,32 @@
     }
     for (const owner of owners) if (isSuggestedTarget(owner)) targets.add(owner);
     return [...targets];
+  }
+
+  function collectTargetsFromMutationRecords(records, collectTargetsForRoot, predicate) {
+    const roots = new Set();
+    const owners = new Set();
+    for (const record of records || []) {
+      const owner = getFeedOwner(record?.target);
+      if (owner) owners.add(owner);
+      for (const node of record?.addedNodes || []) {
+        if (node?.nodeType === 1 || node?.nodeType === 11) roots.add(node);
+      }
+    }
+    const targets = new Set();
+    for (const root of roots) {
+      for (const target of collectTargetsForRoot(root)) targets.add(target);
+    }
+    for (const owner of owners) if (predicate(owner)) targets.add(owner);
+    return [...targets];
+  }
+
+  function collectLikedTargetsFromMutationRecords(records) {
+    return collectTargetsFromMutationRecords(records, collectLikedTargets, isLikedTarget);
+  }
+
+  function collectCommentedTargetsFromMutationRecords(records) {
+    return collectTargetsFromMutationRecords(records, collectCommentedTargets, isCommentedTarget);
   }
 
   function collectBadgesFromMutationRecords(records) {
@@ -446,6 +538,12 @@
     isSuggestedTarget,
     collectSuggestedTargets,
     collectSuggestedTargetsFromMutationRecords,
+    isLikedTarget,
+    collectLikedTargets,
+    collectLikedTargetsFromMutationRecords,
+    isCommentedTarget,
+    collectCommentedTargets,
+    collectCommentedTargetsFromMutationRecords,
     collectLinkedInSidebarTargets
   });
 })(globalThis);

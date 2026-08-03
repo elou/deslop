@@ -383,7 +383,7 @@
   }
 
   function getFeedSourceActor(target, postAuthor, verdict) {
-    if (verdict === 'promoted' || verdict === 'suggested') return null;
+    if (['promoted', 'suggested', 'liked', 'commented'].includes(verdict)) return null;
     if (
       target.matches?.(
         '[role="comment"], .comments-comment-item, .comments-comment-social-activity'
@@ -478,8 +478,12 @@
         ? 'AI-assisted'
         : verdict === 'promoted'
           ? 'Promoted'
-          : verdict === 'suggested'
-            ? 'Suggested'
+            : verdict === 'suggested'
+              ? 'Suggested'
+              : verdict === 'liked'
+                ? 'Like'
+                : verdict === 'commented'
+                  ? 'Comment'
             : 'AI';
     card.setAttribute('aria-label', `${verdictLabel} post replaced`);
     card.setAttribute('aria-busy', 'true');
@@ -548,6 +552,10 @@
       ? '🫥'
       : verdict === 'promoted'
         ? '💸'
+        : verdict === 'liked'
+          ? '💔'
+          : verdict === 'commented'
+            ? '💬'
         : '🤖';
     const verdictChip = createText(
       'span',
@@ -912,6 +920,24 @@
     }
   }
 
+  function processLikedTargets(targets) {
+    if (!settings.hideLiked) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(target, 'liked', activeGeneration, core.getStreamForCleanup(settings, 'liked'));
+    }
+  }
+
+  function processCommentedTargets(targets) {
+    if (!settings.hideCommented) return;
+    const activeGeneration = generation;
+    for (const target of targets) {
+      if (!target.isConnected) continue;
+      void replaceTarget(target, 'commented', activeGeneration, core.getStreamForCleanup(settings, 'commented'));
+    }
+  }
+
   function currentPlatformIsEnabled() {
     return core.isPlatformEnabled(settings, window.location.hostname);
   }
@@ -931,6 +957,8 @@
     processBadges(document.querySelectorAll('.pangram-feed-badge'));
     processPromotedTargets(core.collectPromotedTargets(document));
     processSuggestedTargets(core.collectSuggestedTargets(document));
+    processLikedTargets(core.collectLikedTargets(document));
+    processCommentedTargets(core.collectCommentedTargets(document));
     processLinkedInSidebarTargets();
   }
 
@@ -1001,6 +1029,8 @@
     reconcileChangedCommentTreatments(records);
     processPromotedTargets(core.collectPromotedTargetsFromMutationRecords(records));
     processSuggestedTargets(core.collectSuggestedTargetsFromMutationRecords(records));
+    processLikedTargets(core.collectLikedTargetsFromMutationRecords(records));
+    processCommentedTargets(core.collectCommentedTargetsFromMutationRecords(records));
     processLinkedInSidebarTargets();
   }
 

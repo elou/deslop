@@ -191,3 +191,12 @@ test('offers a separate Suggested-post cleanup control', () => {
   assert.match(optionsHtml, /id="stream-suggested"/);
   assert.match(optionsSource, /hide-suggested/);
 });
+
+test('offers opt-in LinkedIn like and comment cleanup flags', () => {
+  assert.match(optionsHtml, /id="hide-liked"/);
+  assert.match(optionsHtml, />Hide posts because someone liked them</);
+  assert.match(optionsHtml, /id="hide-commented"/);
+  assert.match(optionsHtml, />Hide posts because someone commented</);
+  assert.match(optionsSource, /hideLiked/);
+  assert.match(optionsSource, /hideCommented/);
+});

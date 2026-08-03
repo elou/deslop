@@ -369,8 +369,8 @@ test('captures the feed-source actor for local history without rendering it on t
   );
 });
 
-test('does not capture promoted, suggested, company, or unknown actors in feed-source history', () => {
-  assert.match(contentSource, /if \(verdict === 'promoted' \|\| verdict === 'suggested'\) return null;/);
+test('does not capture cleanup, company, or unknown actors in feed-source history', () => {
+  assert.match(contentSource, /\['promoted', 'suggested', 'liked', 'commented'\]\.includes\(verdict\)\) return null;/);
   assert.match(contentSource, /function isPersonProfile\(value\)/);
   assert.match(contentSource, /\^\\\/in\\\//);
   assert.match(contentSource, /target\.matches\?\.\([\s\S]*\[role="comment"\]/);
@@ -430,4 +430,15 @@ test('processes Suggested feed targets independently of Pangram verdict badges',
   assert.match(contentSource, /core\.collectSuggestedTargets\(document\)/);
   assert.match(contentSource, /core\.collectSuggestedTargetsFromMutationRecords\(records\)/);
   assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'suggested'\)/);
+});
+
+test('processes LinkedIn like and comment context through independent cleanup paths', () => {
+  assert.match(contentSource, /function processLikedTargets\(targets\)/);
+  assert.match(contentSource, /core\.collectLikedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectLikedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'liked'\)/);
+  assert.match(contentSource, /function processCommentedTargets\(targets\)/);
+  assert.match(contentSource, /core\.collectCommentedTargets\(document\)/);
+  assert.match(contentSource, /core\.collectCommentedTargetsFromMutationRecords\(records\)/);
+  assert.match(contentSource, /core\.getStreamForCleanup\(settings, 'commented'\)/);
 });
