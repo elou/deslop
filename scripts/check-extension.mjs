@@ -42,7 +42,8 @@ const requiredHosts = [
   'https://raw.githubusercontent.com/*',
   'https://datasets-server.huggingface.co/*',
   'https://images-api.nasa.gov/*',
-  'https://images-assets.nasa.gov/*'
+  'https://images-assets.nasa.gov/*',
+  'https://sallysbakingaddiction.com/*'
 ];
 for (const host of requiredHosts) {
   assert.ok(manifest.host_permissions?.includes(host), `Missing host permission: ${host}`);

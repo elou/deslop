@@ -17,6 +17,10 @@ const NGA_PUBLISHED_IMAGES_FALLBACK_BYTES = 89_200_527;
 const RIJKSMUSEUM_SEARCH_API = 'https://data.rijksmuseum.nl/search/collection';
 const RIJKSMUSEUM_DATA_API = 'https://data.rijksmuseum.nl';
 const GARROS_GALLERY_URL = 'https://www.garros.gallery/';
+const SALLY_BAKING_FEEDS = Object.freeze([
+  'https://sallysbakingaddiction.com/category/breakfast-treats/muffins/feed/',
+  'https://sallysbakingaddiction.com/category/desserts/feed/'
+]);
 const HIDE_STREAM_ID = 'hide-ai';
 const HIDE_PROMOTED_STREAM_ID = 'hide-promoted';
 const HIDE_SUGGESTED_STREAM_ID = 'hide-suggested';
@@ -621,6 +625,14 @@ function readThumbnailUrl(block) {
   return assetUrl.replace('/master/pass/', '/master/w_960,c_limit/');
 }
 
+function readRssDescriptionImage(block) {
+  const description = readXmlTag(block, 'description');
+  const imageTag = description.match(/<img\b[^>]*>/i)?.[0];
+  const match = imageTag?.match(/\bsrc=(?:"([^"]+)"|'([^']+)')/i);
+  const assetUrl = decodeXml(match?.[1] || match?.[2]);
+  return assetUrl.startsWith('https://') ? assetUrl : '';
+}
+
 export function parseNewYorkerFeed(xml) {
   const blocks = String(xml || '').match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) || [];
   return blocks
@@ -645,6 +657,32 @@ export function parseNewYorkerFeed(xml) {
         rights: 'Publisher RSS',
         credit: 'The New Yorker RSS',
         provider: 'The New Yorker'
+      };
+    })
+    .filter(Boolean);
+}
+
+export function parseSallyBakingFeed(xml) {
+  const blocks = String(xml || '').match(/<item\b[^>]*>[\s\S]*?<\/item>/gi) || [];
+  return blocks
+    .map((block, index) => {
+      const sourceUrl = readXmlTag(block, 'link');
+      const assetUrl = readRssDescriptionImage(block);
+      if (!sourceUrl?.startsWith('https://') || !assetUrl) return null;
+
+      const category = readXmlTag(block, 'category');
+      const creator = readXmlTag(block, 'dc:creator');
+      return {
+        kind: 'image',
+        id: `sally-baking-${encodeURIComponent(sourceUrl || index)}`,
+        assetUrl,
+        title: readXmlTag(block, 'title') || 'Baking recipe',
+        creator: creator || "Sally's Baking",
+        location: category || 'Baking recipe',
+        sourceUrl,
+        rights: 'Copyrighted · recipe link-back',
+        credit: "Sally's Baking RSS",
+        provider: "🧁 Sally's Baking"
       };
     })
     .filter(Boolean);
@@ -968,6 +1006,14 @@ async function fetchGarrosGalleryReplacement(fetchFn, random) {
   return replacement;
 }
 
+async function fetchSallyBakingReplacement(fetchFn, random) {
+  const feedUrl = SALLY_BAKING_FEEDS[chooseIndex(SALLY_BAKING_FEEDS.length, random)];
+  const xml = await fetchText(feedUrl, fetchFn);
+  const items = parseSallyBakingFeed(xml);
+  if (!items.length) throw new Error("Sally's Baking returned no usable recipes");
+  return items[chooseIndex(items.length, random)];
+}
+
 async function fetchNewYorkerReplacement(stream, fetchFn, random) {
   const feeds = {
     'newyorker-latest': 'https://www.newyorker.com/feed/latest/rss'
@@ -1017,6 +1063,12 @@ export const PROVIDER_REGISTRY = Object.freeze({
     category: 'art',
     rightsSafe: false,
     fetch: providerAdapter(fetchGarrosGalleryReplacement)
+  },
+  'sallys-baking': {
+    id: 'sallys-baking',
+    category: 'food',
+    rightsSafe: false,
+    fetch: providerAdapter(fetchSallyBakingReplacement)
   }
 });
 
@@ -1046,6 +1098,10 @@ export const STREAM_REGISTRY = Object.freeze({
   'garros-gallery': {
     label: '🎾 Garross Gallery',
     providerIds: ['garros-gallery']
+  },
+  'baking-recipes': {
+    label: '🧁 Muffins + Desserts',
+    providerIds: ['sallys-baking']
   },
   [SURPRISE_STREAM_ID]: {
     label: '✨ Surprise me',

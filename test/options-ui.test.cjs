@@ -107,6 +107,7 @@ test('offers the supported live streams', () => {
     '🎨 Modern Art (experimental)',
     '🌌 Deep Space',
     '🎾 Garross Gallery',
+    '🧁 Muffins + Desserts',
     '✨ Surprise me'
   ]) {
     assert.ok(optionsSource.includes(`'${label}'`), `missing stream label: ${label}`);

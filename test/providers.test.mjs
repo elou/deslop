@@ -19,6 +19,7 @@ import {
   parseGarrosGallery,
   parseNgaPublishedImagesChunk,
   parseNewYorkerFeed,
+  parseSallyBakingFeed,
   PROVIDER_REGISTRY,
   STREAM_REGISTRY
 } from '../src/background/providers.mjs';
@@ -338,6 +339,25 @@ test('skips animated New Yorker feed thumbnails', () => {
   assert.deepEqual(parseNewYorkerFeed(xml), []);
 });
 
+test('parses Sally Baking muffin and dessert RSS items as recipe link-backs', () => {
+  const xml = `<rss><channel><item>
+    <title><![CDATA[Blackberry Lemon Poppy Seed Muffins]]></title>
+    <link>https://sallysbakingaddiction.com/blackberry-lemon-poppy-seed-muffins/</link>
+    <dc:creator><![CDATA[Sally McKenney]]></dc:creator>
+    <category><![CDATA[Muffins]]></category>
+    <description><![CDATA[<img src="https://sallysbakingaddiction.com/wp-content/uploads/2026/07/muffins.jpg" alt="muffins" /><p>Bakery-style muffins.</p>]]></description>
+  </item></channel></rss>`;
+
+  const [item] = parseSallyBakingFeed(xml);
+  assert.equal(item.provider, "🧁 Sally's Baking");
+  assert.equal(item.title, 'Blackberry Lemon Poppy Seed Muffins');
+  assert.equal(item.creator, 'Sally McKenney');
+  assert.equal(item.location, 'Muffins');
+  assert.equal(item.rights, 'Copyrighted · recipe link-back');
+  assert.match(item.assetUrl, /sallysbakingaddiction\.com\/wp-content/);
+  assert.match(item.sourceUrl, /blackberry-lemon-poppy-seed-muffins/);
+});
+
 test('routes Classic Poetry through the Freeverse index and raw poem', async () => {
   const fetchFn = async (url) => {
     if (url.endsWith('/search-index.json')) {
@@ -379,6 +399,25 @@ test('routes Garross Gallery through its explicit research stream', async () => 
     () => 0
   );
   assert.equal(item.provider, '🎾 Garross Gallery');
+});
+
+test('routes Baking Recipes through the muffin or dessert RSS feeds', async () => {
+  const xml = `<rss><channel><item>
+    <title>Chocolate Chip Muffins</title>
+    <link>https://sallysbakingaddiction.com/chocolate-chip-muffins/</link>
+    <category>Muffins</category>
+    <description><![CDATA[<img src="https://sallysbakingaddiction.com/wp-content/uploads/muffins.jpg" />]]></description>
+  </item></channel></rss>`;
+  const item = await getReplacement(
+    { streams: { ai: 'baking-recipes' } },
+    'ai',
+    async (url) => {
+      assert.match(url, /sallysbakingaddiction\.com\/category\/(?:breakfast-treats\/muffins|desserts)\/feed/);
+      return { ok: true, status: 200, text: async () => xml };
+    },
+    () => 0
+  );
+  assert.equal(item.provider, "🧁 Sally's Baking");
 });
 
 test('routes the Hide AI stream to a compact notice', async () => {

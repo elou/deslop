@@ -44,6 +44,7 @@ const STREAM_IDS = new Set([
   'modern-art',
   'deep-space',
   'garros-gallery',
+  'baking-recipes',
   'surprise-me',
   VOCABULARY_STREAM_ID,
   'hide-ai',

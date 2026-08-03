@@ -8,6 +8,7 @@ import * as vocabularyCore from '../vocabulary-core.mjs';
     ['modern-art', '🎨 Modern Art (experimental)'],
     ['deep-space', '🌌 Deep Space'],
     ['garros-gallery', '🎾 Garross Gallery'],
+    ['baking-recipes', '🧁 Muffins + Desserts'],
     ['surprise-me', '✨ Surprise me'],
     ['hide-ai', '❌ Hide AI completely']
   ];
