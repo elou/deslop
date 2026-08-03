@@ -257,8 +257,7 @@
       });
       if (next.totalHidden === current.totalHidden) return;
       await writeLocalHistory(next);
-    })
-      .catch(() => {});
+    });
   }
 
   function cleanName(value) {
