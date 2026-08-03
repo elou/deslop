@@ -12,7 +12,7 @@ const contentCss = fs.readFileSync(
   'utf8'
 );
 
-test('mounts a reserved replacement card before requesting museum content', () => {
+test('keeps the native X post visible until replacement content is ready', () => {
   const replaceTargetStart = contentSource.indexOf('async function replaceTarget');
   const replaceTargetEnd = contentSource.indexOf('\n  function processBadges', replaceTargetStart);
   const replaceTargetSource = contentSource.slice(replaceTargetStart, replaceTargetEnd);
@@ -22,8 +22,8 @@ test('mounts a reserved replacement card before requesting museum content', () =
   assert.notEqual(mountIndex, -1, 'replacement card should be mounted');
   assert.notEqual(requestIndex, -1, 'museum content should be requested');
   assert.ok(
-    mountIndex < requestIndex,
-    'the reserved card must mount before the museum request starts'
+    requestIndex < mountIndex,
+    'a blank replacement shell must not replace a native X post while replacement content is pending'
   );
 });
 

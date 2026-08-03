@@ -714,15 +714,11 @@
   async function replaceTarget(target, verdict, activeGeneration, stream) {
     if (target.getAttribute(STATE_ATTRIBUTE)) return;
     target.setAttribute(STATE_ATTRIBUTE, 'pending');
-    const card = createCard(verdict, target);
-    target.before(card);
-    target.classList.add(HIDDEN_CLASS);
+    let card = null;
 
     try {
       const postKey = await getReplacementPostKey(target);
       const selectedStream = stream || core.getStreamForVerdict(settings, verdict);
-      card.pangramGalleryPostKey = postKey;
-      card.pangramGalleryStream = selectedStream;
       const response = await requestReplacement({
         type: 'PANGRAM_GALLERY_GET_REPLACEMENT',
         postKey,
@@ -730,14 +726,19 @@
         stream: selectedStream
       });
       if (activeGeneration !== generation || !target.isConnected) {
-        disposeCard(card);
+        if (target.isConnected) target.removeAttribute(STATE_ATTRIBUTE);
         return;
       }
       if (!response?.ok || !response.item) throw new Error('No replacement available');
 
+      card = createCard(verdict, target);
+      card.pangramGalleryPostKey = postKey;
+      card.pangramGalleryStream = selectedStream;
+      target.before(card);
       if (!hydrateCard(card, response.item)) {
         throw new Error('Replacement card is unavailable');
       }
+      target.classList.add(HIDDEN_CLASS);
       target.setAttribute(STATE_ATTRIBUTE, 'replaced');
       void recordHiddenPangramPost(card, verdict);
     } catch (_error) {
