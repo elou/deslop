@@ -291,11 +291,14 @@
 
   function getSocialContextAction(target) {
     if (!target || typeof target.matches !== 'function') return null;
-    for (const label of target.querySelectorAll?.(SOCIAL_CONTEXT_LABEL_SELECTOR) || []) {
-      const owner = getFeedOwner(label);
-      if (owner && owner !== target) continue;
-      const source = parseFeedSourceContext(label.textContent);
-      if (source?.action === 'reacted' || source?.action === 'commented') return source.action;
+    const selectors = [SOCIAL_CONTEXT_LABEL_SELECTOR, 'p, span'];
+    for (const selector of selectors) {
+      for (const label of target.querySelectorAll?.(selector) || []) {
+        const owner = getFeedOwner(label);
+        if (owner && owner !== target) continue;
+        const source = parseFeedSourceContext(label.textContent);
+        if (source?.action === 'reacted' || source?.action === 'commented') return source.action;
+      }
     }
     return null;
   }

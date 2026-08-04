@@ -303,6 +303,20 @@ test('recognizes only explicit LinkedIn like and comment feed context', () => {
   );
 });
 
+test('recognizes a generic LinkedIn reaction header within its feed owner', () => {
+  const core = loadCore();
+  const headerLabel = {
+    textContent: 'Stability AI likes this',
+    closest: () => target
+  };
+  const target = {
+    matches: () => false,
+    querySelectorAll: (selector) => (selector === 'p, span' ? [headerLabel] : [])
+  };
+
+  assert.equal(core.isLikedTarget(target), true);
+});
+
 test('collects like and comment feed context after late LinkedIn hydration', () => {
   const core = loadCore();
   const likedOwner = {
